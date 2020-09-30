@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--    android:layout_height="wrap_content"-->
+    <!--    android:layout_width="match_parent"-->
+    <!--    android:orientation="horizontal">-->
+    <ImageView
+        android:id="@+id/sensor_tab_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingEnd="15dp"
+        tools:src="@drawable/ic_flow"
+        android:scaleType="fitXY"
+        tools:contentDescription="TODO" />
+    <TextView
+        android:id="@+id/sensor_tab_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        tools:text="32C"/>
+</merge>
+

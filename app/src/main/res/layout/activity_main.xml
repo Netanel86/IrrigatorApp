@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <HorizontalScrollView
+        android:id="@+id/scroller"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <RadioGroup
+            android:id="@+id/radioGroup_valves"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <!--            app:layout_constraintEnd_toEndOf="parent"-->
+            <!--            app:layout_constraintStart_toStartOf="parent"-->
+            <!--            app:layout_constraintTop_toTopOf="parent">-->
+
+<!--            <com.netanel.irrigator_app.StateRadioButton
+                android:id="@+id/radio1"
+                style="@style/ValveRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="#1" />
+            <com.netanel.irrigator_app.StateRadioButton
+                android:id="@+id/radio2"
+                style="@style/ValveRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="#2" />
+            <com.netanel.irrigator_app.StateRadioButton
+                android:id="@+id/radio3"
+                style="@style/ValveRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="#3" />
+            <com.netanel.irrigator_app.StateRadioButton
+                android:id="@+id/radio4"
+                style="@style/ValveRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="#4" />-->
+        </RadioGroup>
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/textView_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorPrimaryText"
+        android:textSize="@dimen/headline_size"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scroller"
+        tools:text="Vegetables Valve"/>
+
+    <com.netanel.irrigator_app.TimeSetSeekBar
+        android:id="@+id/csb_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/textView_name"
+        app:layout_constraintBottom_toTopOf="@id/sensor_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:textSize="@dimen/headline_size"
+        app:max_value="3600"
+        />
+
+    <LinearLayout
+        android:id="@+id/sensor_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:divider="@drawable/sensor_bar_divider"
+        android:showDividers="middle"
+        app:layout_constraintBottom_toTopOf="@+id/test_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.netanel.irrigator_app.SensorView
+            android:id="@+id/sensor_view_temp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/sensor_view_background"
+            android:padding="10dp"
+            app:sensor_drawable="@drawable/ic_temperature" />
+
+        <com.netanel.irrigator_app.SensorView
+            android:id="@+id/sensor_view_humid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/sensor_view_background"
+            android:padding="10dp"
+            app:sensor_drawable="@drawable/ic_humidity" />
+
+        <com.netanel.irrigator_app.SensorView
+            android:id="@+id/sensor_view_flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/sensor_view_background"
+            android:padding="10dp"
+            app:sensor_drawable="@drawable/ic_flow" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/test_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimaryLight"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <Button
+            android:id="@+id/btn_command"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="Button" />
+
+        <Button
+            android:id="@+id/btn_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Valve" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
