@@ -1,24 +1,26 @@
 package com.netanel.irrigator_app;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.view.ContextThemeWrapper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.devadvance.circularseekbar.CircularSeekBar;
+import com.netanel.irrigator_app.model.Valve;
+import com.netanel.irrigator_app.services.AppServices;
 
 
 public class MainActivity extends AppCompatActivity
-        implements View.OnClickListener, ManualFragContract.IView, CircularSeekBar.OnCircularSeekBarChangeListener {
+        implements View.OnClickListener, ManualFragContract.IView {
     //for testing
     private Button mAddValveButton;
     private Button mCmndButton;
@@ -29,13 +31,9 @@ public class MainActivity extends AppCompatActivity
     private SensorView mSensorViewTemp;
     private SensorView mSensorViewHumid;
     private SensorView mSensorViewFlow;
-    private TextView mTvValveName;
-    private TimeSetSeekBar mTimeSetSeekBar;
-
 
 
     ManualFragContract.IViewModel mManualViewModel;
-
 
 
     @Override
@@ -46,20 +44,16 @@ public class MainActivity extends AppCompatActivity
         initUI();
         initTestUI();
 
-        mManualViewModel = ViewModelProviders.of(this).get(ManualFragViewModel.class);
+        mManualViewModel = new ViewModelProvider(this).get(ManualFragViewModel.class);
         mManualViewModel.bindView(this);
         mManualViewModel.onCreate();
     }
 
     private void initUI() {
         mValveRadioGroup = findViewById(R.id.radioGroup_valves);
-        mTimeSetSeekBar = findViewById(R.id.csb_time);
         mSensorViewTemp = findViewById(R.id.sensor_view_temp);
         mSensorViewHumid = findViewById(R.id.sensor_view_humid);
         mSensorViewFlow = findViewById(R.id.sensor_view_flow);
-        mTvValveName = findViewById(R.id.textView_name);
-
-        mTimeSetSeekBar.setOnChangedListener(this);
     }
 
     private void initTestUI() {
@@ -78,7 +72,7 @@ public class MainActivity extends AppCompatActivity
     private RadioButton initValveRadioButton(boolean valveState, String btnText) {
         final StateRadioButton btnValve =
                 new StateRadioButton(
-                        new ContextThemeWrapper(this, R.style.ValveRadioButton),
+                        new ContextThemeWrapper(this, R.style.ManualFrag_StateRadioButton),
                         null, 0);
 
         RadioGroup.LayoutParams layoutParams =
@@ -134,29 +128,35 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+    // TODO: 06/10/2020 save field on instance state changed
+    String lastShownValveId = null;
+
     @Override
-    public void showValvePage(String name, boolean state, int duration) {
-        mTimeSetSeekBar.setProgress(duration);
-        mTvValveName.setText(name);
+    public void showValvePage(String name, boolean state, int duration, Valve valve) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment lastShownFragment = fragmentManager.findFragmentByTag(lastShownValveId);
+        Fragment currFragment;
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        if(lastShownFragment != null) {
+            transaction.hide(lastShownFragment);
+        }
+        lastShownValveId = valve.getId();
+
+        if ((currFragment = fragmentManager.findFragmentByTag(valve.getId())) != null) {
+            transaction.show(currFragment).commit();
+        } else {
+            currFragment = initNewValveFragment(valve);
+            transaction.add(R.id.fragment_container_view, currFragment, valve.getId()).commit();
+        }
     }
 
-    @Override
-    public void setSeekBarProgress(long progress) {
-        mTimeSetSeekBar.setProgress((int)progress);
-    }
+    private Fragment initNewValveFragment(Valve valve) {
+        ValveFragment newFragment = ValveFragment.newInstance();
+        String valveJson = AppServices.getInstance().getJsonParser().toJson(valve);
 
-    @Override
-    public void onProgressChanged(CircularSeekBar circularSeekBar, int progress, boolean fromUser) {
-        mManualViewModel.onSeekBarProgressChanged(progress, fromUser);
-    }
-
-    @Override
-    public void onStopTrackingTouch(CircularSeekBar seekBar) {
-
-    }
-
-    @Override
-    public void onStartTrackingTouch(CircularSeekBar seekBar) {
-
+        Bundle bundle = new Bundle();
+        bundle.putString(ValveFragment.BUNDLE_VALVE, valveJson);
+        newFragment.setArguments(bundle);
+        return newFragment;
     }
 }

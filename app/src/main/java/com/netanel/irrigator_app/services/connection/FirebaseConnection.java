@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.services.connection;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -10,8 +10,9 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.Valve;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -88,7 +89,7 @@ public class FirebaseConnection implements IDataBaseConnection {
     }
 
     @Override
-    public void addValveChangedListener(String docId, final OnDataChangedListener<Valve> dataChangedListener) {
+    public void addOnValveChangedListener(String docId, final OnDataChangedListener<Valve> dataChangedListener) {
         mDb.collection(PATH_VALVES).document(docId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {

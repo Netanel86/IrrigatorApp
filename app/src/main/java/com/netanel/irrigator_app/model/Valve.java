@@ -1,9 +1,8 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.model;
 
 
 import com.google.firebase.firestore.DocumentId;
 
-import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +26,8 @@ public class Valve {
     private int mIndex;
     private boolean mState = STATE_OFF;
     private String mName;
-    private Date mLastOnTime;
-    private int mDurationSec;
+    private Date mLastOn;
+    private int mDurationInSec;
 
     private OnChangedListener onChangedListener;
 
@@ -37,9 +36,9 @@ public class Valve {
     }
 
     public void setState(boolean state) {
-        if( this.mState != state ) {
+        if (this.mState != state) {
             this.mState = state;
-            if(onChangedListener != null) {
+            if (onChangedListener != null) {
                 onChangedListener.OnStateChanged(this);
             }
         }
@@ -54,19 +53,19 @@ public class Valve {
     }
 
     public int getDuration() {
-        return mDurationSec;
+        return mDurationInSec;
     }
 
     public void setDuration(int seconds) {
-        this.mDurationSec = seconds;
+        this.mDurationInSec = seconds;
     }
 
     public Date getLastOnTime() {
-        return mLastOnTime;
+        return mLastOn;
     }
 
     public void setLastOnTime(Date lastOnTime) {
-        this.mLastOnTime = lastOnTime;
+        this.mLastOn = lastOnTime;
     }
 
     public void update(Valve newValve) {
@@ -97,15 +96,15 @@ public class Valve {
 
     public long getTimeLeftOn() {
         long leftDuration = 0;
-        if(this.mLastOnTime != null) {
+        if (this.mLastOn != null) {
             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
-                    Calendar.getInstance().getTime().getTime() - this.mLastOnTime.getTime());
-            if (this.mDurationSec - diffInSec > 0) {
-                leftDuration = this.mDurationSec - diffInSec;
+                    Calendar.getInstance().getTime().getTime() - this.mLastOn.getTime());
+            if (this.mDurationInSec - diffInSec > 0) {
+                leftDuration = this.mDurationInSec - diffInSec;
             }
         }
 
-        return  leftDuration;
+        return leftDuration;
     }
 
     public interface OnChangedListener {

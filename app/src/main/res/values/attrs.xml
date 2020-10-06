@@ -33,8 +33,4 @@
     <attr name="sensor_drawable" format="reference"/>
 </declare-styleable>
 
-    <declare-styleable name="TimeSetSeekBar">
-        <attr name="textSize" format="integer"/>
-        <attr name="max_value" format="integer"/>
-    </declare-styleable>
 </resources>

@@ -3,6 +3,7 @@ package com.netanel.irrigator_app;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.widget.RadioButton;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatRadioButton;

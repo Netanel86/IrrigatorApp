@@ -1,5 +1,8 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.services.connection;
 
+
+import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.Valve;
 
 import java.util.Map;
 
@@ -17,7 +20,7 @@ public interface IDataBaseConnection {
 
     void addValve(final Valve valve, final TaskListener<String> onComplete);
 
-    void addValveChangedListener(String valveId, OnDataChangedListener<Valve> dataChangedListener);
+    void addOnValveChangedListener(String valveId, OnDataChangedListener<Valve> dataChangedListener);
 
     void addCommand(Command command, TaskListener<Command> onComplete);
 

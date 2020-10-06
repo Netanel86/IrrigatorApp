@@ -1,7 +1,7 @@
 package com.netanel.irrigator_app;
 
 
-import android.content.Context;
+import com.netanel.irrigator_app.model.Valve;
 
 /**
  * <p></p>
@@ -17,8 +17,7 @@ public interface ManualFragContract {
         int addStateRadioButton(boolean valveState, String viewString);
         void updateStateRadioButton(int btnId, boolean newState);
         void showMessage(String message);
-        void showValvePage(String name, boolean state, int duration);
-        void setSeekBarProgress(long progress);
+        void showValvePage(String name, boolean state, int duration, Valve valve);
     }
 
     interface IViewModel {
@@ -27,6 +26,5 @@ public interface ManualFragContract {
         void onButtonCommandClicked();
         void onButtonAddClicked();
         void onStateRadioButtonClicked(int btnId);
-        void onSeekBarProgressChanged(int progress, boolean fromUser);
     }
 }

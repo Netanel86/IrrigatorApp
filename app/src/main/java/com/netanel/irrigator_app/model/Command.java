@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.model;
 
 
 import com.google.firebase.firestore.DocumentId;

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tv_valve_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="@color/colorPrimaryText"
+        android:textSize="@dimen/headline_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Vegetables Valve" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraint1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_valve_name">
+
+        <com.devadvance.circularseekbar.CircularSeekBar
+            android:id="@+id/circular_seekbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:circle_stroke_width="15dp"
+            app:circle_x_radius="190dp"
+            app:circle_y_radius="190dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:max="3600"
+            app:pointer_radius="12dp"
+            app:use_custom_radii="true" />
+
+        <ImageView
+            android:id="@+id/iv_valve_state"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_power_on"
+            app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
+            app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
+            app:layout_constraintStart_toStartOf="@id/circular_seekbar"
+            app:layout_constraintTop_toTopOf="@id/circular_seekbar" />
+
+        <TextView
+            android:id="@+id/tv_elapsed_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/ManualFrag.SimpleTextView"
+            android:layout_marginBottom="15dp"
+            app:layout_constraintBottom_toTopOf="@id/iv_valve_state"
+            app:layout_constraintEnd_toEndOf="@+id/circular_seekbar"
+            app:layout_constraintStart_toStartOf="@+id/circular_seekbar"
+            tools:text="25:48 Minutes" />
+
+        <LinearLayout
+            android:id="@+id/linear_layout1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
+            app:layout_constraintStart_toStartOf="@id/circular_seekbar"
+            app:layout_constraintBottom_toTopOf="@id/tv_elapsed_time">
+            <TextView
+                android:id="@+id/tv_time_max"
+                style="@style/ManualFrag.TimeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                tools:text="60" />
+            <TextView
+                android:id="@+id/tv_backslash"
+                style="@style/ManualFrag.SimpleTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                android:text="/" />
+            <TextView
+                android:id="@+id/tv_time_zero"
+                style="@style/ManualFrag.TimeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="0" />
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/tv_time_quarter"
+            style="@style/ManualFrag.TimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_hours"
+            app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
+            app:layout_constraintTop_toTopOf="@id/circular_seekbar"
+            app:layout_constraintStart_toEndOf="@id/iv_valve_state"
+            tools:text="15" />
+
+        <TextView
+            android:id="@+id/tv_time_three_quarter"
+            style="@style/ManualFrag.TimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_hours"
+            app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
+            app:layout_constraintTop_toTopOf="@id/circular_seekbar"
+            app:layout_constraintEnd_toStartOf="@id/iv_valve_state"
+            tools:text="45" />
+
+        <TextView
+            android:id="@+id/tv_time_half"
+            style="@style/ManualFrag.TimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_hours"
+            app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
+            app:layout_constraintStart_toStartOf="@id/circular_seekbar"
+            app:layout_constraintTop_toBottomOf="@id/iv_valve_state"
+            tools:text="30" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

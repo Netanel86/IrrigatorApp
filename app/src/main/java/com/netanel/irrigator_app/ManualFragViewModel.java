@@ -1,14 +1,15 @@
 package com.netanel.irrigator_app;
 
-import android.os.CountDownTimer;
+import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.connection.FirebaseConnection;
+import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
+import com.netanel.irrigator_app.model.Valve;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import androidx.lifecycle.ViewModel;
 
@@ -88,7 +89,8 @@ public class ManualFragViewModel extends ViewModel
     }
 
     private void initValveDbListener(final Valve valve) {
-        mDb.addValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
+        AppServices.getInstance().getDbConnection()
+                .addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
             @Override
             public void onDataChanged(Valve changedObject, Exception ex) {
                 if (ex != null) {
@@ -155,37 +157,12 @@ public class ManualFragViewModel extends ViewModel
         });
     }
 
-    private CountDownTimer mTimer;
-
     @Override
     public void onStateRadioButtonClicked(int btnId) {
         if ((mSelectedValve = mValveMap.get(mBtnMapInverse.get(btnId))) != null) {
-            getView().showValvePage(mSelectedValve.getName(), mSelectedValve.getState(), (int) mSelectedValve.getTimeLeftOn());
-
-            if (mSelectedValve.getTimeLeftOn() > 0) {
-                mTimer = new CountDownTimer(mSelectedValve.getTimeLeftOn() * 1000, 1000) {
-
-                    @Override
-                    public void onTick(long l) {
-                        getView().setSeekBarProgress(l / 1000);
-                    }
-
-                    @Override
-                    public void onFinish() {
-
-                    }
-                }.start();
-            }
+            getView().showValvePage(mSelectedValve.getName(), mSelectedValve.getState(), (int) mSelectedValve.getTimeLeftOn(),mSelectedValve);
         } else {
             getView().showMessage("This shouldn't happen!");
-        }
-    }
-
-    @Override
-    public void onSeekBarProgressChanged(int progress, boolean fromUser) {
-        if(mTimer != null && fromUser) {
-            mTimer.cancel();
-            mTimer = null;
         }
     }
 }
