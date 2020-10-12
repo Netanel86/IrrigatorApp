@@ -1,8 +1,6 @@
 package com.netanel.irrigator_app;
 
-import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.services.AppServices;
-import com.netanel.irrigator_app.services.connection.FirebaseConnection;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.model.Valve;
 
@@ -22,8 +20,8 @@ import androidx.lifecycle.ViewModel;
  * Created on 23/09/2020
  */
 
-public class ManualFragViewModel extends ViewModel
-        implements ManualFragContract.IViewModel {
+public class ManualFragPresenter extends ViewModel
+        implements ManualFragContract.IPresenter {
 
     private ManualFragContract.IView mView;
 
@@ -33,12 +31,12 @@ public class ManualFragViewModel extends ViewModel
     private Map<String, Integer> mBtnMap;
     private Map<Integer, String> mBtnMapInverse;
 
-    private Valve mSelectedValve;
+    private ManualFragRouter mRouter;
 
-    public ManualFragViewModel() {
-        mDb = new FirebaseConnection();
+    public ManualFragPresenter(ManualFragRouter router) {
+        mDb = AppServices.getInstance().getDbConnection();
+        mRouter = router;
     }
-
 
     public ManualFragContract.IView getView() {
         return this.mView;
@@ -79,10 +77,12 @@ public class ManualFragViewModel extends ViewModel
 
         valve.setOnChangedListener(new Valve.OnChangedListener() {
             @Override
-            public void OnStateChanged(Valve updatedValve) {
-                Integer btnId;
-                if ((btnId = mBtnMap.get(updatedValve.getId())) != null) {
-                    mView.updateStateRadioButton(btnId, updatedValve.getState());
+            public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
+                if(propertyName.equals(Valve.PROPERTY_DURATION) || propertyName.equals(Valve.PROPERTY_LAST_ON)) {
+                    Integer btnId;
+                    if ((btnId = mBtnMap.get(updatedValve.getId())) != null) {
+                        mView.updateStateRadioButton(btnId, updatedValve.getState());
+                    }
                 }
             }
         });
@@ -101,7 +101,6 @@ public class ManualFragViewModel extends ViewModel
         });
     }
 
-    // ManualFragContract.IViewModel implementation
     @Override
     public void bindView(ManualFragContract.IView view) {
         this.mView = view;
@@ -109,6 +108,8 @@ public class ManualFragViewModel extends ViewModel
 
     @Override
     public void onCreate() {
+        mRouter.showEmptyFragment();
+
         if (mBtnMap == null) {
             mBtnMap = new HashMap<>();
         }
@@ -121,18 +122,7 @@ public class ManualFragViewModel extends ViewModel
 
     @Override
     public void onButtonCommandClicked() {
-        final Command cmnd = new Command();
-        cmnd.setValveID(mValveMap.get(0).getId());
-        cmnd.setDuration(30);
-        mDb.addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
-            @Override
-            public void onComplete(Command answer, Exception ex) {
-                // TODO: 24/09/2020 handle successful request registration
-//                String.format(
-//                        "Request to turn ON valve #%d, for %d seconds has registered successfully",
-//                        mValvesMap.ge);
-            }
-        });
+
     }
 
     @Override
@@ -159,8 +149,9 @@ public class ManualFragViewModel extends ViewModel
 
     @Override
     public void onStateRadioButtonClicked(int btnId) {
-        if ((mSelectedValve = mValveMap.get(mBtnMapInverse.get(btnId))) != null) {
-            getView().showValvePage(mSelectedValve.getName(), mSelectedValve.getState(), (int) mSelectedValve.getTimeLeftOn(),mSelectedValve);
+        Valve selectedValve;
+        if ((selectedValve = mValveMap.get(mBtnMapInverse.get(btnId))) != null) {
+           mRouter.showValveFragment(selectedValve);
         } else {
             getView().showMessage("This shouldn't happen!");
         }

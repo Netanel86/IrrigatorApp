@@ -1,9 +1,6 @@
 package com.netanel.irrigator_app;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
@@ -15,9 +12,6 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.netanel.irrigator_app.model.Valve;
-import com.netanel.irrigator_app.services.AppServices;
-
 
 public class MainActivity extends AppCompatActivity
         implements View.OnClickListener, ManualFragContract.IView {
@@ -25,16 +19,13 @@ public class MainActivity extends AppCompatActivity
     private Button mAddValveButton;
     private Button mCmndButton;
 
-
     private static final String TEMP_SYMBOL = "\u2103";
     private RadioGroup mValveRadioGroup;
     private SensorView mSensorViewTemp;
     private SensorView mSensorViewHumid;
     private SensorView mSensorViewFlow;
 
-
-    ManualFragContract.IViewModel mManualViewModel;
-
+    ManualFragContract.IPresenter mPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +35,12 @@ public class MainActivity extends AppCompatActivity
         initUI();
         initTestUI();
 
-        mManualViewModel = new ViewModelProvider(this).get(ManualFragViewModel.class);
-        mManualViewModel.bindView(this);
-        mManualViewModel.onCreate();
+        ManualFragRouter router = new ManualFragRouter(this);
+        ViewModelFactory factory = new ViewModelFactory(router);
+
+        mPresenter = new ViewModelProvider(this, factory).get(ManualFragPresenter.class);
+        mPresenter.bindView(this);
+        mPresenter.onCreate();
     }
 
     private void initUI() {
@@ -95,15 +89,15 @@ public class MainActivity extends AppCompatActivity
     public void onClick(View view) {
 
         if (view instanceof StateRadioButton) {
-            mManualViewModel.onStateRadioButtonClicked(view.getId());
+            mPresenter.onStateRadioButtonClicked(view.getId());
         }
 
         switch (view.getId()) {
             case R.id.btn_command:
-                mManualViewModel.onButtonCommandClicked();
+                mPresenter.onButtonCommandClicked();
                 break;
             case R.id.btn_add:
-                mManualViewModel.onButtonAddClicked();
+                mPresenter.onButtonAddClicked();
                 break;
         }
     }
@@ -125,38 +119,5 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void showMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-    }
-
-
-    // TODO: 06/10/2020 save field on instance state changed
-    String lastShownValveId = null;
-
-    @Override
-    public void showValvePage(String name, boolean state, int duration, Valve valve) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        Fragment lastShownFragment = fragmentManager.findFragmentByTag(lastShownValveId);
-        Fragment currFragment;
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        if(lastShownFragment != null) {
-            transaction.hide(lastShownFragment);
-        }
-        lastShownValveId = valve.getId();
-
-        if ((currFragment = fragmentManager.findFragmentByTag(valve.getId())) != null) {
-            transaction.show(currFragment).commit();
-        } else {
-            currFragment = initNewValveFragment(valve);
-            transaction.add(R.id.fragment_container_view, currFragment, valve.getId()).commit();
-        }
-    }
-
-    private Fragment initNewValveFragment(Valve valve) {
-        ValveFragment newFragment = ValveFragment.newInstance();
-        String valveJson = AppServices.getInstance().getJsonParser().toJson(valve);
-
-        Bundle bundle = new Bundle();
-        bundle.putString(ValveFragment.BUNDLE_VALVE, valveJson);
-        newFragment.setArguments(bundle);
-        return newFragment;
     }
 }

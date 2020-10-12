@@ -8,4 +8,6 @@
     <color name="colorPrimaryText">#212121</color>
     <color name="colorSecondaryText">#757575</color>
 
+    <color name="color_valve.state_on">@android:color/holo_green_light</color>
+    <color name="color_valve.state_off">@android:color/holo_red_dark</color>
 </resources>

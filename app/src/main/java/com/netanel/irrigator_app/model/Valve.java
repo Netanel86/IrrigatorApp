@@ -1,7 +1,11 @@
 package com.netanel.irrigator_app.model;
 
 
+import android.util.Log;
+
 import com.google.firebase.firestore.DocumentId;
+import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -17,14 +21,15 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class Valve {
-    public static final boolean STATE_ON = true;
-    public static final boolean STATE_OFF = false;
+    public static final String PROPERTY_NAME = "name";
+    public static final String PROPERTY_LAST_ON = "lastOn";
+    public static final String PROPERTY_DURATION = "duration";
 
     @DocumentId
     public String mId;
 
     private int mIndex;
-    private boolean mState = STATE_OFF;
+    private int mMaxDuration;
     private String mName;
     private Date mLastOn;
     private int mDurationInSec;
@@ -32,16 +37,7 @@ public class Valve {
     private OnChangedListener onChangedListener;
 
     public boolean getState() {
-        return mState;
-    }
-
-    public void setState(boolean state) {
-        if (this.mState != state) {
-            this.mState = state;
-            if (onChangedListener != null) {
-                onChangedListener.OnStateChanged(this);
-            }
-        }
+        return getTimeLeftOn() > 0;
     }
 
     public String getId() {
@@ -57,7 +53,13 @@ public class Valve {
     }
 
     public void setDuration(int seconds) {
-        this.mDurationInSec = seconds;
+        if (this.mDurationInSec != seconds) {
+            int oldDuration = this.mDurationInSec;
+            this.mDurationInSec = seconds;
+            if (onChangedListener != null) {
+                onChangedListener.OnPropertyChanged(this, PROPERTY_DURATION, oldDuration);
+            }
+        }
     }
 
     public Date getLastOnTime() {
@@ -65,13 +67,19 @@ public class Valve {
     }
 
     public void setLastOnTime(Date lastOnTime) {
-        this.mLastOn = lastOnTime;
+        if (this.mLastOn != lastOnTime) {
+            Date oldLastOn = this.mLastOn;
+            this.mLastOn = lastOnTime;
+            if (onChangedListener != null) {
+                onChangedListener.OnPropertyChanged(this,PROPERTY_LAST_ON, oldLastOn);
+            }
+        }
     }
 
-    public void update(Valve newValve) {
-        this.setState(newValve.getState());
-        this.setLastOnTime(newValve.getLastOnTime());
-        this.setDuration(newValve.getDuration());
+    public void update(Valve updatedValve) {
+        this.setLastOnTime(updatedValve.getLastOnTime());
+        this.setDuration(updatedValve.getDuration());
+        this.setName(updatedValve.getName());
     }
 
     public void setOnChangedListener(OnChangedListener onChangedListener) {
@@ -82,16 +90,23 @@ public class Valve {
         return mName;
     }
 
-    public void setName(String mName) {
-        this.mName = mName;
+    public void setName(String name) {
+        if(mName == null || !mName.equals(name)) {
+            String oldName = this.mName;
+            this.mName = name;
+            if (onChangedListener != null) {
+                onChangedListener.OnPropertyChanged(this, PROPERTY_NAME, oldName);
+            }
+        }
+
     }
 
     public int getIndex() {
         return mIndex;
     }
 
-    public void setIndex(int mIndex) {
-        this.mIndex = mIndex;
+    public void setIndex(int index) {
+        this.mIndex = index;
     }
 
     public long getTimeLeftOn() {
@@ -103,11 +118,18 @@ public class Valve {
                 leftDuration = this.mDurationInSec - diffInSec;
             }
         }
-
         return leftDuration;
     }
 
+    public int getMaxDuration() {
+        return mMaxDuration;
+    }
+
+    public void setMaxDuration(int mMaxDuration) {
+        this.mMaxDuration = mMaxDuration;
+    }
+
     public interface OnChangedListener {
-        void OnStateChanged(Valve updatedValve);
+        void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue);
     }
 }

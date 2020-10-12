@@ -1,7 +1,6 @@
 package com.netanel.irrigator_app;
 
 import androidx.core.content.res.ResourcesCompat;
-import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
 
@@ -9,196 +8,113 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
-import com.netanel.irrigator_app.services.AppServices;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
-import com.netanel.irrigator_app.model.Valve;
 
-import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
 
-public class ValveFragment extends Fragment
-        implements View.OnClickListener, CircularSeekBar.OnCircularSeekBarChangeListener {
+public class ValveFragment extends Fragment implements
+        View.OnClickListener,
+        CircularSeekBar.OnCircularSeekBarChangeListener,
+        ValveFragContract.IView {
 
     public static final String BUNDLE_VALVE = "valve";
 
-    public static ValveFragment newInstance() {
-        return new ValveFragment();
+    private TextView mTvTimer;
+    private TextView mTvTitle;
+    private ImageView mIvState;
+    private CircularSeekBar mSeekBar;
+    private TextView mTvMax;
+    private TextView mTvQuarter;
+    private TextView mTvHalf;
+    private TextView mTvThreeQuarter;
+    private TextView mTvZero;
+    private Button mButtonSet;
+
+    public ValveFragment(ValveFragContract.IPresenter viewModel) {
+        mPresenter = viewModel;
+        mPresenter.bindView(this);
     }
 
-    private CircularSeekBar mSeekBar;
-    private TextView mTvOnTime;
-    private TextView mTvValveName;
-    private ImageView mIvValveState;
-
-    private TextView mTextViewMax;
-    private TextView mTextViewOneQuarter;
-    private TextView mTextViewHalf;
-    private TextView mTextViewThreeQuarter;
-    private TextView mTextViewZero;
-
-    private ValveViewModel mValveViewModel;
-    private Valve mValve;
-
+    private ValveFragContract.IPresenter mPresenter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        if(getArguments() != null) {
-            mValve = AppServices.getInstance()
-                    .getJsonParser().fromJson(getArguments().getString(BUNDLE_VALVE), Valve.class);
-            mValve.setOnChangedListener(new Valve.OnChangedListener() {
-                @Override
-                public void OnStateChanged(Valve updatedValve) {
-                    setDrawableTintByState(updatedValve.getState());
-                }
-            });
-            initValveDbListener(mValve);
-        }
-
+        mPresenter.onCreateView();
 
         return inflater.inflate(R.layout.valve_man_fragment, container, false);
-    }
-
-    private void initValveDbListener(final Valve valve) {
-        AppServices.getInstance().getDbConnection()
-                .addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
-                    @Override
-                    public void onDataChanged(Valve changedObject, Exception ex) {
-                        if (ex != null) {
-//                            getView().showMessage(ex.getMessage());
-                        }
-                        valve.update(changedObject);
-                    }
-                });
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        initUI();
-
-        mValveViewModel = new ViewModelProvider(this).get(ValveViewModel.class);
-
-        if (mValve != null) showValve();
-        else Toast.makeText(this.getContext(),"Error loading valve",Toast.LENGTH_LONG).show();
-
+        initializeUI();
+        initializeListeners();
+        mPresenter.onViewCreated();
     }
 
-    private void initUI() {
+    private void initializeUI() {
         mSeekBar = getView().findViewById(R.id.circular_seekbar);
-        mTvOnTime = getView().findViewById(R.id.tv_elapsed_time);
-        mIvValveState = getView().findViewById(R.id.iv_valve_state);
-        mTextViewZero = getView().findViewById(R.id.tv_time_zero);
-        mTextViewMax = getView().findViewById(R.id.tv_time_max);
-        mTextViewOneQuarter = getView().findViewById(R.id.tv_time_quarter);
-        mTextViewHalf = getView().findViewById(R.id.tv_time_half);
-        mTextViewThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
-        mTvValveName = getView().findViewById(R.id.tv_valve_name);
+        mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
+        mIvState = getView().findViewById(R.id.iv_valve_state);
+        mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
+        mTvZero = getView().findViewById(R.id.tv_time_zero);
+        mTvMax = getView().findViewById(R.id.tv_time_max);
+        mTvQuarter = getView().findViewById(R.id.tv_time_quarter);
+        mTvHalf = getView().findViewById(R.id.tv_time_half);
+        mTvThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
 
+        mButtonSet = getView().findViewById(R.id.btn_set);
+    }
+
+    private void initializeListeners() {
         mSeekBar.setOnSeekBarChangeListener(this);
-        mTextViewThreeQuarter.setOnClickListener(this);
-        mTextViewMax.setOnClickListener(this);
-        mTextViewZero.setOnClickListener(this);
-        mTextViewHalf.setOnClickListener(this);
-        mTextViewOneQuarter.setOnClickListener(this);
-
-        mTextViewZero.setText(String.valueOf(0));
-        mTextViewOneQuarter.setText(String.valueOf((int) (mSeekBar.getMax() * 0.25 / 60)));
-        mTextViewHalf.setText(String.valueOf((int) (mSeekBar.getMax() * 0.5 / 60)));
-        mTextViewThreeQuarter.setText(String.valueOf((int) (mSeekBar.getMax() * 0.75 / 60)));
-        mTextViewMax.setText(String.valueOf((int) (mSeekBar.getMax() / 60)));
-    }
-
-    private void showValve() {
-        mTvValveName.setText(mValve.getName());
-        mSeekBar.setProgress((int) mValve.getTimeLeftOn());
-        setDrawableTintByState(mValve.getState());
-
-        if (mValve.getTimeLeftOn() > 0) {
-            mTimer = new CountDownTimer(
-                    mValve.getTimeLeftOn() * 1000,
-                    1000) {
-                @Override
-                public void onTick(long l) {
-                    mSeekBar.setProgress((int) l / 1000);
-                }
-
-                @Override
-                public void onFinish() {}
-            }.start();
-        } else {
-            mTvOnTime.setText(getCurrentProgressText(0));
-            mSeekBar.setProgress(0);
-        }
-    }
-
-
-    private void setDrawableTintByState(boolean state) {
-        if(state == Valve.STATE_ON) {
-            mIvValveState.getDrawable()
-                    .setTint(ResourcesCompat.getColor(getResources(),
-                            android.R.color.holo_green_light,null));
-        } else {
-            mIvValveState.getDrawable()
-                    .setTint(ResourcesCompat.getColor(getResources(),
-                            android.R.color.holo_red_dark,null));
-        }
-    }
-
-    private String getCurrentProgressText(int totalSeconds) {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format(Locale.getDefault(), "%02d:%02d %s",
-                minutes, seconds, minutes > 0 ? "Minutes" : "Seconds");
+        mTvThreeQuarter.setOnClickListener(this);
+        mTvMax.setOnClickListener(this);
+        mTvZero.setOnClickListener(this);
+        mTvHalf.setOnClickListener(this);
+        mTvQuarter.setOnClickListener(this);
+        mButtonSet.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View view) {
-
-        if(mTimer != null && view instanceof TextView) {
-            mTimer.cancel();
-        }
-
         switch (view.getId()) {
             case R.id.tv_time_zero:
-                mSeekBar.setProgress(0);
+                mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.Zero);
                 break;
             case R.id.tv_time_max:
-                mSeekBar.setProgress(mSeekBar.getMax());
+                mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.Max);
                 break;
             case R.id.tv_time_three_quarter:
-                mSeekBar.setProgress((int) (mSeekBar.getMax() * 0.75));
+                mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.ThreeQuarters);
                 break;
             case R.id.tv_time_half:
-                mSeekBar.setProgress((int) (mSeekBar.getMax() * 0.5));
+                mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.Half);
                 break;
             case R.id.tv_time_quarter:
-                mSeekBar.setProgress((int) (mSeekBar.getMax() * 0.25));
+                mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.Quarter);
+                break;
+            case R.id.btn_set:
+                mPresenter.onButtonSetClicked();
                 break;
         }
     }
 
-    private CountDownTimer mTimer;
-
     @Override
     public void onProgressChanged(CircularSeekBar circularSeekBar, final int progress, boolean fromUser) {
-
-        if(mTimer != null && fromUser) {
-            mTimer.cancel();
-        }
-
-        mTvOnTime.setText(getCurrentProgressText(progress));
+        mPresenter.onSeekBarProgressChanged(progress,fromUser);
     }
 
     @Override
@@ -209,5 +125,63 @@ public class ValveFragment extends Fragment
     @Override
     public void onStartTrackingTouch(CircularSeekBar seekBar) {
 
+    }
+
+    @Override
+    public void setSeekBarMaxProgress(int maxProgress) {
+        mSeekBar.setMax(maxProgress);
+    }
+
+    @Override
+    public void setSeekBarProgress(int progress) {
+        mSeekBar.setProgress(progress);
+    }
+
+    @Override
+    public void setTimerText(String timeString) {
+        mTvTimer.setText(timeString);
+    }
+
+    @Override
+    public void setImageDrawableTint(int colorResource) {
+        mIvState.getDrawable()
+                .setTint(ResourcesCompat.getColor(getResources(),
+                        colorResource,null));
+    }
+
+    @Override
+    public void setTitleText(String nameString) {
+        mTvTitle.setText(nameString);
+    }
+
+    @Override
+    public void showMessage(String message) {
+        Toast.makeText(this.getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void setPredefinedTimeText(@NotNull ValveFragContract.PredefinedTime predefinedTime, String timeString) {
+        switch (predefinedTime) {
+            case Zero:
+                mTvZero.setText(timeString);
+                break;
+            case Quarter:
+                mTvQuarter.setText(timeString);
+                break;
+            case Half:
+                mTvHalf.setText(timeString);
+                break;
+            case ThreeQuarters:
+                mTvThreeQuarter.setText(timeString);
+                break;
+            case Max:
+                mTvMax.setText(timeString);
+                break;
+        }
+    }
+
+    @Override
+    public int getSeekBarProgress() {
+        return mSeekBar.getProgress();
     }
 }

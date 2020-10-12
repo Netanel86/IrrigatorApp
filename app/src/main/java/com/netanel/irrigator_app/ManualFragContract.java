@@ -15,16 +15,21 @@ import com.netanel.irrigator_app.model.Valve;
 public interface ManualFragContract {
     interface IView {
         int addStateRadioButton(boolean valveState, String viewString);
+
         void updateStateRadioButton(int btnId, boolean newState);
+
         void showMessage(String message);
-        void showValvePage(String name, boolean state, int duration, Valve valve);
     }
 
-    interface IViewModel {
+    interface IPresenter {
         void bindView(IView view);
+
         void onCreate();
+
         void onButtonCommandClicked();
+
         void onButtonAddClicked();
+
         void onStateRadioButtonClicked(int btnId);
     }
 }
