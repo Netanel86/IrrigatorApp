@@ -4,6 +4,6 @@
     android:viewportWidth="48"
     android:width="48dp"
     android:height="48dp">
-    <path android:fillColor="@color/ColorPrimaryBackground" android:pathData="M0,0 L0,24 L48,24 L48,0"/>
-    <path android:fillColor="@color/ColorSecondaryBackground" android:pathData="M0,24 L48,24 L48,48 L0,48"/>
+    <path android:fillColor="@color/ColorSecondaryBackground" android:pathData="M0,0 L0,24 L48,24 L48,0"/>
+    <path android:fillColor="@color/ColorPrimaryBackground" android:pathData="M0,24 L48,24 L48,48 L0,48"/>
 </vector>

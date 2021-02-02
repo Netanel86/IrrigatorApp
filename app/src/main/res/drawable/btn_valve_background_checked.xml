@@ -10,8 +10,8 @@
                 android:left="5dp" />
             <gradient
                 android:angle="90"
-                android:startColor="@color/colorPrimaryLight"
-                android:endColor="@color/colorPrimaryDark" />
+                android:startColor="@color/ColorSecondaryBackground"
+                android:endColor="@color/ColorPrimaryBackground" />
         </shape>
     </item>
 </layer-list>

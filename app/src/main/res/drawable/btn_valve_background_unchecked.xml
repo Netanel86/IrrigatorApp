@@ -9,7 +9,7 @@
                 android:top="10dp"
                 android:left="5dp" />
             <solid
-                android:color="@color/colorPrimaryLight" />
+                android:color="@color/ColorSecondaryBackground" />
         </shape>
     </item>
 </layer-list>

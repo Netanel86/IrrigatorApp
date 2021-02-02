@@ -7,6 +7,9 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentContainer;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -107,7 +110,17 @@ public class ValveFragment extends Fragment implements
                 mPresenter.onPredefinedTimeClicked(ValveFragContract.PredefinedTime.Quarter);
                 break;
             case R.id.btn_set:
-                mPresenter.onButtonSetClicked();
+                FragmentManager manager = getParentFragmentManager();
+                FragmentTransaction transaction = manager.beginTransaction();
+                for (Fragment frag:
+                manager.getFragments()) {
+                    transaction.remove(frag);
+                }
+                transaction.add(
+                    R.id.fragment_container_view,
+                    new Fragment(R.layout.valve_empty_layout),
+                    "Empty").commit();
+//                mPresenter.onButtonSetClicked();
                 break;
         }
     }
