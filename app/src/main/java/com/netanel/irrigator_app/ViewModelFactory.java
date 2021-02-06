@@ -18,10 +18,10 @@ import androidx.lifecycle.ViewModelProvider;
  */
 
 class ViewModelFactory implements ViewModelProvider.Factory {
-    private ManualFragRouter mRouter;
+//    private ManualFragRouter mRouter;
 
-    public ViewModelFactory(ManualFragRouter router) {
-        mRouter = router;
+    public ViewModelFactory() {
+//        mRouter = router;
     }
 
     @NonNull
@@ -29,7 +29,7 @@ class ViewModelFactory implements ViewModelProvider.Factory {
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
         T viewModel = null;
         try {
-            viewModel = modelClass.getConstructor(ManualFragRouter.class).newInstance(mRouter);
+            viewModel = modelClass.getConstructor().newInstance();
         } catch (Exception e) {
             e.printStackTrace();
         }
