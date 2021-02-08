@@ -83,32 +83,6 @@ public class ManualFragPresenter extends ViewModel
         }
     }
 
-//    private void startTimer() {
-//        mTimer = new CountDownTimer(
-//                mSelectedValve.getTimeLeftOn() * 1000,
-//                1000) {
-//            @Override
-//            public void onTick(long l) {
-//                mView.setSeekBarProgress((int) l / 1000);
-//            }
-//
-//            @Override
-//            public void onFinish() {
-//                mView.setSeekBarProgress(0);
-//
-//                if(mOnTimerFinishedListener != null) {
-//                    mOnTimerFinishedListener.onTimerFinished();
-//                }
-//            }
-//        }.start();
-//        mIsTimerRunning = true;
-//    }
-//
-//    private void stopTimer() {
-//        mTimer.cancel();
-//        mIsTimerRunning = false;
-//    }
-
     private String formatSecToTimeString(int totalSeconds) {
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
