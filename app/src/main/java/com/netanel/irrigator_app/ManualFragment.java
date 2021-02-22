@@ -1,7 +1,5 @@
 package com.netanel.irrigator_app;
 
-import androidx.core.content.res.ResourcesCompat;
-
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -13,8 +11,6 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -36,14 +32,14 @@ public class ManualFragment extends Fragment implements
 
     private TextView mTvTimer;
     private TextView mTvTitle;
-    private ImageView mIvState;
+    private StateImageButton mButtonState;
     private CircularSeekBar mSeekBar;
     private TextView mTvMax;
     private TextView mTvQuarter;
     private TextView mTvHalf;
     private TextView mTvThreeQuarter;
     private TextView mTvZero;
-    private Button mButtonSet;
+//    private Button mButtonSet;
 
     ManualFragContract.IPresenter mPresenter;
 
@@ -73,7 +69,7 @@ public class ManualFragment extends Fragment implements
 
         mSeekBar = getView().findViewById(R.id.circular_seekbar);
         mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
-        mIvState = getView().findViewById(R.id.iv_valve_state);
+        mButtonState = getView().findViewById(R.id.i_btn_valve_state);
         mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
         mTvZero = getView().findViewById(R.id.tv_time_zero);
@@ -83,7 +79,7 @@ public class ManualFragment extends Fragment implements
         mTvThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
         mViewSwitcher = getView().findViewById(R.id.view_switcher);
 
-        mButtonSet = getView().findViewById(R.id.btn_set);
+        mButtonState = getView().findViewById(R.id.i_btn_valve_state);
     }
 
     private void initializeListeners() {
@@ -93,10 +89,10 @@ public class ManualFragment extends Fragment implements
         mTvZero.setOnClickListener(this);
         mTvHalf.setOnClickListener(this);
         mTvQuarter.setOnClickListener(this);
-        mButtonSet.setOnClickListener(this);
+        mButtonState.setOnClickListener(this);
     }
 
-    private RadioButton initValveRadioButton(boolean valveState, String btnText) {
+    private RadioButton initStateRadioButton(boolean state, String btnText) {
         final StateRadioButton btnValve =
                 new StateRadioButton(
                         new ContextThemeWrapper(getContext(), R.style.ManualFrag_StateRadioButton),
@@ -113,7 +109,7 @@ public class ManualFragment extends Fragment implements
         btnValve.setOnClickListener(this);
 
         btnValve.setText(btnText);
-        btnValve.setState(valveState);
+        btnValve.setState(state);
 
         return btnValve;
     }
@@ -122,21 +118,21 @@ public class ManualFragment extends Fragment implements
     public void onClick(View view) {
         if (view instanceof StateRadioButton) {
             mPresenter.onStateRadioButtonClicked(view.getId());
-        }
-
-        int viewId = view.getId();
-        if(viewId == R.id.tv_time_zero ) {
-            mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Zero);
-        } else if (viewId == R.id.tv_time_max){
-            mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Max);
-        } else if (viewId == R.id.tv_time_three_quarter) {
-            mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.ThreeQuarters);
-        } else if (viewId ==  R.id.tv_time_half){
-            mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Half);
-        }else if(viewId == R.id.tv_time_quarter){
-            mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Quarter);
-        } else if(viewId == R.id.btn_set) {
-            mPresenter.onButtonSetClicked();
+        } else {
+            int viewId = view.getId();
+            if (viewId == R.id.tv_time_zero) {
+                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Zero);
+            } else if (viewId == R.id.tv_time_max) {
+                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Max);
+            } else if (viewId == R.id.tv_time_three_quarter) {
+                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.ThreeQuarters);
+            } else if (viewId == R.id.tv_time_half) {
+                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Half);
+            } else if (viewId == R.id.tv_time_quarter) {
+                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Quarter);
+            } else if (viewId == R.id.i_btn_valve_state) {
+                mPresenter.onButtonPowerClicked();
+            }
         }
     }
 
@@ -171,10 +167,13 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setImageDrawableTint(int colorResource) {
-        mIvState.getDrawable()
-                .setTint(ResourcesCompat.getColor(getResources(),
-                        colorResource,null));
+    public void setPowerIconActivatedState(boolean state) {
+        mButtonState.setActivatedState(state);
+    }
+
+    @Override
+    public void setPowerIconEditedState(boolean isEdited) {
+        mButtonState.setEdited(isEdited);
     }
 
     @Override
@@ -190,6 +189,11 @@ public class ManualFragment extends Fragment implements
     @Override
     public void switchToValveView() {
         mViewSwitcher.showNext();
+    }
+
+    @Override
+    public void runOnUiThread(Runnable runnable) {
+        this.getActivity().runOnUiThread(runnable);
     }
 
     @Override
@@ -219,14 +223,14 @@ public class ManualFragment extends Fragment implements
     }
     @Override
     public int addStateRadioButton(boolean valveState, String viewString) {
-        RadioButton btnValve = initValveRadioButton(valveState, viewString);
+        RadioButton btnValve = initStateRadioButton(valveState, viewString);
         mValveRadioGroup.addView(btnValve);
 
         return btnValve.getId();
     }
 
     @Override
-    public void updateStateRadioButton(int btnId, boolean newState) {
+    public void setRadioButtonState(int btnId, boolean newState) {
         StateRadioButton btnValve = getView().findViewById(btnId);
         btnValve.setState(newState);
     }

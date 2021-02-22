@@ -3,8 +3,6 @@ package com.netanel.irrigator_app;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.RadioButton;
-
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatRadioButton;
 
@@ -19,9 +17,9 @@ import androidx.appcompat.widget.AppCompatRadioButton;
 
 public class StateRadioButton extends AppCompatRadioButton {
 
-    private static final int[] STATE_ON = {R.attr.state_toggle_on};
-
-    private boolean mCurrentState = false;
+    private static final int[] STATE_ACTIVATED = {R.attr.state_activated};
+    private static final boolean ACTIVATED = true;
+    private boolean mCurrentState = !ACTIVATED;
 
 
     public StateRadioButton(Context context) {
@@ -39,7 +37,7 @@ public class StateRadioButton extends AppCompatRadioButton {
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         return mCurrentState ?
-                mergeDrawableStates(super.onCreateDrawableState(extraSpace + 1), STATE_ON)
+                mergeDrawableStates(super.onCreateDrawableState(extraSpace + 1), STATE_ACTIVATED)
                 : super.onCreateDrawableState(extraSpace);
     }
 

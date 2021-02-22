@@ -15,12 +15,11 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0
  * Created on 02/09/2020
  */
-// TODO: 03/02/2021 add mState property and make it work, dont forget to add it also in firebase.
 public class Valve {
     public static final String PROPERTY_NAME = "name";
     public static final String PROPERTY_LAST_ON = "lastOn";
     public static final String PROPERTY_DURATION = "duration";
-    public static final String PROPERTY_STATUS = "status";
+    public static final String PROPERTY_STATE = "state";
 
     @DocumentId
     public String mId;
@@ -31,23 +30,23 @@ public class Valve {
     private Date mLastOn;
     private int mDurationInSec;
 
-    private boolean mStatus;
+    private boolean mState;
 
-    private OnChangedListener onChangedListener;
+    private OnPropertyChangedListener onPropertyChangedListener;
 
     public void update(Valve updatedValve) {
-        this.setStatus(updatedValve.getStatus());
+        this.setState(updatedValve.getState());
         this.setLastOnTime(updatedValve.getLastOnTime());
         this.setDuration(updatedValve.getDuration());
         this.setName(updatedValve.getName());
     }
 
-    public boolean getStatus() { return mStatus/* = getTimeLeftOn() > 0*/; }
+    public boolean getState() { return mState; }
 
-    public void setStatus(boolean newStatus) {
-        if (mStatus != newStatus) {
-            mStatus = newStatus;
-            onPropertyChanged(PROPERTY_STATUS, !mStatus);
+    public void setState(boolean newState) {
+        if (mState != newState) {
+            mState = newState;
+            onPropertyChanged(PROPERTY_STATE, !mState);
         }
     }
 
@@ -123,17 +122,17 @@ public class Valve {
         this.mMaxDuration = mMaxDuration;
     }
 
-    public void setOnChangedListener(OnChangedListener onChangedListener) {
-        this.onChangedListener = onChangedListener;
+    public void setOnPropertyChangedListener(OnPropertyChangedListener onPropertyChangedListener) {
+        this.onPropertyChangedListener = onPropertyChangedListener;
     }
 
     private void onPropertyChanged(String changedProperty, Object oldValue) {
-        if (onChangedListener != null) {
-            onChangedListener.OnPropertyChanged(this, changedProperty, oldValue);
+        if (onPropertyChangedListener != null) {
+            onPropertyChangedListener.OnPropertyChanged(this, changedProperty, oldValue);
         }
     }
 
-    public interface OnChangedListener {
+    public interface OnPropertyChangedListener {
         void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue);
     }
 }

@@ -74,11 +74,11 @@ public class GsonParser implements IJsonParser {
 
     private <T> GsonBuilder createGsonBuilder(Type typeOfT, String memberName) {
         GsonBuilder builder = new GsonBuilder();
-        GsonClassTypeAdapter adapter;
+        GsonClassTypeAdapter<T> adapter; ////edited: added <T>
         if(memberName == null || memberName.isEmpty()){
-            adapter = new GsonClassTypeAdapter<T>(typeOfT);
+            adapter = new GsonClassTypeAdapter<>(typeOfT);
         }else {
-            adapter = new GsonClassTypeAdapter<T>(typeOfT, memberName);
+            adapter = new GsonClassTypeAdapter<>(typeOfT, memberName);
         }
         builder.registerTypeAdapter(typeOfT, adapter);
         return builder;

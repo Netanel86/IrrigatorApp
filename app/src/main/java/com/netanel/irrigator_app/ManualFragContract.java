@@ -22,7 +22,9 @@ public interface ManualFragContract {
 
         void setTimerText(String timeString);
 
-        void setImageDrawableTint(int colorResource);
+        void setPowerIconActivatedState(boolean state);
+
+        void setPowerIconEditedState(boolean isEdited);
 
         void setTitleText(String nameString);
 
@@ -30,11 +32,13 @@ public interface ManualFragContract {
 
         int addStateRadioButton(boolean valveState, String viewString);
 
-        void updateStateRadioButton(int btnId, boolean newState);
+        void setRadioButtonState(int btnId, boolean newState);
 
         void showMessage(String message);
 
         void switchToValveView();
+
+        void runOnUiThread(Runnable runnable);
     }
 
     interface IPresenter {
@@ -42,7 +46,7 @@ public interface ManualFragContract {
 
         void onPredefinedTimeClicked(PredefinedTime time);
 
-        void onButtonSetClicked();
+        void onButtonPowerClicked();
 
         void bindView(IView view);
 
@@ -52,10 +56,16 @@ public interface ManualFragContract {
     }
 
     enum PredefinedTime {
-        Zero,
-        Quarter,
-        Half,
-        ThreeQuarters,
-        Max
+        Zero(0),
+        Quarter(0.25),
+        Half(0.5),
+        ThreeQuarters(0.75),
+        Max(1);
+
+        public final double value;
+        PredefinedTime(double val) {
+            value = val;
+        }
+
     }
 }

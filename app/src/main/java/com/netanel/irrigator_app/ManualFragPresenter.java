@@ -2,7 +2,6 @@ package com.netanel.irrigator_app;
 
 import android.os.CountDownTimer;
 
-import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.model.Valve;
@@ -10,9 +9,13 @@ import com.netanel.irrigator_app.model.Valve;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import androidx.lifecycle.ViewModel;
 
@@ -49,14 +52,17 @@ public class ManualFragPresenter extends ViewModel
 
     private void showSelectedValve() {
         if (mSelectedValve != null) {
+            for (ManualFragContract.PredefinedTime predefinedTime :
+                    ManualFragContract.PredefinedTime.values()) {
+                mView.setPredefinedTimeText(predefinedTime,
+                        String.valueOf((int) (
+                                mSelectedValve.getMaxDuration() * predefinedTime.value / 60)));
+            }
+
             mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
-            mView.setPredefinedTimeText(ManualFragContract.PredefinedTime.Zero, String.valueOf(0));
-            mView.setPredefinedTimeText(ManualFragContract.PredefinedTime.Quarter, String.valueOf((int) (mSelectedValve.getMaxDuration() * 0.25 / 60)));
-            mView.setPredefinedTimeText(ManualFragContract.PredefinedTime.Half, String.valueOf((int) (mSelectedValve.getMaxDuration() * 0.5 / 60)));
-            mView.setPredefinedTimeText(ManualFragContract.PredefinedTime.ThreeQuarters, String.valueOf((int) (mSelectedValve.getMaxDuration() * 0.75 / 60)));
-            mView.setPredefinedTimeText(ManualFragContract.PredefinedTime.Max, String.valueOf((int) (mSelectedValve.getMaxDuration() / 60)));
             mView.setTitleText(mSelectedValve.getName());
-            updateFocusedValveStatusIconColor();
+            mView.setPowerIconActivatedState(mSelectedValve.getState());
+            mView.setPowerIconEditedState(false);
             updateFocusedValveProgressView();
         } else {
             mView.showMessage("Error loading valve");
@@ -64,30 +70,38 @@ public class ManualFragPresenter extends ViewModel
     }
 
     private void updateFocusedValveProgressView() {
-       mTimer.stopIfRunning();
+        mTimer.stopIfRunning();
 
-        if (mSelectedValve.getStatus() && mSelectedValve.getTimeLeftOn() > 0) {
-            mView.setSeekBarProgress((int) mSelectedValve.getTimeLeftOn());
-            mTimer.start();
+        if (mSelectedValve.getState() &&
+                mSelectedValve.getLastOnTime().before(Calendar.getInstance().getTime())) {
+
+            if (mSelectedValve.getTimeLeftOn() > 0) {
+                mView.setSeekBarProgress((int) mSelectedValve.getTimeLeftOn());
+                mTimer.startCountDown();
+            } else {
+                mTimer.startElapsedTimer();
+                mView.setSeekBarProgress(mSelectedValve.getMaxDuration());
+            }
         } else {
             mView.setTimerText(formatSecToTimeString(0));
             mView.setSeekBarProgress(0);
         }
     }
 
-    private void updateFocusedValveStatusIconColor() {
-        if(mSelectedValve.getStatus()) {
-            mView.setImageDrawableTint(R.color.color_valve_state_on);
-        } else {
-            mView.setImageDrawableTint(R.color.color_valve_state_off);
-        }
-    }
-
     private String formatSecToTimeString(int totalSeconds) {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format(Locale.getDefault(), "%02d:%02d %s",
-                minutes, seconds, minutes > 0 ? "Minutes" : "Seconds");
+        if (totalSeconds < 3600) {
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            return String.format(Locale.getDefault(), "%02d:%02d %s",
+                    minutes, seconds, minutes > 0 ? "Minutes" : "Seconds");
+        } else {
+            int hours = totalSeconds / 3600;
+            int minutes = (totalSeconds % 3600) / 60;
+            int seconds = (totalSeconds % 3600) % 60;
+            return String.format(Locale.getDefault(), "%02d:%02d:%02d %s",
+                    hours, minutes, seconds, "Hours");
+        }
+
     }
 
     public void populateValves() {
@@ -103,7 +117,7 @@ public class ManualFragPresenter extends ViewModel
                         for (int i = 0; i < valves.size(); i++) {
                             Valve currValve = valves.get(i);
                             initValveListeners(currValve);
-                            int btnId = mView.addStateRadioButton(currValve.getStatus(),
+                            int btnId = mView.addStateRadioButton(currValve.getState(),
                                     String.format(Locale.ENGLISH, "#%d", currValve.getIndex()));
                             addToBtnMaps(btnId, currValve.getId());
                         }
@@ -123,21 +137,21 @@ public class ManualFragPresenter extends ViewModel
     private void initValveListeners(final Valve valve) {
         initValveDbListener(valve);
 
-        valve.setOnChangedListener(new Valve.OnChangedListener() {
+        valve.setOnPropertyChangedListener(new Valve.OnPropertyChangedListener() {
             @Override
             public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
-                if(propertyName.equals(Valve.PROPERTY_DURATION) ||
+                if (propertyName.equals(Valve.PROPERTY_DURATION) ||
                         propertyName.equals(Valve.PROPERTY_LAST_ON)) {
-                    if(mSelectedValve == updatedValve) {
+                    if (mSelectedValve == updatedValve) {
                         updateFocusedValveProgressView();
                     }
                 }
-                if(propertyName.equals(Valve.PROPERTY_STATUS)) {
+                if (propertyName.equals(Valve.PROPERTY_STATE)) {
                     Integer btnId;
                     if ((btnId = mBtnMap.get(updatedValve.getId())) != null) {
-                        mView.updateStateRadioButton(btnId, updatedValve.getStatus());
-                        if(mSelectedValve == updatedValve) {
-                            updateFocusedValveStatusIconColor();
+                        mView.setRadioButtonState(btnId, updatedValve.getState());
+                        if (mSelectedValve == updatedValve) {
+                            mView.setPowerIconActivatedState(mSelectedValve.getState());
                         }
                     }
                 }
@@ -176,16 +190,19 @@ public class ManualFragPresenter extends ViewModel
 
     @Override
     public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
-        if(fromUser) {
-            mTimer.stopIfRunning();
+        if (fromUser) {
+            onUserSeekBarProgressChanged();
         }
 
         mView.setTimerText(formatSecToTimeString(progress));
     }
-
+    private void onUserSeekBarProgressChanged() {
+        mTimer.stopIfRunning();
+        mView.setPowerIconEditedState(true);
+    }
     @Override
     public void onStateRadioButtonClicked(int btnId) {
-        if(mSelectedValve == null ) {
+        if (mSelectedValve == null) {
             mView.switchToValveView();
         }
 
@@ -195,50 +212,51 @@ public class ManualFragPresenter extends ViewModel
 
     @Override
     public void onPredefinedTimeClicked(ManualFragContract.PredefinedTime time) {
-        mTimer.stopIfRunning();
+        onUserSeekBarProgressChanged();
 
         switch (time) {
             case Zero:
                 mView.setSeekBarProgress(0);
                 break;
             case Quarter:
-                mView.setSeekBarProgress((int)(mSelectedValve.getMaxDuration() * 0.25));
+                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.25));
                 break;
             case Half:
-                mView.setSeekBarProgress((int)(mSelectedValve.getMaxDuration() * 0.5));
+                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.5));
                 break;
             case ThreeQuarters:
-                mView.setSeekBarProgress((int)(mSelectedValve.getMaxDuration() * 0.75));
+                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
                 break;
             case Max:
-                mView.setSeekBarProgress((int)(mSelectedValve.getMaxDuration()));
+                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration()));
                 break;
         }
     }
 
     @Override
-    public void onButtonSetClicked() {
-        Command cmnd = new Command();
-        cmnd.setDuration(mView.getSeekBarProgress());
-        cmnd.setValveId(mSelectedValve.getId());
-        AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
-            @Override
-            public void onComplete(Command answer, Exception ex) {
-                if(ex != null) {
-                    mView.showMessage(ex.getMessage());
-                } else if(answer != null) {
-                    mView.showMessage("Command registered with id:" + answer.getId());
-                }
-            }
-        });
+    public void onButtonPowerClicked() {
+//        Command cmnd = new Command();
+//        cmnd.setDuration(mView.getSeekBarProgress());
+//        cmnd.setValveId(mSelectedValve.getId());
+//        AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
+//            @Override
+//            public void onComplete(Command answer, Exception ex) {
+//                if (ex != null) {
+//                    mView.showMessage(ex.getMessage());
+//                } else if (answer != null) {
+//                    mView.showMessage("Command registered with id:" + answer.getId());
+//                }
+//            }
+//        });
     }
 
     public class ValveTimer {
-        private CountDownTimer mTimer;
+        private CountDownTimer mCountDownTimer;
+        private Timer mElapsedTimer;
         private boolean mIsTimerRunning = false;
 
-        public void start() {
-            mTimer = new CountDownTimer(
+        public void startCountDown() {
+            mCountDownTimer = new CountDownTimer(
                     mSelectedValve.getTimeLeftOn() * 1000,
                     1000) {
                 @Override
@@ -254,9 +272,29 @@ public class ManualFragPresenter extends ViewModel
             mIsTimerRunning = true;
         }
 
+        public void startElapsedTimer() {
+            mElapsedTimer = new Timer();
+            mElapsedTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    mView.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
+                                    Calendar.getInstance().getTime().getTime() -
+                                            mSelectedValve.getLastOnTime().getTime());
+                            mView.setTimerText(formatSecToTimeString((int) diffInSec));
+                        }
+                    });
+                }
+            }, 0, 1000);
+            mIsTimerRunning = true;
+        }
+
         public void stopIfRunning() {
-            if(mIsTimerRunning) {
-                mTimer.cancel();
+            if (mIsTimerRunning) {
+                if (mCountDownTimer != null) mCountDownTimer.cancel();
+                if (mElapsedTimer != null) mElapsedTimer.cancel();
                 mIsTimerRunning = false;
             }
         }

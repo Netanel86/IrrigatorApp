@@ -10,7 +10,7 @@
     <style name="ManualFrag.StateRadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
         <item name="android:background">@drawable/btn_valve_background_selector</item>
         <item name="android:button">@drawable/valve_btn</item>
-        <item name="android:drawableBottom">@drawable/btn_valve_state_selector</item>
+        <item name="android:drawableBottom">@drawable/radio_btn_state_selector</item>
         <item name="android:textSize">20sp</item>
         <item name="android:textColor">@color/btn_valve_text_color</item>
         <item name="android:textAlignment">center</item>
