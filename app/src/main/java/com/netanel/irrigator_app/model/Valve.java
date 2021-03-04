@@ -41,7 +41,9 @@ public class Valve {
         this.setName(updatedValve.getName());
     }
 
-    public boolean getState() { return mState; }
+    public boolean getState() {
+        return mState;
+    }
 
     public void setState(boolean newState) {
         if (mState != newState) {
@@ -78,7 +80,7 @@ public class Valve {
         if (this.mLastOn != lastOnTime) {
             Date oldLastOn = this.mLastOn;
             this.mLastOn = lastOnTime;
-            onPropertyChanged(PROPERTY_LAST_ON,oldLastOn);
+            onPropertyChanged(PROPERTY_LAST_ON, oldLastOn);
         }
     }
 
@@ -87,10 +89,10 @@ public class Valve {
     }
 
     public void setName(String name) {
-        if(mName == null || !mName.equals(name)) {
+        if (mName == null || !mName.equals(name)) {
             String oldName = this.mName;
             this.mName = name;
-            onPropertyChanged(PROPERTY_NAME,oldName);
+            onPropertyChanged(PROPERTY_NAME, oldName);
         }
     }
 

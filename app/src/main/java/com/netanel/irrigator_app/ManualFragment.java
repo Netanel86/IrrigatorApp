@@ -1,5 +1,7 @@
 package com.netanel.irrigator_app;
 
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -11,6 +13,7 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -18,8 +21,11 @@ import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.connection.NetworkHelper;
 
 import org.jetbrains.annotations.NotNull;
+
 
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
@@ -41,17 +47,19 @@ public class ManualFragment extends Fragment implements
     private TextView mTvZero;
 //    private Button mButtonSet;
 
-    ManualFragContract.IPresenter mPresenter;
+    private ManualFragContract.IPresenter mPresenter;
+    private ConnectionListener connectionListener;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        ViewModelFactory factory = new ViewModelFactory();
-        mPresenter = new ViewModelProvider(this, factory).get(ManualFragPresenter.class);
+        mPresenter = new ViewModelProvider(this,
+                AppServices.getInstance().getViewModelFactory()).get(ManualFragPresenter.class);
 
         mPresenter.bindView(this);
-        mPresenter.onCreate();
+        connectionListener = new ConnectionListener();
+        NetworkHelper.registerConnectivityListener(this.getContext(), connectionListener);
 
         return inflater.inflate(R.layout.fragment_manual, container, false);
     }
@@ -62,6 +70,7 @@ public class ManualFragment extends Fragment implements
 
         initUI();
         initializeListeners();
+        mPresenter.onViewCreated();
     }
 
     private void initUI() {
@@ -92,26 +101,10 @@ public class ManualFragment extends Fragment implements
         mButtonState.setOnClickListener(this);
     }
 
-    private RadioButton initStateRadioButton(boolean state, String btnText) {
-        final StateRadioButton btnValve =
-                new StateRadioButton(
-                        new ContextThemeWrapper(getContext(), R.style.ManualFrag_StateRadioButton),
-                        null, 0);
-
-        RadioGroup.LayoutParams layoutParams =
-                new RadioGroup.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1.0f);
-
-        btnValve.setLayoutParams(layoutParams);
-        btnValve.setId(View.generateViewId());
-        btnValve.setOnClickListener(this);
-
-        btnValve.setText(btnText);
-        btnValve.setState(state);
-
-        return btnValve;
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        NetworkHelper.unregisterConnectivityListener(this.getContext(),connectionListener);
     }
 
     @Override
@@ -151,49 +144,15 @@ public class ManualFragment extends Fragment implements
 
     }
 
-    @Override
-    public void setSeekBarMaxProgress(int maxProgress) {
-        mSeekBar.setMax(maxProgress);
-    }
-
-    @Override
-    public void setSeekBarProgress(int progress) {
-        mSeekBar.setProgress(progress);
-    }
-
-    @Override
-    public void setTimerText(String timeString) {
-        mTvTimer.setText(timeString);
-    }
-
-    @Override
-    public void setPowerIconActivatedState(boolean state) {
-        mButtonState.setActivatedState(state);
-    }
-
-    @Override
-    public void setPowerIconEditedState(boolean isEdited) {
-        mButtonState.setEdited(isEdited);
-    }
-
+    ///region ManualFragContract.IView
     @Override
     public void setTitleText(String nameString) {
         mTvTitle.setText(nameString);
     }
 
     @Override
-    public void showMessage(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void switchToValveView() {
-        mViewSwitcher.showNext();
-    }
-
-    @Override
-    public void runOnUiThread(Runnable runnable) {
-        this.getActivity().runOnUiThread(runnable);
+    public void setTimerText(String timeString) {
+        mTvTimer.setText(timeString);
     }
 
     @Override
@@ -218,9 +177,55 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
+    public void setSeekBarMaxProgress(int maxProgress) {
+        mSeekBar.setMax(maxProgress);
+    }
+
+    @Override
+    public void setSeekBarProgress(int progress) {
+        mSeekBar.setProgress(progress);
+    }
+
+    @Override
     public int getSeekBarProgress() {
         return mSeekBar.getProgress();
     }
+
+    @Override
+    public void setPowerIconActivatedState(boolean state) {
+        mButtonState.setActivatedState(state);
+    }
+
+    @Override
+    public void setPowerIconEditedState(boolean isEdited) {
+        mButtonState.setEdited(isEdited);
+    }
+
+    @Override
+    public void setUiEnabled(boolean enabled) {
+        if (!enabled) {
+            if(mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_manual)) {
+                mViewSwitcher.showPrevious();
+            }
+            mValveRadioGroup.clearCheck();
+
+            if (mValveRadioGroup.isEnabled()) {
+                setRadioGroupEnabled(false);
+            }
+        } else {
+            if (!mValveRadioGroup.isEnabled()) {
+                setRadioGroupEnabled(true);
+            }
+        }
+    }
+
+    private void setRadioGroupEnabled(boolean enabled) {
+        for (int i = 0; i < mValveRadioGroup.getChildCount(); i++) {
+            mValveRadioGroup.getChildAt(i).setEnabled(enabled);
+        }
+        mValveRadioGroup.setEnabled(enabled);
+    }
+
     @Override
     public int addStateRadioButton(boolean valveState, String viewString) {
         RadioButton btnValve = initStateRadioButton(valveState, viewString);
@@ -229,10 +234,84 @@ public class ManualFragment extends Fragment implements
         return btnValve.getId();
     }
 
+    private RadioButton initStateRadioButton(boolean state, String btnText) {
+        final StateRadioButton btnValve =
+                new StateRadioButton(
+                        new ContextThemeWrapper(getContext(), R.style.ManualFrag_StateRadioButton),
+                        null, 0);
+
+        RadioGroup.LayoutParams layoutParams =
+                new RadioGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1.0f);
+
+        btnValve.setLayoutParams(layoutParams);
+        btnValve.setId(View.generateViewId());
+        btnValve.setOnClickListener(this);
+
+        btnValve.setText(btnText);
+        btnValve.setState(state);
+
+        return btnValve;
+    }
+
     @Override
     public void setRadioButtonState(int btnId, boolean newState) {
         StateRadioButton btnValve = getView().findViewById(btnId);
         btnValve.setState(newState);
     }
 
+    @Override
+    public void switchToValveView() {
+        mViewSwitcher.showNext();
+    }
+
+    @Override
+    public void showMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void runOnUiThread(Runnable runnable) {
+        this.getActivity().runOnUiThread(runnable);
+    }
+    ///endregion
+
+    public class ConnectionListener extends ConnectivityManager.NetworkCallback {
+
+        private static final boolean CONNECTED = true;
+        private boolean mIsConnected;
+
+        public ConnectionListener(){
+            super();
+
+            mIsConnected = NetworkHelper.isOnline(getContext()) == CONNECTED;
+        }
+        @Override
+        public void onAvailable(@NonNull Network network) {
+            if(!mIsConnected) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPresenter.onConnectionChanged(CONNECTED);
+                    }
+                });
+            }
+            mIsConnected = CONNECTED;
+        }
+
+        @Override
+        public void onLost(@NonNull Network network) {
+            if(mIsConnected) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPresenter.onConnectionChanged(!CONNECTED);
+                    }
+                });
+            }
+            mIsConnected = !CONNECTED;
+        }
+    }
 }

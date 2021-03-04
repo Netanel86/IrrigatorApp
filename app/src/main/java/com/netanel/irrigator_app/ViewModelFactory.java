@@ -1,10 +1,15 @@
 package com.netanel.irrigator_app;
 
 
+import android.app.Application;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import javax.annotation.Nonnull;
+
 import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -17,10 +22,12 @@ import androidx.lifecycle.ViewModelProvider;
  * Created on 12/10/2020
  */
 
-class ViewModelFactory implements ViewModelProvider.Factory {
+public class ViewModelFactory extends ViewModelProvider.NewInstanceFactory {
 //    private ManualFragRouter mRouter;
+    private final Application mApplication;
 
-    public ViewModelFactory() {
+    public ViewModelFactory(@Nonnull Application app) {
+        mApplication = app;
 //        mRouter = router;
     }
 
@@ -29,7 +36,9 @@ class ViewModelFactory implements ViewModelProvider.Factory {
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
         T viewModel = null;
         try {
-            viewModel = modelClass.getConstructor().newInstance();
+            if (modelClass == ManualFragPresenter.class) {
+                viewModel = (T)new ManualFragPresenter(mApplication);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

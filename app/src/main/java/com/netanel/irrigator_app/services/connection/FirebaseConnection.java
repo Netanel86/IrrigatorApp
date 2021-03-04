@@ -1,7 +1,5 @@
 package com.netanel.irrigator_app.services.connection;
 
-import android.util.Log;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
@@ -9,6 +7,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -17,7 +16,6 @@ import com.netanel.irrigator_app.model.Valve;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,29 +34,35 @@ public class FirebaseConnection implements IDataBaseConnection {
     private static final String PATH_VALVES = "valves";
     private static final String PATH_COMMANDS = "commands";
 
-    private FirebaseFirestore mDb;
+    private final FirebaseFirestore mDb;
 
     public FirebaseConnection() {
         mDb = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings =
+                new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build();
+        mDb.setFirestoreSettings(settings);
     }
+
+
 
     @Override
     public void getValves(final TaskListener<Map<String, Valve>> result) {
+
         mDb.collection(PATH_VALVES).orderBy("index", Query.Direction.ASCENDING).get().addOnCompleteListener(
                 new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         //task is successful
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            LinkedHashMap<String, Valve> valves = new LinkedHashMap<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Valve valve = document.toObject(Valve.class);
-                                valves.put(valve.getId(), valve);
-                            }
-                            result.onComplete(valves, null);
+                        if (task.isSuccessful() && task.getResult() != null ) {
+                                LinkedHashMap<String, Valve> valves = new LinkedHashMap<>();
+                                for (QueryDocumentSnapshot document : task.getResult()) {
+                                    Valve valve = document.toObject(Valve.class);
+                                    valves.put(valve.getId(), valve);
+                                }
+                                result.onComplete(valves, null);
                         }
                         //task is unsuccessful
-                        else if (!task.isSuccessful() || task.getResult() == null) {
+                        else {
                             if(task.getException() != null) {
                                 result.onComplete(null, task.getException());
                             } else {

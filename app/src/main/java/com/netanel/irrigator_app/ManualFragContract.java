@@ -1,8 +1,6 @@
 package com.netanel.irrigator_app;
 
 
-import com.netanel.irrigator_app.model.Valve;
-
 /**
  * <p></p>
  *
@@ -39,6 +37,8 @@ public interface ManualFragContract {
         void switchToValveView();
 
         void runOnUiThread(Runnable runnable);
+
+        void setUiEnabled(boolean focusable);
     }
 
     interface IPresenter {
@@ -50,9 +50,11 @@ public interface ManualFragContract {
 
         void bindView(IView view);
 
-        void onCreate();
+        void onViewCreated();
 
         void onStateRadioButtonClicked(int btnId);
+
+        void onConnectionChanged(boolean isConnected);
     }
 
     enum PredefinedTime {
@@ -66,6 +68,5 @@ public interface ManualFragContract {
         PredefinedTime(double val) {
             value = val;
         }
-
     }
 }

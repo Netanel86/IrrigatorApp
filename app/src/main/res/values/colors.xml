@@ -7,6 +7,7 @@
     <color name="colorIcon">#FFFFFF</color>
     <color name="colorPrimaryText">#212121</color>
     <color name="colorSecondaryText">#757575</color>
+    <color name="colorControlHighlight">#4CAF50</color>
 
     <color name="ColorSecondaryBackground">#29b6f6</color>
     <color name="ColorPrimaryBackground">#01579B</color>

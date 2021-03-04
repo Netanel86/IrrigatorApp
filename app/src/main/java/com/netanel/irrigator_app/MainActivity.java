@@ -1,8 +1,11 @@
 package com.netanel.irrigator_app;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
+
+import com.netanel.irrigator_app.services.AppServices;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -21,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
         initUI();
         initTestUI();
 
+        AppServices.getInstance()
+                .setViewModelFactory(new ViewModelProvider.AndroidViewModelFactory(getApplication()));
         getSupportFragmentManager()
                 .beginTransaction().add(R.id.fragment_container_view,new ManualFragment()).commit();
 
