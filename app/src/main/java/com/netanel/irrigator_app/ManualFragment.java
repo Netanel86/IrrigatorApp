@@ -1,7 +1,5 @@
 package com.netanel.irrigator_app;
 
-import android.net.ConnectivityManager;
-import android.net.Network;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -13,7 +11,6 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -22,11 +19,11 @@ import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
 import com.netanel.irrigator_app.services.AppServices;
-import com.netanel.irrigator_app.services.connection.NetworkHelper;
 
 import org.jetbrains.annotations.NotNull;
 
-
+// TODO: 04/03/2021 refactor radio button behavior where a thin line presents at the bottom of the button if checked.
+// TODO: 04/03/2021 add color selector for radio button disabled state.
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
         CircularSeekBar.OnCircularSeekBarChangeListener,
@@ -48,7 +45,7 @@ public class ManualFragment extends Fragment implements
 //    private Button mButtonSet;
 
     private ManualFragContract.IPresenter mPresenter;
-    private ConnectionListener connectionListener;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -58,8 +55,7 @@ public class ManualFragment extends Fragment implements
                 AppServices.getInstance().getViewModelFactory()).get(ManualFragPresenter.class);
 
         mPresenter.bindView(this);
-        connectionListener = new ConnectionListener();
-        NetworkHelper.registerConnectivityListener(this.getContext(), connectionListener);
+
 
         return inflater.inflate(R.layout.fragment_manual, container, false);
     }
@@ -104,7 +100,7 @@ public class ManualFragment extends Fragment implements
     @Override
     public void onDestroy() {
         super.onDestroy();
-        NetworkHelper.unregisterConnectivityListener(this.getContext(),connectionListener);
+        mPresenter.onDestroy();
     }
 
     @Override
@@ -278,40 +274,5 @@ public class ManualFragment extends Fragment implements
     }
     ///endregion
 
-    public class ConnectionListener extends ConnectivityManager.NetworkCallback {
 
-        private static final boolean CONNECTED = true;
-        private boolean mIsConnected;
-
-        public ConnectionListener(){
-            super();
-
-            mIsConnected = NetworkHelper.isOnline(getContext()) == CONNECTED;
-        }
-        @Override
-        public void onAvailable(@NonNull Network network) {
-            if(!mIsConnected) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mPresenter.onConnectionChanged(CONNECTED);
-                    }
-                });
-            }
-            mIsConnected = CONNECTED;
-        }
-
-        @Override
-        public void onLost(@NonNull Network network) {
-            if(mIsConnected) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mPresenter.onConnectionChanged(!CONNECTED);
-                    }
-                });
-            }
-            mIsConnected = !CONNECTED;
-        }
-    }
 }

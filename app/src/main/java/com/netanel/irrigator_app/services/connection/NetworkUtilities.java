@@ -17,7 +17,7 @@ import android.os.Build;
  * Created on 01/03/2021
  */
 
-public class NetworkHelper {
+public class NetworkUtilities {
 
     public static boolean isOnline(Context context) {
         ConnectivityManager connMgr =
@@ -28,7 +28,7 @@ public class NetworkHelper {
         return netInfo != null && netInfo.isConnected();
     }
 
-    public static void registerConnectivityListener(Context context, ConnectivityManager.NetworkCallback callback) {
+    public static void registerConnectivityCallback(Context context, ConnectivityManager.NetworkCallback callback) {
         ConnectivityManager connMgr =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -41,7 +41,7 @@ public class NetworkHelper {
         }
     }
 
-    public static void unregisterConnectivityListener(Context context, ConnectivityManager.NetworkCallback callback) {
+    public static void unregisterConnectivityCallback(Context context, ConnectivityManager.NetworkCallback callback) {
         ConnectivityManager connMgr =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 

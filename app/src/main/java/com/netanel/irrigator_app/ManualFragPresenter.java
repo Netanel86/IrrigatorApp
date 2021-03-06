@@ -4,9 +4,10 @@ import android.app.Application;
 import android.os.CountDownTimer;
 
 import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.model.Valve;
-import com.netanel.irrigator_app.services.connection.NetworkHelper;
+import com.netanel.irrigator_app.services.connection.NetworkUtilities;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -31,12 +32,13 @@ import androidx.lifecycle.AndroidViewModel;
  */
 
 public class ManualFragPresenter extends AndroidViewModel
-        implements ManualFragContract.IPresenter {
+        implements ManualFragContract.IPresenter,
+        ConnectivityCallback.IConnectivityChangedCallback {
     private static final int HOUR_IN_SEC = 3600;
     private static final int DAY_IN_SEC = 3600 * 24;
 
     private ManualFragContract.IView mView;
-
+    private ConnectivityCallback mConnectivityListener;
     private final IDataBaseConnection mDb;
     private Map<String, Valve> mValveMap;
 
@@ -52,6 +54,9 @@ public class ManualFragPresenter extends AndroidViewModel
         super(app);
         mDb = AppServices.getInstance().getDbConnection();
         mTimer = new ValveTimer();
+        mConnectivityListener = new ConnectivityCallback(this,app.getApplicationContext());
+        NetworkUtilities.registerConnectivityCallback(
+                app.getApplicationContext(), mConnectivityListener);
 //        mRouter = router;
     }
 
@@ -69,12 +74,18 @@ public class ManualFragPresenter extends AndroidViewModel
             mBtnMapInverse = new HashMap<>();
         }
 
-        if(NetworkHelper.isOnline(this.getApplication())) {
+        if(NetworkUtilities.isOnline(this.getApplication())) {
             loadValves();
         } else {
             mView.showMessage("internet connection is not available");
         }
 
+    }
+
+    @Override
+    public void onDestroy() {
+        NetworkUtilities.unregisterConnectivityCallback(
+                this.getApplication().getApplicationContext(),mConnectivityListener);
     }
 
     public void loadValves() {
@@ -142,6 +153,30 @@ public class ManualFragPresenter extends AndroidViewModel
     private void addToBtnMaps(int btnId, String valveId) {
         mBtnMap.put(valveId, btnId);
         mBtnMapInverse.put(btnId, valveId);
+    }
+
+    @Override
+    public void onConnectivityChanged(final boolean isConnected) {
+        mView.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(isConnected) {
+                    if(mValveMap == null || mValveMap.isEmpty()) {
+                        mView.showMessage("connection resumed! loading valves!");
+                        loadValves();
+                    } else {
+                        mView.showMessage("connection resumed!");
+                        mView.setUiEnabled(true);
+                    }
+                } else {
+                    mView.showMessage("connection lost!");
+                    mTimer.stopIfRunning();
+                    mSelectedValve = null;
+                    mView.setUiEnabled(false);
+                }
+            }
+        });
+
     }
 
     @Override
@@ -227,24 +262,6 @@ public class ManualFragPresenter extends AndroidViewModel
         } else {
             mView.setTimerText(formatSecToTimeString(0));
             mView.setSeekBarProgress(0);
-        }
-    }
-
-    @Override
-    public void onConnectionChanged(boolean isConnected) {
-        if(isConnected) {
-            if(mValveMap == null || mValveMap.isEmpty()) {
-                mView.showMessage("connection resumed! loading valves!");
-                loadValves();
-            } else {
-                mView.showMessage("connection resumed!");
-                mView.setUiEnabled(true);
-            }
-        } else {
-            mView.showMessage("connection lost!");
-            mTimer.stopIfRunning();
-            mSelectedValve = null;
-            mView.setUiEnabled(false);
         }
     }
 

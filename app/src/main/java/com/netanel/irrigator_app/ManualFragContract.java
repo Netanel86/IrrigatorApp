@@ -54,7 +54,7 @@ public interface ManualFragContract {
 
         void onStateRadioButtonClicked(int btnId);
 
-        void onConnectionChanged(boolean isConnected);
+        void onDestroy();
     }
 
     enum PredefinedTime {
