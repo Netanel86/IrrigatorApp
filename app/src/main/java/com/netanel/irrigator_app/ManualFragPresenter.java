@@ -1,10 +1,12 @@
 package com.netanel.irrigator_app;
 
 import android.app.Application;
+import android.content.res.Resources;
 import android.os.CountDownTimer;
 
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.StringExt;
 import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.model.Valve;
@@ -31,17 +33,15 @@ import androidx.lifecycle.AndroidViewModel;
  * @since 1.0
  * Created on 23/09/2020
  */
-
 // TODO: 13/03/2021 handle power button functionality, add isEdited value to track changes.
 // TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments, start with valves.
-// TODO: 13/03/2021 remove all hardcoded strings
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
         ConnectivityCallback.IConnectivityChangedCallback {
-    private static final int HOUR_IN_SEC = 3600;
-    private static final int DAY_IN_SEC = 3600 * 24;
+    private final String[] mTimeNames;
 
     private ManualFragContract.IView mView;
+    private final Resources mResources;
     private final ConnectivityCallback mConnectivityChangedCallback;
     private final IDataBaseConnection mDb;
     private Map<String, Valve> mValveMap;
@@ -58,9 +58,16 @@ public class ManualFragPresenter extends AndroidViewModel
         super(app);
         mDb = AppServices.getInstance().getDbConnection();
         mTimer = new ValveTimer();
+        mResources = getApplication().getResources();
         mConnectivityChangedCallback = new ConnectivityCallback(this, app.getApplicationContext());
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
+
+        mTimeNames = new String[]{
+                mResources.getString(R.string.time_counter_seconds),
+                mResources.getString(R.string.time_counter_minutes),
+                mResources.getString(R.string.time_counter_hours),
+                mResources.getString(R.string.time_counter_days)};
 //        mRouter = router;
     }
 
@@ -81,7 +88,7 @@ public class ManualFragPresenter extends AndroidViewModel
         if(NetworkUtilities.isOnline(this.getApplication())) {
             loadValves();
         } else {
-            mView.showMessage("internet connection is not available");
+            mView.showMessage(mResources.getString(R.string.msg_no_connection));
         }
 
     }
@@ -110,7 +117,7 @@ public class ManualFragPresenter extends AndroidViewModel
                             mView.addTab(i, tabText, currValve.isActive());
                         }
                     } else {
-                        mView.showMessage("No Valves Found");
+                        mView.showMessage(mResources.getString(R.string.error_no_valves));
                     }
                 }
             }
@@ -161,27 +168,6 @@ public class ManualFragPresenter extends AndroidViewModel
                         }
                         break;
                 }
-//                if (propertyName.equals(Valve.PROPERTY_DURATION) ||
-//                        propertyName.equals(Valve.PROPERTY_LAST_ON_TIME) ||
-//                        propertyName.equals(Valve.PROPERTY_ACTIVE) ||
-//                        propertyName.equals(Valve.PROPERTY_MAX_DURATION)) {
-//                    if (tabId != null) {
-//                        mView.setTabValveActiveState(tabId, updatedValve.isActive());
-//                    }
-//
-//                    if (mSelectedValve == updatedValve) {
-//                        updateFocusedValveProgressView();
-//                    }
-//                }else if (propertyName.equals(Valve.PROPERTY_DESCRIPTION) ||
-//                        propertyName.equals(Valve.PROPERTY_INDEX)) {
-//                    if (tabId != null) {
-//                        mView.setTabValveDescription(tabId, getValveViewDescription(updatedValve));
-//                    }
-//
-//                    if (mSelectedValve == updatedValve) {
-//                        mView.setTitleText(mSelectedValve.getDescription());
-//                    }
-//                }
             }
         });
     }
@@ -210,14 +196,16 @@ public class ManualFragPresenter extends AndroidViewModel
             public void run() {
                 if(isConnected) {
                     if(mValveMap == null || mValveMap.isEmpty()) {
-                        mView.showMessage("connection resumed! loading valves!");
+                        mView.showMessage(mResources.getString(R.string.msg_connection_resumed)
+                                + StringExt.COMMA + StringExt.SPACE
+                                + mResources.getString(R.string.msg_loading_valves));
                         loadValves();
                     } else {
-                        mView.showMessage("connection resumed!");
+                        mView.showMessage(mResources.getString(R.string.msg_connection_resumed));
                         mView.setUiEnabled(true);
                     }
                 } else {
-                    mView.showMessage("connection lost!");
+                    mView.showMessage(mResources.getString(R.string.msg_connection_lost));
                     mTimer.stopIfRunning();
                     mView.setUiEnabled(false);
                 }
@@ -232,36 +220,12 @@ public class ManualFragPresenter extends AndroidViewModel
             onUserSeekBarProgressChanged();
         }
 
-        mView.setTimerText(formatSecToTimeString(progress));
+        mView.setTimerText(StringExt.formatSecToTimeString(progress, mTimeNames));
     }
 
     private void onUserSeekBarProgressChanged() {
         mTimer.stopIfRunning();
         mView.setPowerIconEditedState(true);
-    }
-
-    private String formatSecToTimeString(int totalSeconds) {
-        String timeFormat;
-        if (totalSeconds < HOUR_IN_SEC) {
-            int minutes = totalSeconds / 60;
-            int seconds = totalSeconds % 60;
-            timeFormat = String.format(Locale.getDefault(),
-                    "%02d:%02d%s", minutes, seconds, minutes > 0 ? "min" : "sec");
-        } else if (totalSeconds < DAY_IN_SEC) {
-            int hours = totalSeconds / HOUR_IN_SEC;
-            int minutes = (totalSeconds % HOUR_IN_SEC) / 60;
-            int seconds = (totalSeconds % HOUR_IN_SEC) % 60;
-            timeFormat = String.format(Locale.getDefault(),
-                    "%02d:%02d:%02dhrs", hours, minutes, seconds);
-        } else {
-            int days = totalSeconds / DAY_IN_SEC;
-            int hours = (totalSeconds % DAY_IN_SEC) / HOUR_IN_SEC;
-            int minutes = ((totalSeconds % DAY_IN_SEC) % HOUR_IN_SEC) / 60;
-            int seconds = ((totalSeconds % DAY_IN_SEC) % HOUR_IN_SEC) % 60;
-            timeFormat = String.format(Locale.getDefault(),
-                    "%dd %02d:%02d:%02dhrs", days, hours, minutes, seconds);
-        }
-        return timeFormat;
     }
 
     @Override
@@ -283,7 +247,7 @@ public class ManualFragPresenter extends AndroidViewModel
             mView.setPowerIconEditedState(false);
             updateFocusedValveProgressView();
         } else {
-            mView.showMessage("Error loading valve");
+            mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
     }
 
@@ -307,7 +271,7 @@ public class ManualFragPresenter extends AndroidViewModel
                 mTimer.startCountDown();
             }
         } else {
-            mView.setTimerText(formatSecToTimeString(0));
+            mView.setTimerText(StringExt.formatSecToTimeString(0, mTimeNames));
             mView.setSeekBarProgress(0);
         }
     }
@@ -386,7 +350,8 @@ public class ManualFragPresenter extends AndroidViewModel
                             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
                                     Calendar.getInstance().getTime().getTime() -
                                             mSelectedValve.getLastOnTime().getTime());
-                            mView.setTimerText(formatSecToTimeString((int) diffInSec));
+                            mView.setTimerText(
+                                    StringExt.formatSecToTimeString((int) diffInSec, mTimeNames));
                         }
                     });
                 }

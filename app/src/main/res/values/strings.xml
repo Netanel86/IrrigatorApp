@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Irrigator App</string>
+    <string name="error_no_valves">No valves found</string>
+    <string name="msg_connection_resumed">Connection resumed</string>
+    <string name="msg_loading_valves">Loading valves</string>
+    <string name="msg_connection_lost">Connection lost</string>
+    <string name="msg_no_connection">Internet connection is not available</string>
+    <string name="error_loading_valve">Error loading valve</string>
+    <string name="time_counter_seconds">sec</string>
+    <string name="time_counter_minutes">min</string>
+    <string name="time_counter_hours">hr</string>
+    <string name="time_counter_days">days</string>
 </resources>
