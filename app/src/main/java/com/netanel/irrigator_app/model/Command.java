@@ -1,8 +1,6 @@
 package com.netanel.irrigator_app.model;
 
 
-import android.renderscript.ScriptIntrinsicYuvToRGB;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 
@@ -20,12 +18,13 @@ public class Command {
     @DocumentId
     private String uID;
 
-    private String mValveId;
+    private int mIndex;
     private int mDuration;
-    private Timestamp mTimeCreated;
+    private boolean mState;
+    private Timestamp mTime;
 
     public Command() {
-        mTimeCreated = Timestamp.now();
+        mTime = Timestamp.now();
     }
     public String getId() {
         return uID;
@@ -35,12 +34,12 @@ public class Command {
         this.uID = uID;
     }
 
-    public String getValveId() {
-        return mValveId;
+    public int getIndex() {
+        return mIndex;
     }
 
-    public void setValveId(String valveId) {
-        mValveId = valveId;
+    public void setIndex(int valveId) {
+        mIndex = valveId;
     }
 
     public int getDuration() {
@@ -52,11 +51,19 @@ public class Command {
     }
 
 
-    public Timestamp getTimeCreated() {
-        return mTimeCreated;
+    public Timestamp getTime() {
+        return mTime;
     }
 
-    public void setTimeCreated(Timestamp timeCreated) {
-        this.mTimeCreated = timeCreated;
+    public void setTime(Timestamp timeCreated) {
+        this.mTime = timeCreated;
+    }
+
+    public boolean isState() {
+        return mState;
+    }
+
+    public void setState(boolean mState) {
+        this.mState = mState;
     }
 }

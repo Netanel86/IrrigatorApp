@@ -3,6 +3,7 @@ package com.netanel.irrigator_app.model;
 
 import com.google.firebase.firestore.DocumentId;
 
+import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -16,39 +17,46 @@ import java.util.concurrent.TimeUnit;
  * Created on 02/09/2020
  */
 public class Valve {
-    public static final String PROPERTY_NAME = "name";
-    public static final String PROPERTY_LAST_ON = "lastOn";
+    public static final String PROPERTY_DESCRIPTION = "description";
+    public static final String PROPERTY_LAST_ON_TIME = "lastOnTime";
     public static final String PROPERTY_DURATION = "duration";
-    public static final String PROPERTY_STATE = "state";
+    public static final String PROPERTY_ACTIVE = "isActive";
+    public static final String PROPERTY_INDEX = "index";
+    public static final String PROPERTY_MAX_DURATION = "maxDuration";
 
     @DocumentId
     public String mId;
 
     private int mIndex;
     private int mMaxDuration;
-    private String mName;
+    private String mDescription;
     private Date mLastOn;
     private int mDurationInSec;
 
-    private boolean mState;
+    private boolean mIsActive;
 
     private OnPropertyChangedListener onPropertyChangedListener;
-
+    public Valve(){}
+    public Valve(int index) {
+        mIndex = index;
+    }
     public void update(Valve updatedValve) {
-        this.setState(updatedValve.getState());
+        this.setActive(updatedValve.isActive());
         this.setLastOnTime(updatedValve.getLastOnTime());
         this.setDuration(updatedValve.getDuration());
-        this.setName(updatedValve.getName());
+        this.setDescription(updatedValve.getDescription());
+        this.setIndex(updatedValve.getIndex());
+        this.setMaxDuration(updatedValve.getMaxDuration());
     }
 
-    public boolean getState() {
-        return mState;
+    public boolean isActive() {
+        return mIsActive && getTimeLeftOn() > 0;
     }
 
-    public void setState(boolean newState) {
-        if (mState != newState) {
-            mState = newState;
-            onPropertyChanged(PROPERTY_STATE, !mState);
+    public void setActive(boolean isActive) {
+        if (mIsActive != isActive) {
+            mIsActive = isActive;
+            onPropertyChanged(PROPERTY_ACTIVE, !mIsActive);
         }
     }
 
@@ -77,22 +85,24 @@ public class Valve {
     }
 
     public void setLastOnTime(Date lastOnTime) {
-        if (this.mLastOn != lastOnTime) {
-            Date oldLastOn = this.mLastOn;
-            this.mLastOn = lastOnTime;
-            onPropertyChanged(PROPERTY_LAST_ON, oldLastOn);
+        if(mLastOn != lastOnTime) {
+            if (mLastOn == null || (mLastOn != null && !mLastOn.equals(lastOnTime))) {
+                Date oldLastOn = mLastOn;
+                mLastOn = lastOnTime;
+                onPropertyChanged(PROPERTY_LAST_ON_TIME, oldLastOn);
+            }
         }
     }
 
-    public String getName() {
-        return mName;
+    public String getDescription() {
+        return mDescription;
     }
 
-    public void setName(String name) {
-        if (mName == null || !mName.equals(name)) {
-            String oldName = this.mName;
-            this.mName = name;
-            onPropertyChanged(PROPERTY_NAME, oldName);
+    public void setDescription(String description) {
+        if (mDescription == null || !mDescription.equals(description)) {
+            String oldName = this.mDescription;
+            this.mDescription = description;
+            onPropertyChanged(PROPERTY_DESCRIPTION, oldName);
         }
     }
 
@@ -101,12 +111,16 @@ public class Valve {
     }
 
     public void setIndex(int index) {
-        this.mIndex = index;
+        if(this.mIndex != index) {
+            int oldIndex = this.mIndex;
+            this.mIndex = index;
+            onPropertyChanged(PROPERTY_INDEX, oldIndex);
+        }
     }
 
     public long getTimeLeftOn() {
         long leftDuration = 0;
-        if (this.mLastOn != null) {
+        if (this.mLastOn != null && mLastOn.before(Calendar.getInstance().getTime())) {
             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
                     Calendar.getInstance().getTime().getTime() - this.mLastOn.getTime());
             if (this.mDurationInSec - diffInSec > 0) {
@@ -120,8 +134,13 @@ public class Valve {
         return mMaxDuration;
     }
 
-    public void setMaxDuration(int mMaxDuration) {
-        this.mMaxDuration = mMaxDuration;
+    public void setMaxDuration(int maxDuration) {
+        if(mMaxDuration != maxDuration) {
+            mDurationInSec = mDurationInSec > maxDuration ? 0 : mDurationInSec;
+            int oldMaxDuration = this.mMaxDuration;
+            this.mMaxDuration = maxDuration;
+            onPropertyChanged(PROPERTY_MAX_DURATION, oldMaxDuration);
+        }
     }
 
     public void setOnPropertyChangedListener(OnPropertyChangedListener onPropertyChangedListener) {

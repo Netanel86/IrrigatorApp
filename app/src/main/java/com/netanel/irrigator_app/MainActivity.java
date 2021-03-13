@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
                 .setViewModelFactory(new ViewModelProvider.AndroidViewModelFactory(getApplication()));
         getSupportFragmentManager()
                 .beginTransaction().add(R.id.fragment_container_view,new ManualFragment()).commit();
-
+        getSupportActionBar().setElevation(0);
 //        ManualFragRouter router = new ManualFragRouter(this);
     }
 

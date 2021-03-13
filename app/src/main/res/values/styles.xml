@@ -1,24 +1,16 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.App" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
-
-    <style name="ManualFrag.StateRadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
-        <item name="android:background">@drawable/rad_btn_valve_background_selector</item>
-        <item name="android:button">@drawable/valve_btn</item>
-        <item name="android:drawableBottom">@drawable/rad_btn_state_selector</item>
-        <item name="android:textSize">20sp</item>
-        <item name="android:textColor">@color/rad_btn_valve_text_color_selector</item>
-        <item name="android:textAlignment">center</item>
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryDark">@color/color_primary_dark</item>
+        <item name="colorAccent">@color/color_accent</item>
+        <item name="colorControlHighlight">@color/color_control_highlight</item>
     </style>
 
     <style name="ManualFrag.SimpleTextView" parent="Widget.AppCompat.TextView">
         <item name="android:textColor">@color/tv_pressable_text_color_selector</item>
-        <item name="android:textSize">@dimen/headline_size</item>
+        <item name="android:textSize">@dimen/text_size_headline</item>
     </style>
 
     <style name="ManualFrag.TimeTextView" parent="ManualFrag.SimpleTextView">

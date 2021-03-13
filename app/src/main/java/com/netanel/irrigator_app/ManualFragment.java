@@ -7,29 +7,29 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.services.AppServices;
 
 import org.jetbrains.annotations.NotNull;
 
-// TODO: 04/03/2021 refactor radio button behavior where a thin line presents at the bottom of the button if checked.
-// TODO: 04/03/2021 add color selector for radio button disabled state.
+// TODO: 13/03/2021 change view of disabled UI objects somehow to show its disabled state
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
+        TabLayout.OnTabSelectedListener,
         CircularSeekBar.OnCircularSeekBarChangeListener,
         ManualFragContract.IView {
 
-    private RadioGroup mValveRadioGroup;
+    private FilledTabLayout mValveTabs;
 
     private ViewSwitcher mViewSwitcher;
 
@@ -42,7 +42,6 @@ public class ManualFragment extends Fragment implements
     private TextView mTvHalf;
     private TextView mTvThreeQuarter;
     private TextView mTvZero;
-//    private Button mButtonSet;
 
     private ManualFragContract.IPresenter mPresenter;
 
@@ -70,8 +69,7 @@ public class ManualFragment extends Fragment implements
     }
 
     private void initUI() {
-        mValveRadioGroup = getView().findViewById(R.id.radioGroup_valves);
-
+        mValveTabs = getView().findViewById(R.id.tab_group_valves);
         mSeekBar = getView().findViewById(R.id.circular_seekbar);
         mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
         mButtonState = getView().findViewById(R.id.i_btn_valve_state);
@@ -88,6 +86,7 @@ public class ManualFragment extends Fragment implements
     }
 
     private void initializeListeners() {
+        mValveTabs.addOnTabSelectedListener(this);
         mSeekBar.setOnSeekBarChangeListener(this);
         mTvThreeQuarter.setOnClickListener(this);
         mTvMax.setOnClickListener(this);
@@ -105,23 +104,19 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void onClick(View view) {
-        if (view instanceof StateRadioButton) {
-            mPresenter.onStateRadioButtonClicked(view.getId());
-        } else {
-            int viewId = view.getId();
-            if (viewId == R.id.tv_time_zero) {
-                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Zero);
-            } else if (viewId == R.id.tv_time_max) {
-                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Max);
-            } else if (viewId == R.id.tv_time_three_quarter) {
-                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.ThreeQuarters);
-            } else if (viewId == R.id.tv_time_half) {
-                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Half);
-            } else if (viewId == R.id.tv_time_quarter) {
-                mPresenter.onPredefinedTimeClicked(ManualFragContract.PredefinedTime.Quarter);
-            } else if (viewId == R.id.i_btn_valve_state) {
-                mPresenter.onButtonPowerClicked();
-            }
+        int viewId = view.getId();
+        if (viewId == R.id.tv_time_zero) {
+            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Zero);
+        } else if (viewId == R.id.tv_time_max) {
+            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Max);
+        } else if (viewId == R.id.tv_time_three_quarter) {
+            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.ThreeQuarters);
+        } else if (viewId == R.id.tv_time_half) {
+            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Half);
+        } else if (viewId == R.id.tv_time_quarter) {
+            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Quarter);
+        } else if (viewId == R.id.i_btn_valve_state) {
+            mPresenter.onButtonPowerClicked();
         }
     }
 
@@ -140,6 +135,21 @@ public class ManualFragment extends Fragment implements
 
     }
 
+    @Override
+    public void onTabSelected(TabLayout.Tab tab) {
+        mPresenter.onTabClicked(tab.getId());
+    }
+
+    @Override
+    public void onTabUnselected(TabLayout.Tab tab) {
+
+    }
+
+    @Override
+    public void onTabReselected(TabLayout.Tab tab) {
+
+    }
+
     ///region ManualFragContract.IView
     @Override
     public void setTitleText(String nameString) {
@@ -152,8 +162,8 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setPredefinedTimeText(@NotNull ManualFragContract.PredefinedTime predefinedTime, String timeString) {
-        switch (predefinedTime) {
+    public void setTimeScaleText(@NotNull ManualFragContract.TimeScale timeScale, String timeString) {
+        switch (timeScale) {
             case Zero:
                 mTvZero.setText(timeString);
                 break;
@@ -188,8 +198,8 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setPowerIconActivatedState(boolean state) {
-        mButtonState.setActivatedState(state);
+    public void setPowerIconActiveState(boolean isActive) {
+        mButtonState.setActivatedState(isActive);
     }
 
     @Override
@@ -199,63 +209,66 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void setUiEnabled(boolean enabled) {
-        if (!enabled) {
-            if(mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_manual)) {
+        if(!enabled) {
+            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_manual)) {
                 mViewSwitcher.showPrevious();
             }
-            mValveRadioGroup.clearCheck();
-
-            if (mValveRadioGroup.isEnabled()) {
-                setRadioGroupEnabled(false);
-            }
         } else {
-            if (!mValveRadioGroup.isEnabled()) {
-                setRadioGroupEnabled(true);
+            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_empty)) {
+                mViewSwitcher.showNext();
             }
         }
+        setTabLayoutEnabled(enabled);
     }
 
-    private void setRadioGroupEnabled(boolean enabled) {
-        for (int i = 0; i < mValveRadioGroup.getChildCount(); i++) {
-            mValveRadioGroup.getChildAt(i).setEnabled(enabled);
+    private void setTabLayoutEnabled(boolean enabled) {
+        ViewGroup tabLayout = (ViewGroup) mValveTabs.getChildAt(0);
+        tabLayout.setEnabled(enabled);
+        for(int i = 0; i < tabLayout.getChildCount(); i++) {
+            tabLayout.getChildAt(i).setEnabled(enabled);
         }
-        mValveRadioGroup.setEnabled(enabled);
     }
 
     @Override
-    public int addStateRadioButton(boolean valveState, String viewString) {
-        RadioButton btnValve = initStateRadioButton(valveState, viewString);
-        mValveRadioGroup.addView(btnValve);
+    public void addTab( int tabId, String description, boolean isActive) {
+        View tabView = getLayoutInflater().inflate(R.layout.tab_valve, null);
 
-        return btnValve.getId();
-    }
+        TabLayout.Tab tab = mValveTabs.newTab().setCustomView(tabView);
+        tab.setId(tabId);
 
-    private RadioButton initStateRadioButton(boolean state, String btnText) {
-        final StateRadioButton btnValve =
-                new StateRadioButton(
-                        new ContextThemeWrapper(getContext(), R.style.ManualFrag_StateRadioButton),
-                        null, 0);
+        setTabText(tabView, description);
 
-        RadioGroup.LayoutParams layoutParams =
-                new RadioGroup.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1.0f);
+        if (isActive) {
+            setTabBadgeVisibility(tabView, View.VISIBLE);
+        }
 
-        btnValve.setLayoutParams(layoutParams);
-        btnValve.setId(View.generateViewId());
-        btnValve.setOnClickListener(this);
-
-        btnValve.setText(btnText);
-        btnValve.setState(state);
-
-        return btnValve;
+        mValveTabs.addTab(tab, mValveTabs.getTabCount());
     }
 
     @Override
-    public void setRadioButtonState(int btnId, boolean newState) {
-        StateRadioButton btnValve = getView().findViewById(btnId);
-        btnValve.setState(newState);
+    public void setTabBadge(int tabId, boolean showActiveBadge) {
+        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
+        if (showActiveBadge) {
+            setTabBadgeVisibility(tabView,View.VISIBLE);
+        } else {
+            setTabBadgeVisibility(tabView, View.GONE);
+        }
+    }
+
+    private void setTabBadgeVisibility(View tab, int visibility) {
+        ImageView badge = tab.findViewById(R.id.tab_valve_badge);
+        badge.setVisibility(visibility);
+    }
+
+    @Override
+    public void setTabDescription(Integer tabId, String description) {
+        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
+        setTabText(tabView, description);
+    }
+
+    private void setTabText(View tab, String description) {
+        MaterialTextView innerTv = tab.findViewById(R.id.tab_valve_text);
+        innerTv.setText(description.toUpperCase());
     }
 
     @Override
@@ -272,7 +285,8 @@ public class ManualFragment extends Fragment implements
     public void runOnUiThread(Runnable runnable) {
         this.getActivity().runOnUiThread(runnable);
     }
-    ///endregion
 
+
+    ///endregion
 
 }

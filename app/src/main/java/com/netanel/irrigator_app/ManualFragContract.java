@@ -20,17 +20,19 @@ public interface ManualFragContract {
 
         void setTimerText(String timeString);
 
-        void setPowerIconActivatedState(boolean state);
+        void setPowerIconActiveState(boolean isActive);
 
         void setPowerIconEditedState(boolean isEdited);
 
         void setTitleText(String nameString);
 
-        void setPredefinedTimeText(PredefinedTime predefinedTime, String timeString);
+        void setTimeScaleText(TimeScale timeScale, String timeString);
 
-        int addStateRadioButton(boolean valveState, String viewString);
+        void addTab(int tabId, String description, boolean showActiveBadge);
 
-        void setRadioButtonState(int btnId, boolean newState);
+        void setTabBadge(int tabId, boolean showActiveBadge);
+
+        void setTabDescription(Integer tabId, String description);
 
         void showMessage(String message);
 
@@ -44,7 +46,7 @@ public interface ManualFragContract {
     interface IPresenter {
         void onSeekBarProgressChanged(final int progress, boolean fromUser);
 
-        void onPredefinedTimeClicked(PredefinedTime time);
+        void onTimeScaleClicked(TimeScale time);
 
         void onButtonPowerClicked();
 
@@ -52,12 +54,12 @@ public interface ManualFragContract {
 
         void onViewCreated();
 
-        void onStateRadioButtonClicked(int btnId);
+        void onTabClicked(int tabId);
 
         void onDestroy();
     }
 
-    enum PredefinedTime {
+    enum TimeScale {
         Zero(0),
         Quarter(0.25),
         Half(0.5),
@@ -65,7 +67,7 @@ public interface ManualFragContract {
         Max(1);
 
         public final double value;
-        PredefinedTime(double val) {
+        TimeScale(double val) {
             value = val;
         }
     }

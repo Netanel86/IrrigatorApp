@@ -43,8 +43,6 @@ public class FirebaseConnection implements IDataBaseConnection {
         mDb.setFirestoreSettings(settings);
     }
 
-
-
     @Override
     public void getValves(final TaskListener<Map<String, Valve>> result) {
 
@@ -114,7 +112,7 @@ public class FirebaseConnection implements IDataBaseConnection {
         mDb.collection(PATH_VALVES).add(valve).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
             @Override
             public void onComplete(@NonNull Task<DocumentReference> task) {
-                if(task.isSuccessful() && task.getResult() != null) {
+                if(task.isSuccessful() && task.getResult() != null && onComplete != null) {
                     onComplete.onComplete(task.getResult().getId(),null);
                 }
                 else {

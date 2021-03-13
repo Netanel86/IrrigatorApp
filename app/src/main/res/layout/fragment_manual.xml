@@ -6,30 +6,29 @@
     android:layout_height="match_parent"
     android:background="@color/ColorSecondaryBackground">
 
-    <HorizontalScrollView
-        android:id="@+id/scroller"
-        android:layout_width="match_parent"
+    <com.netanel.irrigator_app.FilledTabLayout
+        style="@style/Widget.Design.TabLayout"
+        android:id="@+id/tab_group_valves"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:fillViewport="true"
+        app:tabMode="scrollable"
+        app:elevation="0dp"
+        app:tabGravity="fill"
+        app:tabIndicatorHeight="4dp"
+        app:tabBackground="@color/color_primary"
+        app:tabIconTint="@color/tab_valve_icon_color_selector"
+        app:tabTextColor="@color/tab_valve_icon_color_selector"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <RadioGroup
-            android:id="@+id/radioGroup_valves"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-        </RadioGroup>
-    </HorizontalScrollView>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <ViewSwitcher
         android:id="@+id/view_switcher"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/scroller"
+        app:layout_constraintTop_toBottomOf="@+id/tab_group_valves"
         app:layout_constraintBottom_toBottomOf="parent">
+
         <FrameLayout
             android:id="@+id/view_empty"
             android:layout_width="match_parent"
@@ -56,8 +55,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_gravity="center"
-                android:textColor="@color/colorPrimaryText"
-                android:textSize="@dimen/headline_size"
+                android:textColor="@color/color_primary_text"
+                android:textSize="@dimen/text_size_headline"
                 tools:text="Vegetables Valve" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
