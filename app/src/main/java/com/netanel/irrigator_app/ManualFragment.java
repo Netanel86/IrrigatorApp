@@ -198,12 +198,12 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void setPowerButtonActiveState(boolean activated) {
-        mButtonPower.setActivatedState(activated);
+        mButtonPower.setStateActivated(activated);
     }
 
     @Override
     public void setPowerButtonEditedState(boolean edited) {
-        mButtonPower.setEdited(edited);
+        mButtonPower.setStateEdited(edited);
     }
 
     @Override

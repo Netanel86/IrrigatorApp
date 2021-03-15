@@ -49,22 +49,21 @@ public class StateImageButton extends AppCompatImageButton {
         return baseState;
     }
 
-    public void setActivatedState(boolean state) {
-        this.mIsActivated = state;
+    public void setStateActivated(boolean activated) {
+        this.mIsActivated = activated;
         this.refreshDrawableState();
     }
 
-
-    public Boolean getActivatedState() {
+    public Boolean isStateActivated() {
         return mIsActivated;
     }
 
-    public void setEdited(boolean state) {
-        this.mIsEdited = state;
+    public void setStateEdited(boolean edited) {
+        this.mIsEdited = edited;
         this.refreshDrawableState();
     }
 
-    public Boolean getEdited() {
+    public Boolean isStateEdited() {
         return mIsEdited;
     }
 }
