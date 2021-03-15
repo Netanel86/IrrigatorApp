@@ -3,6 +3,7 @@ package com.netanel.irrigator_app;
 import android.app.Application;
 import android.content.res.Resources;
 import android.os.CountDownTimer;
+import android.util.Log;
 
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.services.AppServices;
@@ -17,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,26 +33,28 @@ import androidx.lifecycle.AndroidViewModel;
  * @since 1.0
  * Created on 23/09/2020
  */
-// TODO: 13/03/2021 handle power button functionality, add isEdited value to track changes.
 // TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments, start with valves.
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
         ConnectivityCallback.IConnectivityChangedCallback {
+    private static final boolean EDITED = true;
+    private static final boolean ENABLED = true;
+
     private final String[] mTimeNames;
 
-    private ManualFragContract.IView mView;
     private final Resources mResources;
     private final ConnectivityCallback mConnectivityChangedCallback;
     private final IDataBaseConnection mDb;
-    private Map<String, Valve> mValveMap;
+    private final ValveTimer mTimer;
 
+    private ManualFragContract.IView mView;
+
+    private Map<String, Valve> mValveMap;
     private Map<String, Integer> mTabMap;
     private Map<Integer, String> mTabMapInverse;
 
     private Valve mSelectedValve;
-    private final ValveTimer mTimer;
-
-//    private ManualFragRouter mRouter;
+    private boolean mIsEdited;
 
     public ManualFragPresenter(Application app) {
         super(app);
@@ -68,7 +70,6 @@ public class ManualFragPresenter extends AndroidViewModel
                 mResources.getString(R.string.time_counter_minutes),
                 mResources.getString(R.string.time_counter_hours),
                 mResources.getString(R.string.time_counter_days)};
-//        mRouter = router;
     }
 
     @Override
@@ -114,7 +115,7 @@ public class ManualFragPresenter extends AndroidViewModel
                             initValveListeners(currValve);
                             String tabText = getValveViewDescription(currValve);
                             addToTabMaps(i, currValve.getId());
-                            mView.addTab(i, tabText, currValve.isActive());
+                            mView.addTab(i, tabText, currValve.isOpen());
                         }
                     } else {
                         mView.showMessage(mResources.getString(R.string.error_no_valves));
@@ -132,7 +133,7 @@ public class ManualFragPresenter extends AndroidViewModel
     private void initValveListeners(final Valve valve) {
         initValveDbListener(valve);
 
-        valve.setOnPropertyChangedListener(new Valve.OnPropertyChangedListener() {
+        valve.setOnPropertyChangedCallback(new Valve.OnPropertyChangedCallback() {
             @Override
             public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
                 Integer tabId = mTabMap.get(updatedValve.getId());
@@ -140,13 +141,16 @@ public class ManualFragPresenter extends AndroidViewModel
                 switch (propertyName) {
                     case Valve.PROPERTY_DURATION:
                     case Valve.PROPERTY_LAST_ON_TIME:
-                    case Valve.PROPERTY_ACTIVE:
+                    case Valve.PROPERTY_OPEN:
                         if (tabId != null) {
-                            mView.setTabBadge(tabId, updatedValve.isActive());
+                            mView.setTabBadge(tabId, updatedValve.isOpen());
                         }
                         if (mSelectedValve == updatedValve) {
-                            mView.setPowerIconActiveState(mSelectedValve.isActive());
+                            mView.setPowerButtonActiveState(mSelectedValve.isOpen());
+                            mView.setPowerButtonEditedState(!EDITED);
+                            mView.setPowerButtonEnabled(mSelectedValve.isOpen());
                             updateFocusedValveProgressView();
+                            mIsEdited = !EDITED;
                         }
                         break;
 
@@ -155,6 +159,7 @@ public class ManualFragPresenter extends AndroidViewModel
                             mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
                             setTimeScaleMarks();
                             updateFocusedValveProgressView();
+                            mIsEdited = !EDITED;
                         }
                         break;
 
@@ -225,7 +230,9 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private void onUserSeekBarProgressChanged() {
         mTimer.stopIfRunning();
-        mView.setPowerIconEditedState(true);
+        mView.setPowerButtonEditedState(EDITED);
+        mIsEdited = EDITED;
+        mView.setPowerButtonEnabled(ENABLED);
     }
 
     @Override
@@ -243,9 +250,11 @@ public class ManualFragPresenter extends AndroidViewModel
             setTimeScaleMarks();
             mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
             mView.setTitleText(mSelectedValve.getDescription());
-            mView.setPowerIconActiveState(mSelectedValve.isActive());
-            mView.setPowerIconEditedState(false);
+            mView.setPowerButtonActiveState(mSelectedValve.isOpen());
+            mView.setPowerButtonEnabled(mSelectedValve.isOpen());
+            mView.setPowerButtonEditedState(!EDITED);
             updateFocusedValveProgressView();
+            mIsEdited = !EDITED;
         } else {
             mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
@@ -263,11 +272,11 @@ public class ManualFragPresenter extends AndroidViewModel
     private void updateFocusedValveProgressView() {
         mTimer.stopIfRunning();
 
-        if (mSelectedValve.isActive()
+        if (mSelectedValve.isOpen()
                 && mSelectedValve.getLastOnTime().before(Calendar.getInstance().getTime())) {
 
-            if (mSelectedValve.getTimeLeftOn() > 0) {
-                mView.setSeekBarProgress((int) mSelectedValve.getTimeLeftOn());
+            if (mSelectedValve.timeLeftOpen() > 0) {
+                mView.setSeekBarProgress((int) mSelectedValve.timeLeftOpen());
                 mTimer.startCountDown();
             }
         } else {
@@ -301,20 +310,26 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onButtonPowerClicked() {
-        Command cmnd = new Command();
-        cmnd.setDuration(mView.getSeekBarProgress());
-        cmnd.setIndex(mSelectedValve.getIndex());
-        cmnd.setState(mView.getSeekBarProgress() > 0);
-        AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
-            @Override
-            public void onComplete(Command answer, Exception ex) {
-                if (ex != null) {
-                    mView.showMessage(ex.getMessage());
-                } else if (answer != null) {
-                    mView.showMessage("Command registered with id:" + answer.getId());
+        Command cmnd = null;
+
+        if (mIsEdited) {
+            cmnd = new Command(mSelectedValve.getIndex(), mView.getSeekBarProgress(), Valve.OPEN);
+        } else if (mSelectedValve.isOpen()) {
+            cmnd = new Command(mSelectedValve.getIndex(), !Valve.OPEN);
+        }
+
+        if (cmnd != null) {
+            AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
+                @Override
+                public void onComplete(Command answer, Exception ex) {
+                    if (ex != null) {
+                        mView.showMessage(ex.getMessage());
+                    } else if (answer != null) {
+                        Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public class ValveTimer {
@@ -324,7 +339,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
         public void startCountDown() {
             mCountDownTimer = new CountDownTimer(
-                    mSelectedValve.getTimeLeftOn() * 1000,
+                    mSelectedValve.timeLeftOpen() * 1000,
                     1000) {
                 @Override
                 public void onTick(long l) {

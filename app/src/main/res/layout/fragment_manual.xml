@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
-    android:layout_height="match_parent"
-    android:background="@color/ColorSecondaryBackground">
+    android:layout_height="match_parent">
 
     <com.netanel.irrigator_app.FilledTabLayout
         style="@style/Widget.Design.TabLayout"
@@ -20,7 +19,8 @@
         app:tabTextColor="@color/tab_valve_icon_color_selector"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"/>
 
     <ViewSwitcher
         android:id="@+id/view_switcher"
@@ -88,15 +88,14 @@
                     android:id="@+id/i_btn_valve_state"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:scaleType="fitXY"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_power"
-                    android:background="@drawable/btn_power_background_ripple"
+                    android:background="@drawable/ic_power"
                     android:backgroundTint="@color/btn_power_color_selector"
                     android:tint="@android:color/transparent"
                     android:tintMode="src_in"
                     android:adjustViewBounds="true"
-                    android:focusable="true"
-                    android:clickable="true"
+                    android:elevation="5dp"
                     app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
                     app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
                     app:layout_constraintStart_toStartOf="@id/circular_seekbar"

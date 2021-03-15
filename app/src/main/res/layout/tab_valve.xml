@@ -12,7 +12,7 @@
         android:scaleX="0.7"
         android:scaleY="0.7"
         android:src="@drawable/ic_power"
-        app:tint="@color/color_valve.state_activated"
+        app:tint="@color/color_valve_state_activated"
         android:layout_gravity="end"
         android:visibility="gone"/>
 <LinearLayout

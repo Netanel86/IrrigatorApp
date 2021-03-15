@@ -35,7 +35,7 @@ public class ManualFragment extends Fragment implements
 
     private TextView mTvTimer;
     private TextView mTvTitle;
-    private StateImageButton mButtonState;
+    private StateImageButton mButtonPower;
     private CircularSeekBar mSeekBar;
     private TextView mTvMax;
     private TextView mTvQuarter;
@@ -55,7 +55,6 @@ public class ManualFragment extends Fragment implements
 
         mPresenter.bindView(this);
 
-
         return inflater.inflate(R.layout.fragment_manual, container, false);
     }
 
@@ -72,7 +71,7 @@ public class ManualFragment extends Fragment implements
         mValveTabs = getView().findViewById(R.id.tab_group_valves);
         mSeekBar = getView().findViewById(R.id.circular_seekbar);
         mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
-        mButtonState = getView().findViewById(R.id.i_btn_valve_state);
+        mButtonPower = getView().findViewById(R.id.i_btn_valve_state);
         mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
         mTvZero = getView().findViewById(R.id.tv_time_zero);
@@ -82,7 +81,7 @@ public class ManualFragment extends Fragment implements
         mTvThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
         mViewSwitcher = getView().findViewById(R.id.view_switcher);
 
-        mButtonState = getView().findViewById(R.id.i_btn_valve_state);
+        mButtonPower = getView().findViewById(R.id.i_btn_valve_state);
     }
 
     private void initializeListeners() {
@@ -93,7 +92,7 @@ public class ManualFragment extends Fragment implements
         mTvZero.setOnClickListener(this);
         mTvHalf.setOnClickListener(this);
         mTvQuarter.setOnClickListener(this);
-        mButtonState.setOnClickListener(this);
+        mButtonPower.setOnClickListener(this);
     }
 
     @Override
@@ -198,13 +197,18 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setPowerIconActiveState(boolean isActive) {
-        mButtonState.setActivatedState(isActive);
+    public void setPowerButtonActiveState(boolean activated) {
+        mButtonPower.setActivatedState(activated);
     }
 
     @Override
-    public void setPowerIconEditedState(boolean isEdited) {
-        mButtonState.setEdited(isEdited);
+    public void setPowerButtonEditedState(boolean edited) {
+        mButtonPower.setEdited(edited);
+    }
+
+    @Override
+    public void setPowerButtonEnabled(boolean enabled) {
+        mButtonPower.setEnabled(enabled);
     }
 
     @Override
@@ -243,6 +247,10 @@ public class ManualFragment extends Fragment implements
         }
 
         mValveTabs.addTab(tab, mValveTabs.getTabCount());
+
+        if(mValveTabs.getVisibility() == View.GONE) {
+            mValveTabs.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -285,8 +293,5 @@ public class ManualFragment extends Fragment implements
     public void runOnUiThread(Runnable runnable) {
         this.getActivity().runOnUiThread(runnable);
     }
-
-
     ///endregion
-
 }

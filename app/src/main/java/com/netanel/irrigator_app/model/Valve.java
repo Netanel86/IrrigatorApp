@@ -3,7 +3,6 @@ package com.netanel.irrigator_app.model;
 
 import com.google.firebase.firestore.DocumentId;
 
-import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -17,10 +16,11 @@ import java.util.concurrent.TimeUnit;
  * Created on 02/09/2020
  */
 public class Valve {
+    public static final boolean OPEN = true;
     public static final String PROPERTY_DESCRIPTION = "description";
     public static final String PROPERTY_LAST_ON_TIME = "lastOnTime";
     public static final String PROPERTY_DURATION = "duration";
-    public static final String PROPERTY_ACTIVE = "isActive";
+    public static final String PROPERTY_OPEN = "isOpen";
     public static final String PROPERTY_INDEX = "index";
     public static final String PROPERTY_MAX_DURATION = "maxDuration";
 
@@ -32,16 +32,19 @@ public class Valve {
     private String mDescription;
     private Date mLastOn;
     private int mDurationInSec;
+    private boolean mIsOpen;
 
-    private boolean mIsActive;
+    private OnPropertyChangedCallback mOnPropertyChangedCallback;
 
-    private OnPropertyChangedListener onPropertyChangedListener;
     public Valve(){}
+
     public Valve(int index) {
         mIndex = index;
+        mLastOn = new Date();
     }
+
     public void update(Valve updatedValve) {
-        this.setActive(updatedValve.isActive());
+        this.setOpen(updatedValve.isOpen());
         this.setLastOnTime(updatedValve.getLastOnTime());
         this.setDuration(updatedValve.getDuration());
         this.setDescription(updatedValve.getDescription());
@@ -49,14 +52,26 @@ public class Valve {
         this.setMaxDuration(updatedValve.getMaxDuration());
     }
 
-    public boolean isActive() {
-        return mIsActive && getTimeLeftOn() > 0;
+    public long timeLeftOpen() {
+        long leftDuration = 0;
+        if (this.mLastOn != null && mLastOn.before(Calendar.getInstance().getTime())) {
+            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
+                    Calendar.getInstance().getTime().getTime() - this.mLastOn.getTime());
+            if (this.mDurationInSec - diffInSec > 0) {
+                leftDuration = this.mDurationInSec - diffInSec;
+            }
+        }
+        return leftDuration;
     }
 
-    public void setActive(boolean isActive) {
-        if (mIsActive != isActive) {
-            mIsActive = isActive;
-            onPropertyChanged(PROPERTY_ACTIVE, !mIsActive);
+    public boolean isOpen() {
+        return mIsOpen && timeLeftOpen() > 0;
+    }
+
+    public void setOpen(boolean isOpen) {
+        if (mIsOpen != isOpen) {
+            mIsOpen = isOpen;
+            onPropertyChanged(PROPERTY_OPEN, !mIsOpen);
         }
     }
 
@@ -118,18 +133,6 @@ public class Valve {
         }
     }
 
-    public long getTimeLeftOn() {
-        long leftDuration = 0;
-        if (this.mLastOn != null && mLastOn.before(Calendar.getInstance().getTime())) {
-            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
-                    Calendar.getInstance().getTime().getTime() - this.mLastOn.getTime());
-            if (this.mDurationInSec - diffInSec > 0) {
-                leftDuration = this.mDurationInSec - diffInSec;
-            }
-        }
-        return leftDuration;
-    }
-
     public int getMaxDuration() {
         return mMaxDuration;
     }
@@ -143,17 +146,17 @@ public class Valve {
         }
     }
 
-    public void setOnPropertyChangedListener(OnPropertyChangedListener onPropertyChangedListener) {
-        this.onPropertyChangedListener = onPropertyChangedListener;
+    public void setOnPropertyChangedCallback(OnPropertyChangedCallback onPropertyChangedCallback) {
+        this.mOnPropertyChangedCallback = onPropertyChangedCallback;
     }
 
     private void onPropertyChanged(String changedProperty, Object oldValue) {
-        if (onPropertyChangedListener != null) {
-            onPropertyChangedListener.OnPropertyChanged(this, changedProperty, oldValue);
+        if (mOnPropertyChangedCallback != null) {
+            mOnPropertyChangedCallback.OnPropertyChanged(this, changedProperty, oldValue);
         }
     }
 
-    public interface OnPropertyChangedListener {
+    public interface OnPropertyChangedCallback {
         void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue);
     }
 }

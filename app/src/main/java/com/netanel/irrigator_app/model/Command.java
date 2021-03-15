@@ -20,12 +20,26 @@ public class Command {
 
     private int mIndex;
     private int mDuration;
-    private boolean mState;
+    private boolean mIsOpen;
     private Timestamp mTime;
+
+    public Command(int valveIndex, boolean isOpen) {
+        this();
+        mIndex = valveIndex;
+        mIsOpen = isOpen;
+    }
+
+    public Command(int valveIndex, int duration, boolean isOpen) {
+        this();
+        mIndex = valveIndex;
+        mDuration = duration;
+        mIsOpen = isOpen;
+    }
 
     public Command() {
         mTime = Timestamp.now();
     }
+
     public String getId() {
         return uID;
     }
@@ -50,7 +64,6 @@ public class Command {
         mDuration = duration;
     }
 
-
     public Timestamp getTime() {
         return mTime;
     }
@@ -59,11 +72,11 @@ public class Command {
         this.mTime = timeCreated;
     }
 
-    public boolean isState() {
-        return mState;
+    public boolean isOpen() {
+        return mIsOpen;
     }
 
-    public void setState(boolean mState) {
-        this.mState = mState;
+    public void setOpen(boolean isOpen) {
+        this.mIsOpen = isOpen;
     }
 }
