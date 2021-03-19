@@ -34,6 +34,7 @@ import androidx.lifecycle.AndroidViewModel;
  * Created on 23/09/2020
  */
 // TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments, start with valves.
+// TODO: 15/03/2021 change progress bar colors according to power button color: ON- green, Edited- blue, OFF- gray.
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
         ConnectivityCallback.IConnectivityChangedCallback {

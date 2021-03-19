@@ -136,7 +136,15 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
-        mPresenter.onTabClicked(tab.getId());
+        final int tabId = tab.getId();
+        mValveTabs.getChildAt(0).postDelayed(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        mPresenter.onTabClicked(tabId);
+                    }
+                }, 150
+        );
     }
 
     @Override
