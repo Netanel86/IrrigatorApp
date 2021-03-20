@@ -20,6 +20,8 @@ public interface ManualFragContract {
 
         void setTimerText(String timeString);
 
+        void setSeekBarEditedState(boolean edited);
+
         void setPowerButtonActiveState(boolean activated);
 
         void setPowerButtonEditedState(boolean edited);

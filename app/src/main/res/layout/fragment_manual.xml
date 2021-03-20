@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp">
 
-                <com.devadvance.circularseekbar.CircularSeekBar
+                <com.netanel.irrigator_app.StateCircularSeekBar
                     android:id="@+id/circular_seekbar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -75,8 +75,8 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
+                    app:circle_progress_color="@color/seekbar_circle_color_selector"
                     app:circle_color="@color/sb_circle_color"
-                    app:circle_progress_color="@color/sb_circle_progress_color"
                     app:pointer_color="@color/sb_pointer_color"
                     app:pointer_halo_color="@color/sb_pointer_halo_color"
                     app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"

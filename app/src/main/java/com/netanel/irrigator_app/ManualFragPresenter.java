@@ -34,7 +34,7 @@ import androidx.lifecycle.AndroidViewModel;
  * Created on 23/09/2020
  */
 // TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments, start with valves.
-// TODO: 15/03/2021 change progress bar colors according to power button color: ON- green, Edited- blue, OFF- gray.
+
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
         ConnectivityCallback.IConnectivityChangedCallback {
@@ -55,7 +55,6 @@ public class ManualFragPresenter extends AndroidViewModel
     private Map<Integer, String> mTabMapInverse;
 
     private Valve mSelectedValve;
-    private boolean mIsEdited;
 
     public ManualFragPresenter(Application app) {
         super(app);
@@ -149,9 +148,9 @@ public class ManualFragPresenter extends AndroidViewModel
                         if (mSelectedValve == updatedValve) {
                             mView.setPowerButtonActiveState(mSelectedValve.isOpen());
                             mView.setPowerButtonEditedState(!EDITED);
+                            mView.setSeekBarEditedState(!EDITED);
                             mView.setPowerButtonEnabled(mSelectedValve.isOpen());
                             updateFocusedValveProgressView();
-                            mIsEdited = !EDITED;
                         }
                         break;
 
@@ -160,7 +159,6 @@ public class ManualFragPresenter extends AndroidViewModel
                             mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
                             setTimeScaleMarks();
                             updateFocusedValveProgressView();
-                            mIsEdited = !EDITED;
                         }
                         break;
 
@@ -232,8 +230,16 @@ public class ManualFragPresenter extends AndroidViewModel
     private void onUserSeekBarProgressChanged() {
         mTimer.stopIfRunning();
         mView.setPowerButtonEditedState(EDITED);
-        mIsEdited = EDITED;
-        mView.setPowerButtonEnabled(ENABLED);
+        mView.setSeekBarEditedState(EDITED);
+        if(mView.getSeekBarProgress() != 0) {
+            mView.setPowerButtonEnabled(ENABLED);
+        } else if (!mSelectedValve.isOpen()) {
+            mView.setPowerButtonEnabled(!ENABLED);
+        }
+    }
+
+    private boolean isUserSeekBarProgressChanged() {
+        return mSelectedValve.timeLeftOpen() != mView.getSeekBarProgress();
     }
 
     @Override
@@ -254,8 +260,8 @@ public class ManualFragPresenter extends AndroidViewModel
             mView.setPowerButtonActiveState(mSelectedValve.isOpen());
             mView.setPowerButtonEnabled(mSelectedValve.isOpen());
             mView.setPowerButtonEditedState(!EDITED);
+            mView.setSeekBarEditedState(!EDITED);
             updateFocusedValveProgressView();
-            mIsEdited = !EDITED;
         } else {
             mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
@@ -288,8 +294,6 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onTimeScaleClicked(ManualFragContract.TimeScale time) {
-        onUserSeekBarProgressChanged();
-
         switch (time) {
             case Zero:
                 mView.setSeekBarProgress(0);
@@ -304,17 +308,23 @@ public class ManualFragPresenter extends AndroidViewModel
                 mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
                 break;
             case Max:
-                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration()));
+                mView.setSeekBarProgress((mSelectedValve.getMaxDuration()));
                 break;
         }
+
+        onUserSeekBarProgressChanged();
     }
 
     @Override
     public void onButtonPowerClicked() {
         Command cmnd = null;
 
-        if (mIsEdited) {
-            cmnd = new Command(mSelectedValve.getIndex(), mView.getSeekBarProgress(), Valve.OPEN);
+        if (isUserSeekBarProgressChanged()) {
+            if(mView.getSeekBarProgress() != 0) {
+                cmnd = new Command(mSelectedValve.getIndex(), mView.getSeekBarProgress(), Valve.OPEN);
+            } else {
+                cmnd = new Command(mSelectedValve.getIndex(), !Valve.OPEN);
+            }
         } else if (mSelectedValve.isOpen()) {
             cmnd = new Command(mSelectedValve.getIndex(), !Valve.OPEN);
         }

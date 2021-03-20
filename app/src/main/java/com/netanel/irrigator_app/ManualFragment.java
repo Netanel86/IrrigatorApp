@@ -36,7 +36,7 @@ public class ManualFragment extends Fragment implements
     private TextView mTvTimer;
     private TextView mTvTitle;
     private StateImageButton mButtonPower;
-    private CircularSeekBar mSeekBar;
+    private StateCircularSeekBar mSeekBar;
     private TextView mTvMax;
     private TextView mTvQuarter;
     private TextView mTvHalf;
@@ -202,6 +202,11 @@ public class ManualFragment extends Fragment implements
     @Override
     public int getSeekBarProgress() {
         return mSeekBar.getProgress();
+    }
+
+    @Override
+    public void setSeekBarEditedState(boolean edited) {
+        mSeekBar.setStateEdited(edited);
     }
 
     @Override
