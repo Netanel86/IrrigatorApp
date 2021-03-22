@@ -11,18 +11,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.services.AppServices;
 
 import org.jetbrains.annotations.NotNull;
 
-// TODO: 13/03/2021 change view of disabled UI objects somehow to show its disabled state
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
         TabLayout.OnTabSelectedListener,
@@ -63,7 +61,7 @@ public class ManualFragment extends Fragment implements
         super.onViewCreated(view, savedInstanceState);
 
         initUI();
-        initializeListeners();
+        initListeners();
         mPresenter.onViewCreated();
     }
 
@@ -84,7 +82,7 @@ public class ManualFragment extends Fragment implements
         mButtonPower = getView().findViewById(R.id.i_btn_valve_state);
     }
 
-    private void initializeListeners() {
+    private void initListeners() {
         mValveTabs.addOnTabSelectedListener(this);
         mSeekBar.setOnSeekBarChangeListener(this);
         mTvThreeQuarter.setOnClickListener(this);
@@ -299,7 +297,8 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void showMessage(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+//        Toast.makeText(getContext(), resString, Toast.LENGTH_LONG).show();
+        Snackbar.make(this.getView(), message, Snackbar.LENGTH_LONG).show();
     }
 
     @Override

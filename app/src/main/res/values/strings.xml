@@ -10,4 +10,5 @@
     <string name="time_counter_minutes">min</string>
     <string name="time_counter_hours">hr</string>
     <string name="time_counter_days">days</string>
+    <string name="command_sent">Request was sent to server</string>
 </resources>

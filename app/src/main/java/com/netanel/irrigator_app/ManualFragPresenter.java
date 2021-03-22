@@ -114,7 +114,7 @@ public class ManualFragPresenter extends AndroidViewModel
                         for (int i = 0; i < valves.size(); i++) {
                             Valve currValve = valves.get(i);
                             initValveListeners(currValve);
-                            String tabText = getValveViewDescription(currValve);
+                            String tabText = formatValveDescription(currValve);
                             addToTabMaps(i, currValve.getId());
                             mView.addTab(i, tabText, currValve.isOpen());
                         }
@@ -126,7 +126,7 @@ public class ManualFragPresenter extends AndroidViewModel
         });
     }
 
-    private String getValveViewDescription(Valve valve) {
+    private String formatValveDescription(Valve valve) {
         return valve.getDescription() == null || valve.getDescription().isEmpty() ?
                 "#" + valve.getIndex() : valve.getDescription();
     }
@@ -169,7 +169,7 @@ public class ManualFragPresenter extends AndroidViewModel
                         }
                     case Valve.PROPERTY_INDEX:
                         if (tabId != null) {
-                            mView.setTabDescription(tabId, getValveViewDescription(updatedValve));
+                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
                         }
                         break;
                 }
@@ -260,7 +260,7 @@ public class ManualFragPresenter extends AndroidViewModel
         if (mSelectedValve != null) {
             setTimeScaleMarks();
             mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
-            mView.setTitleText(mSelectedValve.getDescription());
+            mView.setTitleText(formatValveDescription(mSelectedValve));
             mView.setPowerButtonActiveState(mSelectedValve.isOpen());
             mView.setPowerButtonEnabled(mSelectedValve.isOpen());
             mView.setPowerButtonEditedState(!EDITED);
@@ -341,6 +341,8 @@ public class ManualFragPresenter extends AndroidViewModel
                         mView.showMessage(ex.getMessage());
                     } else if (answer != null) {
                         Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
+                        mView.showMessage(mResources.getString(R.string.command_sent));
+                        mView.setPowerButtonEnabled(!ENABLED);
                     }
                 }
             });

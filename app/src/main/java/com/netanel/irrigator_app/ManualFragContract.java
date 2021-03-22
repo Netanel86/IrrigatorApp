@@ -12,21 +12,21 @@ package com.netanel.irrigator_app;
 
 public interface ManualFragContract {
     interface IView {
+        int getSeekBarProgress();
+
         void setSeekBarMaxProgress(int maxProgress);
 
         void setSeekBarProgress(int progress);
 
-        int getSeekBarProgress();
+        void setSeekBarEditedState(boolean edited);
 
         void setTimerText(String timeString);
-
-        void setSeekBarEditedState(boolean edited);
 
         void setPowerButtonActiveState(boolean activated);
 
         void setPowerButtonEditedState(boolean edited);
 
-        void setPowerButtonEnabled(boolean isEnabled);
+        void setPowerButtonEnabled(boolean enabled);
 
         void setTitleText(String nameString);
 
@@ -54,11 +54,11 @@ public interface ManualFragContract {
 
         void onButtonPowerClicked();
 
+        void onTabClicked(int tabId);
+
         void bindView(IView view);
 
         void onViewCreated();
-
-        void onTabClicked(int tabId);
 
         void onDestroy();
     }

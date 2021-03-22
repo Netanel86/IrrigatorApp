@@ -55,8 +55,7 @@
                 android:layout_marginTop="10dp"
                 android:layout_gravity="center"
                 android:textColor="@color/color_primary_text"
-                android:textSize="@dimen/text_size_headline"
-                tools:text="Vegetables Valve" />
+                android:textSize="@dimen/text_size_headline"/>
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/constraint1"
