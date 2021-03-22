@@ -48,7 +48,7 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/tv_valve_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -99,7 +99,7 @@
                     app:layout_constraintStart_toStartOf="@id/circular_seekbar"
                     app:layout_constraintTop_toTopOf="@id/circular_seekbar" />
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_elapsed_time"
                     style="@style/ManualFrag.SimpleTextView"
                     android:layout_width="wrap_content"
@@ -120,7 +120,7 @@
                     app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
                     app:layout_constraintStart_toStartOf="@id/circular_seekbar">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tv_time_max"
                         style="@style/ManualFrag.TimeTextView"
                         android:layout_width="wrap_content"
@@ -128,7 +128,7 @@
                         android:layout_marginEnd="5dp"
                         tools:text="60" />
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tv_backslash"
                         style="@style/ManualFrag.SimpleTextView"
                         android:layout_width="wrap_content"
@@ -136,7 +136,7 @@
                         android:layout_marginEnd="5dp"
                         android:text="/" />
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tv_time_zero"
                         style="@style/ManualFrag.TimeTextView"
                         android:layout_width="wrap_content"
@@ -144,7 +144,7 @@
                         tools:text="0" />
                 </LinearLayout>
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_time_quarter"
                     style="@style/ManualFrag.TimeTextView"
                     android:layout_width="wrap_content"
@@ -155,7 +155,7 @@
                     app:layout_constraintTop_toTopOf="@id/circular_seekbar"
                     tools:text="15" />
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_time_three_quarter"
                     style="@style/ManualFrag.TimeTextView"
                     android:layout_width="wrap_content"
@@ -166,7 +166,7 @@
                     app:layout_constraintTop_toTopOf="@id/circular_seekbar"
                     tools:text="45" />
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_time_half"
                     style="@style/ManualFrag.TimeTextView"
                     android:layout_width="wrap_content"

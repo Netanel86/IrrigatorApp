@@ -33,15 +33,15 @@ public class ManualFragment extends Fragment implements
 
     private ViewSwitcher mViewSwitcher;
 
-    private TextView mTvTimer;
-    private TextView mTvTitle;
+    private MaterialTextView mTvTimer;
+    private MaterialTextView mTvTitle;
     private StateImageButton mButtonPower;
     private StateCircularSeekBar mSeekBar;
-    private TextView mTvMax;
-    private TextView mTvQuarter;
-    private TextView mTvHalf;
-    private TextView mTvThreeQuarter;
-    private TextView mTvZero;
+    private MaterialTextView mTvMax;
+    private MaterialTextView mTvQuarter;
+    private MaterialTextView mTvHalf;
+    private MaterialTextView mTvThreeQuarter;
+    private MaterialTextView mTvZero;
 
     private ManualFragContract.IPresenter mPresenter;
 
