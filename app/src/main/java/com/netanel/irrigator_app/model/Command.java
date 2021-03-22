@@ -4,6 +4,9 @@ package com.netanel.irrigator_app.model;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * <p></p>
  *
@@ -13,31 +16,17 @@ import com.google.firebase.firestore.DocumentId;
  * Created on 15/09/2020
  */
 
-public class Command {
+public abstract class Command {
 
     @DocumentId
     private String uID;
 
-    private int mIndex;
-    private int mDuration;
-    private boolean mIsOpen;
-    private Timestamp mTime;
-
-    public Command(int valveIndex, boolean isOpen) {
-        this();
-        mIndex = valveIndex;
-        mIsOpen = isOpen;
-    }
-
-    public Command(int valveIndex, int duration, boolean isOpen) {
-        this();
-        mIndex = valveIndex;
-        mDuration = duration;
-        mIsOpen = isOpen;
-    }
+    private final Timestamp mTime;
+    protected final List<String> mCommandLog;
 
     public Command() {
         mTime = Timestamp.now();
+        mCommandLog = new ArrayList<>();
     }
 
     public String getId() {
@@ -48,35 +37,18 @@ public class Command {
         this.uID = uID;
     }
 
-    public int getIndex() {
-        return mIndex;
-    }
-
-    public void setIndex(int valveId) {
-        mIndex = valveId;
-    }
-
-    public int getDuration() {
-        return mDuration;
-    }
-
-    public void setDuration(int duration) {
-        mDuration = duration;
-    }
-
     public Timestamp getTime() {
         return mTime;
     }
 
-    public void setTime(Timestamp timeCreated) {
-        this.mTime = timeCreated;
+    public List<String> getCommandLog() {
+        return mCommandLog;
     }
 
-    public boolean isOpen() {
-        return mIsOpen;
-    }
-
-    public void setOpen(boolean isOpen) {
-        this.mIsOpen = isOpen;
+    protected void addUniqueCommandLog(String registry) {
+        if(!mCommandLog.contains(registry)) {
+            mCommandLog.add(registry);
+        }
     }
 }
+

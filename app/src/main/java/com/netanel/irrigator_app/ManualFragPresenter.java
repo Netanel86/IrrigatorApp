@@ -6,6 +6,7 @@ import android.os.CountDownTimer;
 import android.util.Log;
 
 import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.ValveCommand;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.StringExt;
 import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
@@ -239,7 +240,10 @@ public class ManualFragPresenter extends AndroidViewModel
     }
 
     private boolean isUserSeekBarProgressChanged() {
-        return mSelectedValve.timeLeftOpen() != mView.getSeekBarProgress();
+        long time = mSelectedValve.timeLeftOpen();
+        int progress = mView.getSeekBarProgress();
+        int diff = (int)time - progress;
+        return  diff >= 5 || diff <= -5;
     }
 
     @Override
@@ -321,12 +325,12 @@ public class ManualFragPresenter extends AndroidViewModel
 
         if (isUserSeekBarProgressChanged()) {
             if(mView.getSeekBarProgress() != 0) {
-                cmnd = new Command(mSelectedValve.getIndex(), mView.getSeekBarProgress(), Valve.OPEN);
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), mView.getSeekBarProgress());
             } else {
-                cmnd = new Command(mSelectedValve.getIndex(), !Valve.OPEN);
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
             }
         } else if (mSelectedValve.isOpen()) {
-            cmnd = new Command(mSelectedValve.getIndex(), !Valve.OPEN);
+            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
         }
 
         if (cmnd != null) {
