@@ -55,16 +55,16 @@
                 android:layout_marginTop="10dp"
                 android:layout_gravity="center"
                 android:textColor="@color/color_primary_text"
-                android:textSize="@dimen/text_size_headline"/>
+                android:textSize="@dimen/text_headline5"/>
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/constraint1"
+                android:id="@+id/constraint_timer_seekbar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp">
 
                 <com.netanel.irrigator_app.StateCircularSeekBar
-                    android:id="@+id/circular_seekbar"
+                    android:id="@+id/timer_seekbar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:circle_stroke_width="15dp"
@@ -83,7 +83,7 @@
                     app:use_custom_radii="true" />
 
                 <com.netanel.irrigator_app.StateImageButton
-                    android:id="@+id/i_btn_valve_state"
+                    android:id="@+id/img_btn_power"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:scaleType="fitCenter"
@@ -93,10 +93,10 @@
                     android:tint="@android:color/transparent"
                     android:tintMode="src_in"
                     android:adjustViewBounds="true"
-                    app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
-                    app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
-                    app:layout_constraintStart_toStartOf="@id/circular_seekbar"
-                    app:layout_constraintTop_toTopOf="@id/circular_seekbar" />
+                    app:layout_constraintBottom_toBottomOf="@id/timer_seekbar"
+                    app:layout_constraintEnd_toEndOf="@id/timer_seekbar"
+                    app:layout_constraintStart_toStartOf="@id/timer_seekbar"
+                    app:layout_constraintTop_toTopOf="@id/timer_seekbar" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_elapsed_time"
@@ -104,9 +104,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
-                    app:layout_constraintBottom_toTopOf="@id/i_btn_valve_state"
-                    app:layout_constraintEnd_toEndOf="@+id/circular_seekbar"
-                    app:layout_constraintStart_toStartOf="@+id/circular_seekbar"
+                    app:layout_constraintBottom_toTopOf="@id/img_btn_power"
+                    app:layout_constraintEnd_toEndOf="@+id/timer_seekbar"
+                    app:layout_constraintStart_toStartOf="@+id/timer_seekbar"
                     tools:text="25:48 Minutes" />
 
                 <LinearLayout
@@ -116,8 +116,8 @@
                     android:layout_marginBottom="5dp"
                     android:orientation="horizontal"
                     app:layout_constraintBottom_toTopOf="@id/tv_elapsed_time"
-                    app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
-                    app:layout_constraintStart_toStartOf="@id/circular_seekbar">
+                    app:layout_constraintEnd_toEndOf="@id/timer_seekbar"
+                    app:layout_constraintStart_toStartOf="@id/timer_seekbar">
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tv_time_max"
@@ -149,9 +149,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/margin_hours"
-                    app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
-                    app:layout_constraintStart_toEndOf="@id/i_btn_valve_state"
-                    app:layout_constraintTop_toTopOf="@id/circular_seekbar"
+                    app:layout_constraintBottom_toBottomOf="@id/timer_seekbar"
+                    app:layout_constraintStart_toEndOf="@id/img_btn_power"
+                    app:layout_constraintTop_toTopOf="@id/timer_seekbar"
                     tools:text="15" />
 
                 <com.google.android.material.textview.MaterialTextView
@@ -160,9 +160,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/margin_hours"
-                    app:layout_constraintBottom_toBottomOf="@id/circular_seekbar"
-                    app:layout_constraintEnd_toStartOf="@id/i_btn_valve_state"
-                    app:layout_constraintTop_toTopOf="@id/circular_seekbar"
+                    app:layout_constraintBottom_toBottomOf="@id/timer_seekbar"
+                    app:layout_constraintEnd_toStartOf="@id/img_btn_power"
+                    app:layout_constraintTop_toTopOf="@id/timer_seekbar"
                     tools:text="45" />
 
                 <com.google.android.material.textview.MaterialTextView
@@ -171,9 +171,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/margin_hours"
-                    app:layout_constraintEnd_toEndOf="@id/circular_seekbar"
-                    app:layout_constraintStart_toStartOf="@id/circular_seekbar"
-                    app:layout_constraintTop_toBottomOf="@id/i_btn_valve_state"
+                    app:layout_constraintEnd_toEndOf="@id/timer_seekbar"
+                    app:layout_constraintStart_toStartOf="@id/timer_seekbar"
+                    app:layout_constraintTop_toBottomOf="@id/img_btn_power"
                     tools:text="30" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>

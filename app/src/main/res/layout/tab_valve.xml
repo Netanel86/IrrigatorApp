@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:textColor="@color/tab_valve_icon_color_selector"
-        android:textSize="@dimen/text_size_btn"
+        android:textSize="@dimen/text_button"
         tool:text="VALVE ONE"/>
 
     </LinearLayout>

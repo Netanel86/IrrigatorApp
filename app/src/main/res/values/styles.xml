@@ -10,7 +10,7 @@
 
     <style name="ManualFrag.SimpleTextView" parent="Widget.AppCompat.TextView">
         <item name="android:textColor">@color/tv_pressable_text_color_selector</item>
-        <item name="android:textSize">@dimen/text_size_headline</item>
+        <item name="android:textSize">@dimen/text_headline5</item>
     </style>
 
     <style name="ManualFrag.TimeTextView" parent="ManualFrag.SimpleTextView">
