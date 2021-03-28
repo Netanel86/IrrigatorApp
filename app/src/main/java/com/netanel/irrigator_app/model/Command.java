@@ -5,6 +5,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -21,11 +23,11 @@ public abstract class Command {
     @DocumentId
     private String uID;
 
-    private final Timestamp mTime;
+    private final Date mTime;
     protected final List<String> mCommandLog;
 
     public Command() {
-        mTime = Timestamp.now();
+        mTime = Calendar.getInstance().getTime();
         mCommandLog = new ArrayList<>();
     }
 
@@ -37,7 +39,7 @@ public abstract class Command {
         this.uID = uID;
     }
 
-    public Timestamp getTime() {
+    public Date getTime() {
         return mTime;
     }
 

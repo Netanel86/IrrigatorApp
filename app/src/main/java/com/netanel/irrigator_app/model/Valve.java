@@ -1,6 +1,7 @@
 package com.netanel.irrigator_app.model;
 
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 
 import java.util.Calendar;
@@ -54,7 +55,8 @@ public class Valve {
 
     public long timeLeftOpen() {
         long leftDuration = 0;
-        if (this.mLastOn != null && mLastOn.before(Calendar.getInstance().getTime())) {
+        Date now = Calendar.getInstance().getTime();
+        if (this.mLastOn != null && mLastOn.before(now)) {
             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
                     Calendar.getInstance().getTime().getTime() - this.mLastOn.getTime());
             if (this.mDurationInSec - diffInSec > 0) {
