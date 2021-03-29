@@ -2,6 +2,6 @@
 <resources>
     <dimen name="text_headline5">24sp</dimen>
     <dimen name="text_headline4">34sp</dimen>
-    <dimen name="margin_hours">50dp</dimen>
+    <dimen name="margin_hours">40dp</dimen>
     <dimen name="text_button">14sp</dimen>
 </resources>
