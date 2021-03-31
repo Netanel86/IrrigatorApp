@@ -67,7 +67,7 @@ public class ManualFragment extends Fragment implements
 
     private void initUI() {
         mValveTabs = getView().findViewById(R.id.tab_group_valves);
-        mSeekBar = getView().findViewById(R.id.timer_seekbar);
+        mSeekBar = getView().findViewById(R.id.seekbar_timer);
         mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
         mButtonPower = getView().findViewById(R.id.img_btn_power);
         mTvTitle = getView().findViewById(R.id.tv_valve_name);
