@@ -8,7 +8,7 @@
     <string name="error_loading_valve">Error loading valve</string>
     <string name="time_counter_seconds">sec</string>
     <string name="time_counter_minutes">min</string>
-    <string name="time_counter_hours">hr</string>
+    <string name="time_counter_hours">h</string>
     <string name="time_counter_days">days</string>
     <string name="command_sent">Request was sent to server</string>
 </resources>

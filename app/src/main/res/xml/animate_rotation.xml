@@ -4,7 +4,7 @@
     <item android:state_pressed="true">
         <set>
             <objectAnimator android:propertyName="rotation"
-                android:duration="@android:integer/config_shortAnimTime"
+                android:duration="100"
                 android:valueTo="180"
                 android:valueType="floatType"/>
         </set>
@@ -13,7 +13,7 @@
     <item android:state_pressed="false">
         <set>
             <objectAnimator android:propertyName="rotation"
-                android:duration="@android:integer/config_shortAnimTime"
+                android:duration="100"
                 android:valueTo="0"
                 android:valueType="floatType"/>
         </set>

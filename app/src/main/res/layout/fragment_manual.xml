@@ -131,8 +131,8 @@
 
             <com.netanel.irrigator_app.StateImageButton
                     android:id="@+id/img_btn_power"
-                    android:layout_width="90dp"
-                    android:layout_height="90dp"
+                    android:layout_width="85dp"
+                    android:layout_height="85dp"
                     android:adjustViewBounds="true"
                     android:background="@drawable/btn_power_background_ripple"
                     android:backgroundTint="@color/btn_power_color_selector"
