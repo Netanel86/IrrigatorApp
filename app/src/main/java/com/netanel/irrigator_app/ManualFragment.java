@@ -67,9 +67,9 @@ public class ManualFragment extends Fragment implements
 
     private void initUI() {
         mValveTabs = getView().findViewById(R.id.tab_group_valves);
-        mSeekBar = getView().findViewById(R.id.circular_seekbar);
+        mSeekBar = getView().findViewById(R.id.seekbar_timer);
         mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
-        mButtonPower = getView().findViewById(R.id.i_btn_valve_state);
+        mButtonPower = getView().findViewById(R.id.img_btn_power);
         mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
         mTvZero = getView().findViewById(R.id.tv_time_zero);
@@ -79,7 +79,7 @@ public class ManualFragment extends Fragment implements
         mTvThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
         mViewSwitcher = getView().findViewById(R.id.view_switcher);
 
-        mButtonPower = getView().findViewById(R.id.i_btn_valve_state);
+        mButtonPower = getView().findViewById(R.id.img_btn_power);
     }
 
     private void initListeners() {
@@ -112,7 +112,7 @@ public class ManualFragment extends Fragment implements
             mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Half);
         } else if (viewId == R.id.tv_time_quarter) {
             mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Quarter);
-        } else if (viewId == R.id.i_btn_valve_state) {
+        } else if (viewId == R.id.img_btn_power) {
             mPresenter.onButtonPowerClicked();
         }
     }
