@@ -31,19 +31,19 @@
         app:layout_constraintTop_toBottomOf="@+id/tab_group_valves"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <FrameLayout
-            android:id="@+id/view_empty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/manual_empty_background">
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_valve_colored"
-                android:scaleX="1.5"
-                android:scaleY="1.5"/>
-        </FrameLayout>
+<!--        <FrameLayout-->
+<!--            android:id="@+id/view_empty"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:background="@drawable/manual_empty_background">-->
+<!--            <ImageView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:src="@drawable/ic_valve_colored"-->
+<!--                android:scaleX="1.5"-->
+<!--                android:scaleY="1.5"/>-->
+<!--        </FrameLayout>-->
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/view_manual"
@@ -68,6 +68,7 @@
                     android:textColor="@color/color_icon"
                     android:textSize="@dimen/text_headline5"
                     app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     tools:text="Spices" />
 
@@ -91,26 +92,6 @@
                     app:layout_constraintBottom_toBottomOf="parent"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-            <com.netanel.irrigator_app.StateImageButton
-                android:id="@+id/img_btn_power"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:adjustViewBounds="true"
-                android:background="@drawable/btn_power_background_ripple"
-                android:backgroundTint="@color/btn_power_color_selector"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_power"
-                android:tint="@android:color/transparent"
-                android:tintMode="src_in"
-                app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
-                app:layout_constraintLeft_toRightOf="@+id/seekbar_timer"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                tools:tint="@android:color/black" />
-
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/img_btn_settings"
                 android:layout_width="56dp"
@@ -124,29 +105,46 @@
                 android:tintMode="src_in"
                 android:clickable="true"
                 android:focusable="true"
-                app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                app:layout_constraintLeft_toRightOf="@id/seekbar_timer"
+                app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"/>
 
-                <com.netanel.irrigator_app.StateCircularSeekBar
-                    android:id="@+id/seekbar_timer"
-                    android:layout_width="270dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    app:circle_color="@color/sb_circle_color"
-                    app:circle_progress_color="@color/seekbar_circle_color_selector"
-                    app:circle_stroke_width="10dp"
-                    app:circle_x_radius="135dp"
-                    app:circle_y_radius="135dp"
-                    app:pointer_color="@color/sb_pointer_color"
-                    app:pointer_halo_color="@color/sb_pointer_halo_color"
-                    app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
-                    app:pointer_radius="8dp"
-                    app:use_custom_radii="true"
-                    app:layout_constraintTop_toBottomOf="@id/layout_title"
-                    app:layout_constraintBottom_toTopOf="@id/seekbar_sensor"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintVertical_bias="0.3" />
+            <com.netanel.irrigator_app.StateCircularSeekBar
+                android:id="@+id/seekbar_timer"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                app:circle_color="@color/sb_circle_color"
+                app:circle_progress_color="@color/seekbar_circle_color_selector"
+                app:circle_stroke_width="12dp"
+                app:circle_x_radius="150dp"
+                app:circle_y_radius="150dp"
+                app:layout_constraintBottom_toTopOf="@id/seekbar_sensor"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/layout_title"
+                app:pointer_color="@color/sb_pointer_color"
+                app:pointer_halo_color="@color/sb_pointer_halo_color"
+                app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
+                app:pointer_radius="8dp"
+                app:use_custom_radii="true" />
+
+            <com.netanel.irrigator_app.StateImageButton
+                    android:id="@+id/img_btn_power"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/btn_power_background_ripple"
+                    android:backgroundTint="@color/btn_power_color_selector"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_power"
+                    android:tint="@android:color/transparent"
+                    android:tintMode="src_in"
+                    app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
+                    app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
+                    app:layout_constraintLeft_toLeftOf="@+id/seekbar_timer"
+                    app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                    tools:tint="@android:color/black" />
 
                 <LinearLayout
                     android:id="@+id/layout_time_min_max"
@@ -188,10 +186,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/text_headline5"
+                    app:layout_constraintBottom_toTopOf="@id/img_btn_power"
+                    app:layout_constraintTop_toTopOf="@id/layout_time_min_max"
                     app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                     app:layout_constraintLeft_toLeftOf="@+id/seekbar_timer"
-                    app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                    app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
+                    app:layout_constraintVertical_bias="0.9"
                     tools:text="25:48 min" />
 
                 <com.google.android.material.textview.MaterialTextView
@@ -234,8 +233,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginBottom="10dp"
                 app:circle_stroke_width="5dp"
-                app:circle_x_radius="45dp"
-                app:circle_y_radius="45dp"
+                app:circle_x_radius="40dp"
+                app:circle_y_radius="40dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:pointer_halo_border_width="0dp"
