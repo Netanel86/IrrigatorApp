@@ -9,7 +9,7 @@ package com.netanel.irrigator_app.model;
  * @since 1.0
  * Created on 22/03/2021
  */
-
+// TODO: 01/04/2021 make commands immutable 
 public class ValveCommand extends Command {
 
     private static final String COMMAND_OPEN = "open";

@@ -4,16 +4,19 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
@@ -35,11 +38,10 @@ public class ManualFragment extends Fragment implements
     private MaterialTextView mTvTitle;
     private StateImageButton mButtonPower;
     private StateCircularSeekBar mSeekBar;
-    private MaterialTextView mTvMax;
+    private AppCompatButton mTvMax;
     private MaterialTextView mTvQuarter;
     private MaterialTextView mTvHalf;
     private MaterialTextView mTvThreeQuarter;
-    private MaterialTextView mTvZero;
 
     private ManualFragContract.IPresenter mPresenter;
 
@@ -72,7 +74,6 @@ public class ManualFragment extends Fragment implements
         mButtonPower = getView().findViewById(R.id.img_btn_power);
         mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
-        mTvZero = getView().findViewById(R.id.tv_time_zero);
         mTvMax = getView().findViewById(R.id.tv_time_max);
         mTvQuarter = getView().findViewById(R.id.tv_time_quarter);
         mTvHalf = getView().findViewById(R.id.tv_time_half);
@@ -87,7 +88,6 @@ public class ManualFragment extends Fragment implements
         mSeekBar.setOnSeekBarChangeListener(this);
         mTvThreeQuarter.setOnClickListener(this);
         mTvMax.setOnClickListener(this);
-        mTvZero.setOnClickListener(this);
         mTvHalf.setOnClickListener(this);
         mTvQuarter.setOnClickListener(this);
         mButtonPower.setOnClickListener(this);
@@ -102,9 +102,7 @@ public class ManualFragment extends Fragment implements
     @Override
     public void onClick(View view) {
         int viewId = view.getId();
-        if (viewId == R.id.tv_time_zero) {
-            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Zero);
-        } else if (viewId == R.id.tv_time_max) {
+        if (viewId == R.id.tv_time_max) {
             mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Max);
         } else if (viewId == R.id.tv_time_three_quarter) {
             mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.ThreeQuarters);
@@ -169,9 +167,6 @@ public class ManualFragment extends Fragment implements
     @Override
     public void setTimeScaleText(@NotNull ManualFragContract.TimeScale timeScale, String timeString) {
         switch (timeScale) {
-            case Zero:
-                mTvZero.setText(timeString);
-                break;
             case Quarter:
                 mTvQuarter.setText(timeString);
                 break;
