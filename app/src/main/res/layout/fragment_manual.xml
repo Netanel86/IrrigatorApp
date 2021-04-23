@@ -45,112 +45,132 @@
                 android:scaleY="1.5"/>
         </FrameLayout>
 
-
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/view_manual"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:orientation="vertical"
             android:background="@android:color/holo_blue_dark">
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.MaterialComponents.CardView"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layout_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
+                android:padding="5dp"
+                android:elevation="3dp"
+                android:background="@color/color_valve_state_edited"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:cardElevation="5dp"
-                app:cardCornerRadius="15dp"
-                app:cardPreventCornerOverlap="true"
-                app:cardBackgroundColor="@color/color_primary_light">
-                <androidx.constraintlayout.widget.ConstraintLayout
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:textColor="@color/color_icon"
+                    android:textSize="@dimen/text_headline5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    tools:text="Spices" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/img_btn_settings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitCenter"
+                    android:background="@drawable/btn_settings_background_ripple"
+                    android:backgroundTint="@color/color_icon"
+                    android:src="@drawable/ic_gear_filled"
+                    android:tint="@android:color/transparent"
+                    android:stateListAnimator="@xml/animate_rotation"
+                    android:tintMode="src_in"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cv_valve"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.CardView"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="10dp"
+                    app:cardElevation="5dp"
+                    app:cardCornerRadius="15dp"
+                    app:cardPreventCornerOverlap="true"
+                    app:cardBackgroundColor="@color/color_primary_light">
+<!--                    app:layout_constraintStart_toStartOf="parent"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toBottomOf="@id/layout_title">-->
 
                     <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/layout_title"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:padding="5dp"
-                        android:elevation="3dp"
-                        android:background="@color/color_primary_dark"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
 
-                        <ImageView
-                            android:id="@+id/title_valve_icon"
-                            android:layout_width="wrap_content"
+                        <androidx.appcompat.widget.LinearLayoutCompat
+                            android:id="@+id/card_valve_layout_title"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="5dp"
-                            android:adjustViewBounds="true"
-                            android:backgroundTint="@color/color_icon"
-                            android:scaleType="fitCenter"
-                            android:background="@drawable/ic_valve_filled"
+                            android:padding="5dp"
+                            android:elevation="3dp"
+                            android:background="@color/color_primary_dark"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintVertical_bias="0.5"/>
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/tv_valve_name"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:textColor="@color/color_icon"
-                            android:textSize="@dimen/text_headline5"
-                            app:layout_constraintStart_toEndOf="@id/title_valve_icon"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"
-
-                            tools:text="Spices" />
-
-                        <androidx.appcompat.widget.AppCompatImageButton
-                            android:id="@+id/img_btn_settings"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="5dp"
-                            android:adjustViewBounds="true"
-                            android:scaleType="fitCenter"
-                            android:background="@drawable/btn_settings_background_ripple"
-                            android:backgroundTint="@color/color_icon"
-                            android:src="@drawable/ic_gear_filled"
-                            android:tint="@android:color/transparent"
-                            android:stateListAnimator="@xml/animate_rotation"
-                            android:tintMode="src_in"
-                            android:clickable="true"
-                            android:focusable="true"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"/>
+                            app:layout_constraintTop_toTopOf="parent">
 
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+                            <ImageView
+                                android:id="@+id/card_valve_iv_icon"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
+                                android:layout_gravity="center_vertical"
+                                android:adjustViewBounds="true"
+                                android:backgroundTint="@color/color_icon"
+                                android:scaleType="fitCenter"
+                                android:background="@drawable/ic_valve_filled"/>
 
-                    <com.netanel.irrigator_app.StateCircularSeekBar
-                        android:id="@+id/seekbar_timer"
-                        android:layout_width="300dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="10dp"
-                        app:circle_color="@color/sb_circle_color"
-                        app:circle_progress_color="@color/seekbar_circle_color_selector"
-                        app:circle_stroke_width="12dp"
-                        app:circle_x_radius="150dp"
-                        app:circle_y_radius="150dp"
-                        app:layout_constraintBottom_toTopOf="@id/seekbar_sensor"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/layout_title"
-                        app:pointer_color="@color/sb_pointer_color"
-                        app:pointer_halo_color="@color/sb_pointer_halo_color"
-                        app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
-                        app:pointer_radius="8dp"
-                        app:use_custom_radii="true" />
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/card_valve_tv_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:textColor="@color/color_icon"
+                                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                                android:text="@string/card_valve_title" />
 
-                    <com.netanel.irrigator_app.StateImageButton
+                        </androidx.appcompat.widget.LinearLayoutCompat>
+
+                        <com.netanel.irrigator_app.StateCircularSeekBar
+                            android:id="@+id/seekbar_timer"
+                            android:layout_width="300dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="10dp"
+                            app:circle_color="@color/sb_circle_color"
+                            app:circle_progress_color="@color/seekbar_circle_color_selector"
+                            app:circle_stroke_width="12dp"
+                            app:circle_x_radius="150dp"
+                            app:circle_y_radius="150dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/card_valve_layout_title"
+                            app:pointer_color="@color/sb_pointer_color"
+                            app:pointer_halo_color="@color/sb_pointer_halo_color"
+                            app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
+                            app:pointer_radius="8dp"
+                            app:use_custom_radii="true" />
+
+                        <com.netanel.irrigator_app.StateImageButton
                             android:id="@+id/img_btn_power"
                             android:layout_width="80dp"
                             android:layout_height="80dp"
@@ -167,119 +187,146 @@
                             app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                             tools:tint="@android:color/black" />
 
-                    <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/tv_time_max"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_marginTop="@dimen/margin_hours"
-                        android:padding="2dp"
-                        android:background="@drawable/btn_round_selector"
-                        android:textColor="@color/color_icon"
-                        android:textSize="15sp"
-                        app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                        app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
-                        app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                        tools:text="60"/>
-<!--                    <com.google.android.material.textview.MaterialTextView-->
-<!--                        android:id="@+id/tv_time_max"-->
-<!--                        style="@style/ManualFrag.TimeTextView"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginTop="@dimen/margin_hours"-->
-<!--                        app:layout_constraintRight_toRightOf="@id/seekbar_timer"-->
-<!--                        app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"-->
-<!--                        app:layout_constraintTop_toTopOf="@id/seekbar_timer"-->
-<!--                        tools:text="60" />-->
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/tv_time_max"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="@dimen/margin_hours"
+                            android:padding="2dp"
+                            android:elevation="3dp"
+                            android:background="@drawable/btn_round_selector"
+                            android:textColor="@color/color_icon"
+                            android:textSize="15sp"
+                            app:layout_constraintRight_toRightOf="@id/seekbar_timer"
+                            app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
+                            app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                            tools:text="60"/>
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_elapsed_time"
-                        style="@style/ManualFrag.SimpleTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="@dimen/text_headline5"
-                        app:layout_constraintTop_toBottomOf="@id/img_btn_power"
-                        app:layout_constraintBottom_toTopOf="@id/tv_time_half"
-                        app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
-                        app:layout_constraintLeft_toLeftOf="@+id/seekbar_timer"
-                        app:layout_constraintVertical_bias="0.9"
-                        tools:text="25:48 min" />
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tv_elapsed_time"
+                            style="@style/ManualFrag.SimpleTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_headline5"
+                            app:layout_constraintTop_toBottomOf="@id/img_btn_power"
+                            app:layout_constraintBottom_toTopOf="@id/tv_time_half"
+                            app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
+                            app:layout_constraintLeft_toLeftOf="@+id/seekbar_timer"
+                            app:layout_constraintVertical_bias="0.9"
+                            tools:text="25:48 min" />
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_time_quarter"
-                        style="@style/ManualFrag.TimeTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="@dimen/margin_hours"
-                        app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
-                        app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                        app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                        tools:text="15" />
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tv_time_quarter"
+                            style="@style/ManualFrag.TimeTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="@dimen/margin_hours"
+                            app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
+                            app:layout_constraintRight_toRightOf="@id/seekbar_timer"
+                            app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                            tools:text="15" />
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_time_three_quarter"
-                        style="@style/ManualFrag.TimeTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/margin_hours"
-                        app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
-                        app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
-                        app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                        tools:text="45" />
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tv_time_three_quarter"
+                            style="@style/ManualFrag.TimeTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/margin_hours"
+                            app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
+                            app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
+                            app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                            tools:text="45" />
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_time_half"
-                        style="@style/ManualFrag.TimeTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/margin_hours"
-                        app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
-                        app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                        app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
-                        tools:text="30" />
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tv_time_half"
+                            style="@style/ManualFrag.TimeTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/margin_hours"
+                            app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
+                            app:layout_constraintRight_toRightOf="@id/seekbar_timer"
+                            app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
+                            tools:text="30" />
 
-                    <com.devadvance.circularseekbar.CircularSeekBar
-                        android:id="@+id/seekbar_sensor"
-                        android:layout_width="75dp"
-                        android:layout_height="75dp"
-                        android:layout_marginStart="10dp"
-                        android:layout_marginBottom="10dp"
-                        app:circle_stroke_width="5dp"
-                        app:circle_x_radius="40dp"
-                        app:circle_y_radius="40dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:pointer_halo_border_width="0dp"
-                        app:pointer_halo_width="0dp"
-                        app:pointer_radius="0dp"
-                        app:use_custom_radii="true" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <ImageView
-                        android:id="@+id/img_sensor"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_humidity_filled"
-                        app:layout_constraintBottom_toBottomOf="@id/seekbar_sensor"
-                        app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
-                        app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
-                        app:layout_constraintTop_toTopOf="@id/seekbar_sensor"
-                        app:layout_constraintVertical_bias="0.3" />
+            <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.CardView"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:scrollbars="vertical"
+                    app:cardElevation="5dp"
+                    app:cardCornerRadius="15dp"
+                    app:cardPreventCornerOverlap="true"
+                    app:cardBackgroundColor="@color/color_primary_light">
+<!--                    app:layout_constraintTop_toBottomOf="@id/cv_valve"-->
+<!--                    app:layout_constraintStart_toStartOf="parent"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent">-->
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:textColor="@color/color_primary_text"
-                        android:textSize="@dimen/text_subtitle1"
-                        app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
-                        app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
-                        app:layout_constraintTop_toBottomOf="@id/img_sensor"
-                        android:text="52%" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                        <androidx.appcompat.widget.LinearLayoutCompat
+                            android:id="@+id/card_sensor_layout_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:elevation="3dp"
+                            android:background="@color/color_primary_dark"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
 
+                            <ImageView
+                                android:id="@+id/card_sensor_iv_icon"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
+                                android:layout_gravity="center_vertical"
+                                android:adjustViewBounds="true"
+                                android:backgroundTint="@color/color_icon"
+                                android:scaleType="fitCenter"
+                                android:background="@drawable/ic_sensors"/>
 
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/card_sensor_tv_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:textColor="@color/color_icon"
+                                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                                android:text="@string/card_sensor_title" />
+
+                        </androidx.appcompat.widget.LinearLayoutCompat>
+
+                        <GridView
+                            android:id="@+id/grid_sensors"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="5dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginBottom="10dp"
+                            android:layout_marginTop="10dp"
+                            android:padding="0dp"
+                            android:verticalSpacing="5dp"
+                            android:horizontalSpacing="0dp"
+                            android:gravity="center_horizontal"
+                            app:layout_constraintTop_toBottomOf="@id/card_sensor_layout_title"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            android:columnWidth="85dp"
+                            android:numColumns="auto_fit" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
     </ViewSwitcher>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

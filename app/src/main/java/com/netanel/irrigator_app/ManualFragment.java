@@ -11,18 +11,20 @@ import androidx.lifecycle.ViewModelProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.StringExt;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
 
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
@@ -44,6 +46,8 @@ public class ManualFragment extends Fragment implements
     private MaterialTextView mTvThreeQuarter;
 
     private ManualFragContract.IPresenter mPresenter;
+
+    private GridView mGridSensors;
 
 
     @Override
@@ -67,20 +71,27 @@ public class ManualFragment extends Fragment implements
         mPresenter.onViewCreated();
     }
 
+    private SensorsAdapter mSensorsAdapter;
     private void initUI() {
         mValveTabs = getView().findViewById(R.id.tab_group_valves);
         mSeekBar = getView().findViewById(R.id.seekbar_timer);
-        mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
-        mButtonPower = getView().findViewById(R.id.img_btn_power);
-        mTvTitle = getView().findViewById(R.id.tv_valve_name);
 
+        mButtonPower = getView().findViewById(R.id.img_btn_power);
+
+        mTvTitle = getView().findViewById(R.id.tv_title);
+        mTvTimer = getView().findViewById(R.id.tv_elapsed_time);
         mTvMax = getView().findViewById(R.id.tv_time_max);
         mTvQuarter = getView().findViewById(R.id.tv_time_quarter);
         mTvHalf = getView().findViewById(R.id.tv_time_half);
         mTvThreeQuarter = getView().findViewById(R.id.tv_time_three_quarter);
+
         mViewSwitcher = getView().findViewById(R.id.view_switcher);
 
-        mButtonPower = getView().findViewById(R.id.img_btn_power);
+        mGridSensors = getView().findViewById(R.id.grid_sensors);
+
+        mSensorsAdapter = new SensorsAdapter(this.getContext());
+        mGridSensors.setAdapter(mSensorsAdapter);
+
     }
 
     private void initListeners() {
@@ -113,6 +124,33 @@ public class ManualFragment extends Fragment implements
         } else if (viewId == R.id.img_btn_power) {
             mPresenter.onButtonPowerClicked();
         }
+    }
+
+
+    @Override
+    public void addHumiditySensorView(float value) {
+        addSensorView(value, "%", R.drawable.ic_humidity_filled);
+    }
+
+    @Override
+    public void addTemperatureSensorView(float value) {
+        addSensorView(value, StringExt.SYMBOL_CELSIUS, R.drawable.ic_thermometer);
+    }
+
+    @Override
+    public void addFlowSensorView(float value) {
+        addSensorView(value, "L/s", R.drawable.ic_flow_meter);
+    }
+
+    @Override
+    public void addPhSensorView(float value) {
+        addSensorView(value, "pH", R.drawable.ic_ph_meter);
+    }
+
+    private void addSensorView(float value, String unitSymbol, int iconResId) {
+        String formattedValue =
+                String.format(Locale.getDefault(), "%.1f%s", value, unitSymbol);
+        mSensorsAdapter.addItem(value, formattedValue, iconResId);
     }
 
     @Override

@@ -12,47 +12,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/sensor_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_width="match_parent"
         android:layout_height="0dp"/>
-
-    <LinearLayout
-        android:id="@+id/sensor_bar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:divider="@drawable/sensor_bar_divider"
-        android:showDividers="middle"
-        app:layout_constraintTop_toBottomOf="@id/fragment_container_view"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <com.netanel.irrigator_app.SensorView
-            android:id="@+id/sensor_view_temp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/sensor_view_background"
-            android:padding="10dp"
-            app:sensor_drawable="@drawable/ic_temperature" />
-
-        <com.netanel.irrigator_app.SensorView
-            android:id="@+id/sensor_view_humid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/sensor_view_background"
-            android:padding="10dp"
-            app:sensor_drawable="@drawable/ic_humidity" />
-
-        <com.netanel.irrigator_app.SensorView
-            android:id="@+id/sensor_view_flow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/sensor_view_background"
-            android:padding="10dp"
-            app:sensor_drawable="@drawable/ic_flow" />
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

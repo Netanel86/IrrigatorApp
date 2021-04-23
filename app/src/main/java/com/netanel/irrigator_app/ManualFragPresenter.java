@@ -6,6 +6,7 @@ import android.os.CountDownTimer;
 import android.util.Log;
 
 import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.Sensor;
 import com.netanel.irrigator_app.model.ValveCommand;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.StringExt;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -91,6 +93,48 @@ public class ManualFragPresenter extends AndroidViewModel
             loadValves();
         } else {
             mView.showMessage(mResources.getString(R.string.msg_no_connection));
+        }
+
+
+        List<Sensor> sensors = new ArrayList<>();
+
+        for(int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.HUMIDITY);
+            s1.setValue(50*(i+1));
+            sensors.add(s1);
+        }
+        for(int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.TEMPERATURE);
+            s1.setValue(50*(i+1));
+            sensors.add(s1);
+        }
+        for(int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.FLOW);
+            s1.setValue(50*(i+1));
+            sensors.add(s1);
+        }
+        for(int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.PH);
+            s1.setValue(50*(i+1));
+            sensors.add(s1);
+        }
+
+        for (Sensor s :
+                sensors) {
+            switch (s.getMeasureType()) {
+                case HUMIDITY:
+                    mView.addHumiditySensorView(s.getValue());
+                    break;
+                case TEMPERATURE:
+                    mView.addTemperatureSensorView(s.getValue());
+                    break;
+                case FLOW:
+                    mView.addFlowSensorView(s.getValue());
+                    break;
+                case PH:
+                    mView.addPhSensorView(s.getValue());
+                    break;
+            }
         }
 
     }

@@ -5,6 +5,7 @@
     <dimen name="text_headline4">34sp</dimen>
     <dimen name="text_headline3">48sp</dimen>
     <dimen name="text_subtitle1">16sp</dimen>
+    <dimen name="text_subtitle2">14sp</dimen>
     <dimen name="margin_hours">40dp</dimen>
     <dimen name="text_button">14sp</dimen>
 </resources>

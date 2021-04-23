@@ -8,9 +8,12 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+
+import com.devadvance.circularseekbar.CircularSeekBar;
+import com.google.android.material.textview.MaterialTextView;
 
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 /**
  * <p></p>
@@ -20,11 +23,12 @@ import androidx.annotation.Nullable;
  * @since 1.0
  * Created on 21/09/2020
  */
+//"added title to manual page, refactored valve CardView layout, added sensors CardView, implemented basic sensor model for testing."
+public class SensorView extends ConstraintLayout {
 
-public class SensorView extends LinearLayout {
-
-    private ImageView mIcon;
-    private TextView mValue;
+    private ImageView mIvIcon;
+    private MaterialTextView mTvValue;
+    private CircularSeekBar mSeekBarSensor;
 
     public SensorView(Context context) {
         super(context);
@@ -36,27 +40,34 @@ public class SensorView extends LinearLayout {
         LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.sensor_view, this, true);
 
-        setOrientation(LinearLayout.HORIZONTAL);
-        setGravity(Gravity.CENTER);
+        mIvIcon = findViewById(R.id.iv_sensor);
+        mTvValue = findViewById(R.id.tv_sensor_value);
+        mSeekBarSensor = findViewById(R.id.seekbar_sensor);
+        mSeekBarSensor.setIsTouchEnabled(false);
 
-        mIcon = findViewById(R.id.sensor_tab_icon);
-        mValue = findViewById(R.id.sensor_tab_value);
-
-        initAttr(attrs);
-
+        if (attrs != null) {
+            initAttr(attrs);
+        }
     }
 
     private void initAttr(@Nullable AttributeSet attrs) {
         TypedArray array= getContext().obtainStyledAttributes(attrs,R.styleable.SensorView,0,0);
         try {
-            mIcon.setImageResource(array.getResourceId(R.styleable.SensorView_sensor_drawable,0));
-            mIcon.setScaleType(ImageView.ScaleType.FIT_XY);
+            mIvIcon.setImageResource(array.getResourceId(R.styleable.SensorView_sensor_drawable,0));
         }finally {
             array.recycle();
         }
     }
 
-    public void setValue(String value) {
-        mValue.setText(value);
+    public void setValueText(String valueText) {
+        mTvValue.setText(valueText);
+    }
+
+    public void setProgress(int progress) {
+        mSeekBarSensor.setProgress(progress);
+    }
+
+    public void setIcon(int resourceId) {
+        mIvIcon.setImageResource(resourceId);
     }
 }

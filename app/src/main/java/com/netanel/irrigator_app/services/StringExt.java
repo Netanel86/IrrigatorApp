@@ -16,9 +16,12 @@ import java.util.Locale;
  */
 
 public class StringExt {
+    public static final String EMPTY_STRING = "";
     public static final String EMPTY_LINE = "/n";
     public static final String SPACE = " ";
     public static final String COMMA = ",";
+
+    public static final String SYMBOL_CELSIUS = "\u2103";
 
     private static final int HOUR_IN_SEC = 3600;
     private static final int DAY_IN_SEC = 3600 * 24;

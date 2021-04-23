@@ -1,24 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
-    <!--    android:layout_height="wrap_content"-->
-    <!--    android:layout_width="match_parent"-->
-    <!--    android:orientation="horizontal">-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:layout_width="wrap_content"-->
+<!--    >-->
+    <com.devadvance.circularseekbar.CircularSeekBar
+        android:id="@+id/seekbar_sensor"
+        android:layout_width="85dp"
+        android:layout_height="85dp"
+        app:circle_stroke_width="5dp"
+        app:circle_x_radius="45dp"
+        app:circle_y_radius="45dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:pointer_halo_border_width="0dp"
+        app:pointer_halo_width="0dp"
+        app:pointer_radius="0dp"
+        app:use_custom_radii="true"/>
+
     <ImageView
-        android:id="@+id/sensor_tab_icon"
+        android:id="@+id/iv_sensor"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        tools:src="@drawable/ic_humidity_filled"
+        app:layout_constraintBottom_toBottomOf="@id/seekbar_sensor"
+        app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
+        app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
+        app:layout_constraintTop_toTopOf="@id/seekbar_sensor"
+        app:layout_constraintVertical_bias="0.3" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_sensor_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingEnd="15dp"
-        tools:src="@drawable/ic_flow"
-        android:scaleType="fitXY"
-        tools:contentDescription="TODO" />
-    <TextView
-        android:id="@+id/sensor_tab_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        tools:text="32C"/>
+        android:layout_marginTop="2dp"
+        android:textColor="@color/color_primary_text"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+        app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
+        app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
+        app:layout_constraintTop_toBottomOf="@id/iv_sensor"
+        tools:text="52%" />
 </merge>
 
