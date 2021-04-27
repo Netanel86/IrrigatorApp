@@ -6,12 +6,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.fragment.app.Fragment;
+import androidx.gridlayout.widget.GridLayout;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridView;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.ViewSwitcher;
 
@@ -26,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
+// TODO: 27/04/2021 refactor sensor progress to increase in decimal values instead of integers for higher resolution.
+// TODO: 27/04/2021 remove custom material dimensions and use android material styles instead.
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
         TabLayout.OnTabSelectedListener,
@@ -47,7 +50,7 @@ public class ManualFragment extends Fragment implements
 
     private ManualFragContract.IPresenter mPresenter;
 
-    private GridView mGridSensors;
+    private GridLayout mGridSensors;
 
 
     @Override
@@ -71,9 +74,8 @@ public class ManualFragment extends Fragment implements
         mPresenter.onViewCreated();
     }
 
-    private SensorsAdapter mSensorsAdapter;
     private void initUI() {
-        mValveTabs = getView().findViewById(R.id.tab_group_valves);
+        mValveTabs = getView().findViewById(R.id.tab_layout_valves);
         mSeekBar = getView().findViewById(R.id.seekbar_timer);
 
         mButtonPower = getView().findViewById(R.id.img_btn_power);
@@ -88,10 +90,6 @@ public class ManualFragment extends Fragment implements
         mViewSwitcher = getView().findViewById(R.id.view_switcher);
 
         mGridSensors = getView().findViewById(R.id.grid_sensors);
-
-        mSensorsAdapter = new SensorsAdapter(this.getContext());
-        mGridSensors.setAdapter(mSensorsAdapter);
-
     }
 
     private void initListeners() {
@@ -128,30 +126,65 @@ public class ManualFragment extends Fragment implements
 
 
     @Override
-    public void addHumiditySensorView(float value) {
-        addSensorView(value, "%", R.drawable.ic_humidity_filled);
+    public void addHumiditySensorView(float currValue, float maxValue) {
+        addSensorView(currValue, maxValue,"%", R.drawable.ic_humidity_filled);
     }
 
     @Override
-    public void addTemperatureSensorView(float value) {
-        addSensorView(value, StringExt.SYMBOL_CELSIUS, R.drawable.ic_thermometer);
+    public void addTemperatureSensorView(float currValue, float maxValue) {
+        addSensorView(currValue,maxValue, StringExt.SYMBOL_CELSIUS, R.drawable.ic_thermometer);
     }
 
     @Override
-    public void addFlowSensorView(float value) {
-        addSensorView(value, "L/s", R.drawable.ic_flow_meter);
+    public void addFlowSensorView(float currValue, float maxValue) {
+        addSensorView(currValue, maxValue,"L/s", R.drawable.ic_flow_meter);
     }
 
     @Override
-    public void addPhSensorView(float value) {
-        addSensorView(value, "pH", R.drawable.ic_ph_meter);
+    public void addPhSensorView(float currValue, float maxValue) {
+        addSensorView(currValue, maxValue,"pH", R.drawable.ic_ph_meter);
     }
 
-    private void addSensorView(float value, String unitSymbol, int iconResId) {
+    private void addSensorView(float currValue, float maxValue, String unitSymbol, int iconResId) {
         String formattedValue =
-                String.format(Locale.getDefault(), "%.1f%s", value, unitSymbol);
-        mSensorsAdapter.addItem(value, formattedValue, iconResId);
+                String.format(Locale.getDefault(), "%.1f%s", currValue, unitSymbol);
+        final SensorView sensorView = new SensorView(this.getContext(), null);
+        sensorView.setValueText(formattedValue);
+        sensorView.setProgress((int)currValue);
+        sensorView.setIcon(iconResId);
+        sensorView.setMaxProgress((int) maxValue);
+        sensorView.setPaddingInDp(3,3,3,3);
+        mGridSensors.addView(sensorView);
+        setSensorViewOptimalDimensions(sensorView);
     }
+
+    private int mSensorDimensions;
+    private void setSensorViewOptimalDimensions(final SensorView sensorView) {
+        final View parentView = getView().findViewById(R.id.cv_sensors);
+        ViewTreeObserver viewTreeObserver = parentView.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    parentView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                    if (mSensorDimensions == 0) {
+                        ViewGroup.MarginLayoutParams gridParams =
+                                (ViewGroup.MarginLayoutParams) getView()
+                                        .findViewById(R.id.grid_sensors).getLayoutParams();
+                        int parentWidth = parentView.getMeasuredWidth();
+                        int columnCount = mGridSensors.getColumnCount();
+                        int gridMargins = gridParams.leftMargin + gridParams.rightMargin +
+                                (gridParams.rightMargin * (columnCount - 1));
+                        int padding = sensorView.getPaddingStart() * columnCount * 2;
+                        mSensorDimensions = (parentWidth - gridMargins - padding) / columnCount;
+                    }
+                    sensorView.setViewDimensions(mSensorDimensions);
+                }
+            });
+        }
+    }
+
 
     @Override
     public void onProgressChanged(CircularSeekBar circularSeekBar, final int progress, boolean fromUser) {
@@ -258,11 +291,11 @@ public class ManualFragment extends Fragment implements
     @Override
     public void setUiEnabled(boolean enabled) {
         if(!enabled) {
-            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_manual)) {
+            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.manual_layout)) {
                 mViewSwitcher.showPrevious();
             }
         } else {
-            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.view_empty)) {
+            if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.empty_layout)) {
                 mViewSwitcher.showNext();
             }
         }

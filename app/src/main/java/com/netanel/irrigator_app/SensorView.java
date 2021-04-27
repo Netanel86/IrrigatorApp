@@ -4,10 +4,9 @@ package com.netanel.irrigator_app;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.textview.MaterialTextView;
@@ -32,6 +31,7 @@ public class SensorView extends ConstraintLayout {
 
     public SensorView(Context context) {
         super(context);
+
     }
 
     public SensorView(Context context, @Nullable AttributeSet attrs) {
@@ -48,6 +48,15 @@ public class SensorView extends ConstraintLayout {
         if (attrs != null) {
             initAttr(attrs);
         }
+    }
+
+    void setPaddingInDp(int dpLeft, int dpTop, int dpRight, int dpBottom) {
+        float scale = getResources().getDisplayMetrics().density;
+        int leftInPx = (int) (dpLeft * scale + 0.5f);
+        int topInPx = (int) (dpTop * scale + 0.5f);
+        int rightInPx =(int) (dpRight * scale + 0.5f);
+        int bottomInPx = (int) (dpBottom * scale + 0.5f);
+        this.setPadding(leftInPx, topInPx, rightInPx, bottomInPx);
     }
 
     private void initAttr(@Nullable AttributeSet attrs) {
@@ -67,7 +76,19 @@ public class SensorView extends ConstraintLayout {
         mSeekBarSensor.setProgress(progress);
     }
 
+    public void setMaxProgress(int maxProgress) {
+        mSeekBarSensor.setMax(maxProgress);
+    }
+
     public void setIcon(int resourceId) {
         mIvIcon.setImageResource(resourceId);
+    }
+
+    public void setViewDimensions(int widthAndHeight) {
+        ViewGroup.LayoutParams params = mSeekBarSensor.getLayoutParams();
+        params.width = widthAndHeight;
+        params.height = widthAndHeight;
+        mSeekBarSensor.setLayoutParams(params);
+        mSeekBarSensor.setCircleRadius((float) widthAndHeight / 2);
     }
 }

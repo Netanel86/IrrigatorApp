@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
-<!--    android:layout_height="wrap_content"-->
-<!--    android:layout_width="wrap_content"-->
-<!--    >-->
+
     <com.devadvance.circularseekbar.CircularSeekBar
         android:id="@+id/seekbar_sensor"
-        android:layout_width="85dp"
-        android:layout_height="85dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:layout_width="90dp"
+        tools:layout_height="90dp"
         app:circle_stroke_width="5dp"
-        app:circle_x_radius="45dp"
-        app:circle_y_radius="45dp"
+        tools:circle_x_radius="45dp"
+        tools:circle_y_radius="45dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"

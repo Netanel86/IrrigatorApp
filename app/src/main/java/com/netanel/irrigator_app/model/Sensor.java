@@ -15,19 +15,20 @@ public class Sensor {
     private String mId;
     private Measure mMeasure;
     private float mValue;
+    private float mMaxValue;
 
-    public Sensor() {
-    }
+    public Sensor() {}
 
-    public Sensor(Measure measure) {
+    public Sensor(Measure measure, int maxValue) {
         mMeasure = measure;
+        mMaxValue = maxValue;
     }
 
     public Measure getMeasureType() {
         return this.mMeasure;
     }
 
-    public void setMeasure(Measure measure) {
+    public void setMeasureType(Measure measure) {
         this.mMeasure = measure;
     }
 
@@ -45,6 +46,14 @@ public class Sensor {
 
     public void setParentControllerId(String parentId) {
         mParentControllerId = parentId;
+    }
+
+    public float getMaxValue() {
+        return mMaxValue;
+    }
+
+    public void setMaxValue(int mMaxValue) {
+        this.mMaxValue = mMaxValue;
     }
 
     public enum Measure {

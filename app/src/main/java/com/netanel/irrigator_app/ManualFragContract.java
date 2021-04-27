@@ -9,7 +9,7 @@ package com.netanel.irrigator_app;
  * @since 1.0
  * Created on 24/09/2020
  */
-// TODO: 23/04/2021 transfer all string resource handling to view, including string formatting.
+
 public interface ManualFragContract {
     interface IView {
         int getSeekBarProgress();
@@ -38,13 +38,13 @@ public interface ManualFragContract {
 
         void setTabDescription(Integer tabId, String description);
 
-        void addHumiditySensorView(float value);
+        void addHumiditySensorView(float currValue, float maxValue);
 
-        void addTemperatureSensorView(float value);
+        void addTemperatureSensorView(float value, float maxValue);
 
-        void addFlowSensorView(float value);
+        void addFlowSensorView(float value, float maxValue);
 
-        void addPhSensorView(float value);
+        void addPhSensorView(float value, float maxValue);
 
         void showMessage(String message);
 

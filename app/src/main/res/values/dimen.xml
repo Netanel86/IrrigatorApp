@@ -6,6 +6,11 @@
     <dimen name="text_headline3">48sp</dimen>
     <dimen name="text_subtitle1">16sp</dimen>
     <dimen name="text_subtitle2">14sp</dimen>
-    <dimen name="margin_hours">40dp</dimen>
     <dimen name="text_button">14sp</dimen>
+    <dimen name="margin_hours">40dp</dimen>
+    <dimen name="margin_card_vertical">10dp</dimen>
+    <dimen name="margin_card_horizontal">8dp</dimen>
+    <dimen name="elevation_card">5dp</dimen>
+    <dimen name="elevation_card_title">3dp</dimen>
+
 </resources>

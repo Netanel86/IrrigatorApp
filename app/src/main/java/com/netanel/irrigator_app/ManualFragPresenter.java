@@ -36,7 +36,8 @@ import androidx.lifecycle.AndroidViewModel;
  * @since 1.0
  * Created on 23/09/2020
  */
-// TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments, start with valves.
+// TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments.
+// TODO: 27/04/2021 remove all resource handling from presenter and implement them in the view.
 
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
@@ -89,33 +90,36 @@ public class ManualFragPresenter extends AndroidViewModel
             mTabMapInverse = new HashMap<>();
         }
 
-        if(NetworkUtilities.isOnline(this.getApplication())) {
+        if (NetworkUtilities.isOnline(this.getApplication())) {
             loadValves();
         } else {
             mView.showMessage(mResources.getString(R.string.msg_no_connection));
         }
 
+        testSensors();
+    }
 
+    private void testSensors() {
         List<Sensor> sensors = new ArrayList<>();
 
-        for(int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.HUMIDITY);
-            s1.setValue(50*(i+1));
+        for (int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.HUMIDITY, 100);
+            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
             sensors.add(s1);
         }
-        for(int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.TEMPERATURE);
-            s1.setValue(50*(i+1));
+        for (int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.TEMPERATURE, 99);
+            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
             sensors.add(s1);
         }
-        for(int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.FLOW);
-            s1.setValue(50*(i+1));
+        for (int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.FLOW, 9);
+            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
             sensors.add(s1);
         }
-        for(int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.PH);
-            s1.setValue(50*(i+1));
+        for (int i = 0; i < 2; i++) {
+            Sensor s1 = new Sensor(Sensor.Measure.PH, 15);
+            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
             sensors.add(s1);
         }
 
@@ -123,16 +127,16 @@ public class ManualFragPresenter extends AndroidViewModel
                 sensors) {
             switch (s.getMeasureType()) {
                 case HUMIDITY:
-                    mView.addHumiditySensorView(s.getValue());
+                    mView.addHumiditySensorView(s.getValue(), s.getMaxValue());
                     break;
                 case TEMPERATURE:
-                    mView.addTemperatureSensorView(s.getValue());
+                    mView.addTemperatureSensorView(s.getValue(), s.getMaxValue());
                     break;
                 case FLOW:
-                    mView.addFlowSensorView(s.getValue());
+                    mView.addFlowSensorView(s.getValue(), s.getMaxValue());
                     break;
                 case PH:
-                    mView.addPhSensorView(s.getValue());
+                    mView.addPhSensorView(s.getValue(), s.getMaxValue());
                     break;
             }
         }
@@ -243,8 +247,8 @@ public class ManualFragPresenter extends AndroidViewModel
         mView.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if(isConnected) {
-                    if(mValveMap == null || mValveMap.isEmpty()) {
+                if (isConnected) {
+                    if (mValveMap == null || mValveMap.isEmpty()) {
                         mView.showMessage(mResources.getString(R.string.msg_connection_resumed)
                                 + StringExt.COMMA + StringExt.SPACE
                                 + mResources.getString(R.string.msg_loading_valves));
@@ -276,7 +280,7 @@ public class ManualFragPresenter extends AndroidViewModel
         mTimer.stopIfRunning();
         mView.setPowerButtonEditedState(EDITED);
         mView.setSeekBarEditedState(EDITED);
-        if(mView.getSeekBarProgress() != 0) {
+        if (mView.getSeekBarProgress() != 0) {
             mView.setPowerButtonEnabled(ENABLED);
         } else if (!mSelectedValve.isOpen()) {
             mView.setPowerButtonEnabled(!ENABLED);
@@ -286,8 +290,8 @@ public class ManualFragPresenter extends AndroidViewModel
     private boolean isUserSeekBarProgressChanged() {
         long time = mSelectedValve.timeLeftOpen();
         int progress = mView.getSeekBarProgress();
-        int diff = (int)time - progress;
-        return  diff >= 5 || diff <= -5;
+        int diff = (int) time - progress;
+        return diff >= 5 || diff <= -5;
     }
 
     @Override
@@ -368,7 +372,7 @@ public class ManualFragPresenter extends AndroidViewModel
         Command cmnd = null;
 
         if (isUserSeekBarProgressChanged()) {
-            if(mView.getSeekBarProgress() != 0) {
+            if (mView.getSeekBarProgress() != 0) {
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), mView.getSeekBarProgress());
             } else {
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);

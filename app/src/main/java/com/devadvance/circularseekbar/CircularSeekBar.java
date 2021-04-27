@@ -1079,4 +1079,10 @@ public class CircularSeekBar extends View {
 		return isTouchEnabled;
 	}
 
+	public void setCircleRadius(float radius) {
+		mCircleXRadius = mCircleYRadius = radius;
+		recalculateAll();
+		invalidate();
+	}
+
 }
