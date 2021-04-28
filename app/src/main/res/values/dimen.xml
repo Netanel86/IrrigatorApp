@@ -12,5 +12,6 @@
     <dimen name="margin_card_horizontal">8dp</dimen>
     <dimen name="elevation_card">5dp</dimen>
     <dimen name="elevation_card_title">3dp</dimen>
+    <dimen name="radius_round_button">36dp</dimen>
 
 </resources>

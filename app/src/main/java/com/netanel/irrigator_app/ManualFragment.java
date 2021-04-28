@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
@@ -36,6 +37,7 @@ public class ManualFragment extends Fragment implements
         ManualFragContract.IView {
 
     private FilledTabLayout mValveTabs;
+    private GridLayout mGridSensors;
 
     private ViewSwitcher mViewSwitcher;
 
@@ -43,15 +45,13 @@ public class ManualFragment extends Fragment implements
     private MaterialTextView mTvTitle;
     private StateImageButton mButtonPower;
     private StateCircularSeekBar mSeekBar;
-    private AppCompatButton mTvMax;
-    private MaterialTextView mTvQuarter;
-    private MaterialTextView mTvHalf;
-    private MaterialTextView mTvThreeQuarter;
+
+    private MaterialButton mTvMax;
+    private MaterialButton mTvQuarter;
+    private MaterialButton mTvHalf;
+    private MaterialButton mTvThreeQuarter;
 
     private ManualFragContract.IPresenter mPresenter;
-
-    private GridLayout mGridSensors;
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -127,22 +127,22 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void addHumiditySensorView(float currValue, float maxValue) {
-        addSensorView(currValue, maxValue,"%", R.drawable.ic_humidity_filled);
+        addSensorView(currValue, maxValue, "%", R.drawable.ic_humidity_filled);
     }
 
     @Override
     public void addTemperatureSensorView(float currValue, float maxValue) {
-        addSensorView(currValue,maxValue, StringExt.SYMBOL_CELSIUS, R.drawable.ic_thermometer);
+        addSensorView(currValue, maxValue, StringExt.SYMBOL_CELSIUS, R.drawable.ic_thermometer);
     }
 
     @Override
     public void addFlowSensorView(float currValue, float maxValue) {
-        addSensorView(currValue, maxValue,"L/s", R.drawable.ic_flow_meter);
+        addSensorView(currValue, maxValue, "L/s", R.drawable.ic_flow_meter);
     }
 
     @Override
     public void addPhSensorView(float currValue, float maxValue) {
-        addSensorView(currValue, maxValue,"pH", R.drawable.ic_ph_meter);
+        addSensorView(currValue, maxValue, "pH", R.drawable.ic_ph_meter);
     }
 
     private void addSensorView(float currValue, float maxValue, String unitSymbol, int iconResId) {
@@ -150,15 +150,17 @@ public class ManualFragment extends Fragment implements
                 String.format(Locale.getDefault(), "%.1f%s", currValue, unitSymbol);
         final SensorView sensorView = new SensorView(this.getContext(), null);
         sensorView.setValueText(formattedValue);
-        sensorView.setProgress((int)currValue);
-        sensorView.setIcon(iconResId);
         sensorView.setMaxProgress((int) maxValue);
-        sensorView.setPaddingInDp(3,3,3,3);
+        sensorView.setProgress((int) currValue);
+        sensorView.setIcon(iconResId);
+
+        sensorView.setPaddingInDp(3, 3, 3, 3);
         mGridSensors.addView(sensorView);
         setSensorViewOptimalDimensions(sensorView);
     }
 
     private int mSensorDimensions;
+
     private void setSensorViewOptimalDimensions(final SensorView sensorView) {
         final View parentView = getView().findViewById(R.id.cv_sensors);
         ViewTreeObserver viewTreeObserver = parentView.getViewTreeObserver();
@@ -188,7 +190,7 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void onProgressChanged(CircularSeekBar circularSeekBar, final int progress, boolean fromUser) {
-        mPresenter.onSeekBarProgressChanged(progress,fromUser);
+        mPresenter.onSeekBarProgressChanged(progress, fromUser);
     }
 
     @Override
@@ -224,7 +226,6 @@ public class ManualFragment extends Fragment implements
 
     }
 
-    ///region ManualFragContract.IView
     @Override
     public void setTitleText(String nameString) {
         mTvTitle.setText(nameString);
@@ -290,7 +291,7 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void setUiEnabled(boolean enabled) {
-        if(!enabled) {
+        if (!enabled) {
             if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.manual_layout)) {
                 mViewSwitcher.showPrevious();
             }
@@ -305,13 +306,13 @@ public class ManualFragment extends Fragment implements
     private void setTabLayoutEnabled(boolean enabled) {
         ViewGroup tabLayout = (ViewGroup) mValveTabs.getChildAt(0);
         tabLayout.setEnabled(enabled);
-        for(int i = 0; i < tabLayout.getChildCount(); i++) {
+        for (int i = 0; i < tabLayout.getChildCount(); i++) {
             tabLayout.getChildAt(i).setEnabled(enabled);
         }
     }
 
     @Override
-    public void addTab( int tabId, String description, boolean isActive) {
+    public void addTab(int tabId, String description, boolean isActive) {
         View tabView = getLayoutInflater().inflate(R.layout.tab_valve, null);
 
         TabLayout.Tab tab = mValveTabs.newTab().setCustomView(tabView);
@@ -325,7 +326,7 @@ public class ManualFragment extends Fragment implements
 
         mValveTabs.addTab(tab, mValveTabs.getTabCount());
 
-        if(mValveTabs.getVisibility() == View.GONE) {
+        if (mValveTabs.getVisibility() == View.GONE) {
             mValveTabs.setVisibility(View.VISIBLE);
         }
     }
@@ -334,7 +335,7 @@ public class ManualFragment extends Fragment implements
     public void setTabBadge(int tabId, boolean showActiveBadge) {
         View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
         if (showActiveBadge) {
-            setTabBadgeVisibility(tabView,View.VISIBLE);
+            setTabBadgeVisibility(tabView, View.VISIBLE);
         } else {
             setTabBadgeVisibility(tabView, View.GONE);
         }
@@ -371,5 +372,4 @@ public class ManualFragment extends Fragment implements
     public void runOnUiThread(Runnable runnable) {
         this.getActivity().runOnUiThread(runnable);
     }
-    ///endregion
 }

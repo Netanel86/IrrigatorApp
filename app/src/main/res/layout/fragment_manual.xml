@@ -37,20 +37,20 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/manual_empty_background">
+
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_valve_colored"
                 android:scaleX="1.5"
-                android:scaleY="1.5"/>
+                android:scaleY="1.5"
+                android:src="@drawable/ic_valve_colored" />
         </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/manual_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/holo_blue_dark">
+            android:layout_height="match_parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layout_title"
@@ -199,21 +199,6 @@
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:tint="@android:color/black" />
 
-                            <androidx.appcompat.widget.AppCompatButton
-                                android:id="@+id/tv_time_max"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:layout_marginTop="@dimen/margin_hours"
-                                android:background="@drawable/btn_round_selector"
-                                android:elevation="3dp"
-                                android:padding="2dp"
-                                android:textColor="@color/color_icon"
-                                android:textSize="15sp"
-                                app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
-                                app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                                app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                tools:text="60" />
-
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tv_elapsed_time"
                                 style="@style/ManualFrag.SimpleTextView"
@@ -227,34 +212,37 @@
                                 app:layout_constraintVertical_bias="0.9"
                                 tools:text="25:48 min" />
 
-                            <com.google.android.material.textview.MaterialTextView
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/tv_time_max"
+                                android:layout_marginTop="@dimen/margin_hours"
+                                style="@style/Custom.MaterialComponents.TimeStampButton"
+                                app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
+                                app:layout_constraintRight_toRightOf="@id/seekbar_timer"
+                                app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                                tools:text="60" />
+
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/tv_time_quarter"
-                                style="@style/ManualFrag.TimeTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
                                 android:layout_marginEnd="@dimen/margin_hours"
+                                style="@style/Custom.MaterialComponents.TimeStampButton"
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:text="15" />
 
-                            <com.google.android.material.textview.MaterialTextView
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/tv_time_three_quarter"
-                                style="@style/ManualFrag.TimeTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
                                 android:layout_marginStart="@dimen/margin_hours"
+                                style="@style/Custom.MaterialComponents.TimeStampButton"
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:text="45" />
 
-                            <com.google.android.material.textview.MaterialTextView
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/tv_time_half"
-                                style="@style/ManualFrag.TimeTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
                                 android:layout_marginBottom="@dimen/margin_hours"
+                                style="@style/Custom.MaterialComponents.TimeStampButton"
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"

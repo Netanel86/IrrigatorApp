@@ -50,7 +50,7 @@ public class SensorView extends ConstraintLayout {
         }
     }
 
-    void setPaddingInDp(int dpLeft, int dpTop, int dpRight, int dpBottom) {
+    public void setPaddingInDp(int dpLeft, int dpTop, int dpRight, int dpBottom) {
         float scale = getResources().getDisplayMetrics().density;
         int leftInPx = (int) (dpLeft * scale + 0.5f);
         int topInPx = (int) (dpTop * scale + 0.5f);
