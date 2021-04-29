@@ -45,20 +45,26 @@ public class ManualFragPresenter extends AndroidViewModel
     private static final boolean EDITED = true;
     private static final boolean ENABLED = true;
 
-    private final String[] mTimeNames;
+    private final ConnectivityCallback mConnectivityChangedCallback;
+
+    private final IDataBaseConnection mDb;
+
+    private Map<String, Valve> mValveMap;
+
+    private Valve mSelectedValve;
 
     private final Resources mResources;
-    private final ConnectivityCallback mConnectivityChangedCallback;
-    private final IDataBaseConnection mDb;
-    private final ValveTimer mTimer;
 
     private ManualFragContract.IView mView;
 
-    private Map<String, Valve> mValveMap;
+    private final String[] mTimeNames;
+
+    private final ValveTimer mTimer;
+
     private Map<String, Integer> mTabMap;
+
     private Map<Integer, String> mTabMapInverse;
 
-    private Valve mSelectedValve;
 
     public ManualFragPresenter(Application app) {
         super(app);
@@ -83,17 +89,27 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onViewCreated() {
+
         if (mTabMap == null) {
             mTabMap = new HashMap<>();
-        }
-        if (mTabMapInverse == null) {
-            mTabMapInverse = new HashMap<>();
+        } else {
+            mTabMap.clear();
         }
 
-        if (NetworkUtilities.isOnline(this.getApplication())) {
-            loadValves();
+        if (mTabMapInverse == null) {
+            mTabMapInverse = new HashMap<>();
         } else {
-            mView.showMessage(mResources.getString(R.string.msg_no_connection));
+            mTabMap.clear();
+        }
+
+        if (mValveMap == null) {
+            if (NetworkUtilities.isOnline(this.getApplication())) {
+                fetchValves();
+            } else {
+                mView.showMessage(mResources.getString(R.string.msg_no_connection));
+            }
+        } else {
+            addValvesToView();
         }
 
         testSensors();
@@ -149,7 +165,7 @@ public class ManualFragPresenter extends AndroidViewModel
                 this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
     }
 
-    public void loadValves() {
+    public void fetchValves() {
         mDb.getValves(new IDataBaseConnection.TaskListener<Map<String, Valve>>() {
             @Override
             public void onComplete(Map<String, Valve> answer, Exception ex) {
@@ -160,18 +176,28 @@ public class ManualFragPresenter extends AndroidViewModel
                     if (!mValveMap.isEmpty()) {
                         ArrayList<Valve> valves = new ArrayList<>(mValveMap.values());
                         for (int i = 0; i < valves.size(); i++) {
-                            Valve currValve = valves.get(i);
-                            initValveListeners(currValve);
-                            String tabText = formatValveDescription(currValve);
-                            addToTabMaps(i, currValve.getId());
-                            mView.addTab(i, tabText, currValve.isOpen());
+                            initValveListeners(valves.get(i));
                         }
+                        addValvesToView();
                     } else {
                         mView.showMessage(mResources.getString(R.string.error_no_valves));
                     }
+                } else {
+                    mView.showMessage("Something went wrong, db returned empty result");
                 }
             }
         });
+    }
+
+    private void addValvesToView() {
+        mView.switchToValveView();
+        ArrayList<Valve> valves = new ArrayList<>(mValveMap.values());
+        for (int i = 0; i < valves.size(); i++) {
+            Valve currValve = valves.get(i);
+            String tabText = formatValveDescription(currValve);
+            addToTabMaps(i, currValve.getId());
+            mView.addTab(i, tabText, currValve.isOpen());
+        }
     }
 
     private String formatValveDescription(Valve valve) {
@@ -181,7 +207,22 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private void initValveListeners(final Valve valve) {
         initValveDbListener(valve);
+        initValveViewListener(valve);
+    }
 
+    private void initValveDbListener(@NotNull final Valve valve) {
+        mDb.addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
+            @Override
+            public void onDataChanged(Valve changedObject, Exception ex) {
+                if (ex != null) {
+                    mView.showMessage(ex.getMessage());
+                }
+                valve.update(changedObject);
+            }
+        });
+    }
+
+    private void initValveViewListener(Valve valve) {
         valve.setOnPropertyChangedCallback(new Valve.OnPropertyChangedCallback() {
             @Override
             public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
@@ -225,18 +266,6 @@ public class ManualFragPresenter extends AndroidViewModel
         });
     }
 
-    private void initValveDbListener(@NotNull final Valve valve) {
-        mDb.addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
-            @Override
-            public void onDataChanged(Valve changedObject, Exception ex) {
-                if (ex != null) {
-                    mView.showMessage(ex.getMessage());
-                }
-                valve.update(changedObject);
-            }
-        });
-    }
-
     private void addToTabMaps(int btnId, String valveId) {
         mTabMap.put(valveId, btnId);
         mTabMapInverse.put(btnId, valveId);
@@ -252,7 +281,7 @@ public class ManualFragPresenter extends AndroidViewModel
                         mView.showMessage(mResources.getString(R.string.msg_connection_resumed)
                                 + StringExt.COMMA + StringExt.SPACE
                                 + mResources.getString(R.string.msg_loading_valves));
-                        loadValves();
+                        fetchValves();
                     } else {
                         mView.showMessage(mResources.getString(R.string.msg_connection_resumed));
                         mView.setUiEnabled(true);
@@ -296,9 +325,9 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onTabClicked(int tabId) {
-        if (mSelectedValve == null) {
-            mView.switchToValveView();
-        }
+//        if (mSelectedValve == null) {
+//            mView.switchToValveView();
+//        }
 
         mSelectedValve = mValveMap.get(mTabMapInverse.get(tabId));
         showSelectedValve();

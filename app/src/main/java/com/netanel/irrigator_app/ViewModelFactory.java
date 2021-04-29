@@ -23,12 +23,11 @@ import androidx.lifecycle.ViewModelProvider;
  */
 
 public class ViewModelFactory extends ViewModelProvider.NewInstanceFactory {
-//    private ManualFragRouter mRouter;
+
     private final Application mApplication;
 
-    public ViewModelFactory(@Nonnull Application app) {
+    public ViewModelFactory(@NonNull Application app) {
         mApplication = app;
-//        mRouter = router;
     }
 
     @NonNull
@@ -37,7 +36,7 @@ public class ViewModelFactory extends ViewModelProvider.NewInstanceFactory {
         T viewModel = null;
         try {
             if (modelClass == ManualFragPresenter.class) {
-                viewModel = (T)new ManualFragPresenter(mApplication);
+                viewModel = (T) new ManualFragPresenter(mApplication);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -45,5 +44,4 @@ public class ViewModelFactory extends ViewModelProvider.NewInstanceFactory {
         assert viewModel != null;
         return viewModel;
     }
-
 }

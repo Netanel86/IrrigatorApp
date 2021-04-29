@@ -71,6 +71,7 @@ public class ManualFragment extends Fragment implements
 
         initUI();
         initListeners();
+
         mPresenter.onViewCreated();
     }
 
@@ -123,7 +124,6 @@ public class ManualFragment extends Fragment implements
             mPresenter.onButtonPowerClicked();
         }
     }
-
 
     @Override
     public void addHumiditySensorView(float currValue, float maxValue) {
@@ -359,7 +359,9 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void switchToValveView() {
-        mViewSwitcher.showNext();
+        if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.empty_layout)) {
+            mViewSwitcher.showNext();
+        }
     }
 
     @Override
