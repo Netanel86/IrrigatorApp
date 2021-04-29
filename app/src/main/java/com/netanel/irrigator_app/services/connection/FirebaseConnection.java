@@ -50,20 +50,20 @@ public class FirebaseConnection implements IDataBaseConnection {
                 new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        //task is successful
-                        if (task.isSuccessful() && task.getResult() != null ) {
-                                LinkedHashMap<String, Valve> valves = new LinkedHashMap<>();
-                                for (QueryDocumentSnapshot document : task.getResult()) {
-                                    Valve valve = document.toObject(Valve.class);
-                                    valves.put(valve.getId(), valve);
-                                }
-                                result.onComplete(valves, null);
-                        }
-                        //task is unsuccessful
-                        else {
-                            if(task.getException() != null) {
+                        if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                            //task is successful and has a non empty result
+                            LinkedHashMap<String, Valve> valves = new LinkedHashMap<>();
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                Valve valve = document.toObject(Valve.class);
+                                valves.put(valve.getId(), valve);
+                            }
+                            result.onComplete(valves, null);
+                        } else {
+                            if (task.getException() != null) {
+                                //task is unsuccessful
                                 result.onComplete(null, task.getException());
                             } else {
+                                //task was successful but returned an empty or null result
                                 result.onComplete(null, null);
                             }
                         }
