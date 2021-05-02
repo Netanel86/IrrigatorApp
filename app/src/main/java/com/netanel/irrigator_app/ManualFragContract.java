@@ -12,31 +12,19 @@ package com.netanel.irrigator_app;
 
 public interface ManualFragContract {
     interface IView {
-        int getSeekBarProgress();
+        int getSelectedValveProgress();
 
-        void setSeekBarMaxProgress(int maxProgress);
-
-        void setSeekBarProgress(int progress);
+        void setSelectedValveProgress(int progress);
 
         void setSeekBarEditedState(boolean edited);
 
-        void setTimerText(String timeString);
-
-        void setPowerButtonActiveState(boolean activated);
-
         void setPowerButtonEditedState(boolean edited);
 
-        void setPowerButtonEnabled(boolean enabled);
+        void setSendCommandEnabledState(boolean enabled);
 
-        void setTitleText(String nameString);
+        void addValve(String valveId, String description, boolean isOpen);
 
-        void setTimeScaleText(TimeScale timeScale, String timeString);
-
-        void addTab(int tabId, String description, boolean showActiveBadge);
-
-        void setTabBadge(int tabId, boolean showActiveBadge);
-
-        void setTabDescription(Integer tabId, String description);
+        void setValveDescription(String valveId, String description);
 
         void addHumiditySensorView(float currValue, float maxValue);
 
@@ -53,16 +41,26 @@ public interface ManualFragContract {
         void runOnUiThread(Runnable runnable);
 
         void setUiEnabled(boolean focusable);
+
+        void showValve(String description, boolean isOpen, int maxDuration);
+
+        void setSelectedValveMaxProgress(int maxProgress);
+
+        void setValveOpen(String valveId, boolean isOpen);
+
+        void setSelectedValveEdited();
     }
 
     interface IPresenter {
-        void onSeekBarProgressChanged(final int progress, boolean fromUser);
+        void onValveProgressChanged(final int progress, boolean fromUser);
+
+        void onValveSelected(String valveId);
 
         void onTimeScaleClicked(TimeScale time);
 
-        void onButtonPowerClicked();
+        void onSendCommand();
 
-        void onTabClicked(int tabId);
+//        void onValveSelected(int tabId);
 
         void bindView(IView view);
 

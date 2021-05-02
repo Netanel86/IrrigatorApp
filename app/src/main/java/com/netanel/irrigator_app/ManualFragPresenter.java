@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -57,13 +56,13 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private ManualFragContract.IView mView;
 
-    private final String[] mTimeNames;
+//    private final String[] mTimeNames;
 
     private final ValveTimer mTimer;
 
-    private Map<String, Integer> mTabMap;
-
-    private Map<Integer, String> mTabMapInverse;
+//    private Map<String, Integer> mTabMap;
+//
+//    private Map<Integer, String> mTabMapInverse;
 
 
     public ManualFragPresenter(Application app) {
@@ -75,11 +74,11 @@ public class ManualFragPresenter extends AndroidViewModel
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
 
-        mTimeNames = new String[]{
-                mResources.getString(R.string.time_counter_seconds),
-                mResources.getString(R.string.time_counter_minutes),
-                mResources.getString(R.string.time_counter_hours),
-                mResources.getString(R.string.time_counter_days)};
+//        mTimeNames = new String[]{
+//                mResources.getString(R.string.time_counter_seconds),
+//                mResources.getString(R.string.time_counter_minutes),
+//                mResources.getString(R.string.time_counter_hours),
+//                mResources.getString(R.string.time_counter_days)};
     }
 
     @Override
@@ -90,17 +89,17 @@ public class ManualFragPresenter extends AndroidViewModel
     @Override
     public void onViewCreated() {
 
-        if (mTabMap == null) {
-            mTabMap = new HashMap<>();
-        } else {
-            mTabMap.clear();
-        }
-
-        if (mTabMapInverse == null) {
-            mTabMapInverse = new HashMap<>();
-        } else {
-            mTabMap.clear();
-        }
+//        if (mTabMap == null) {
+//            mTabMap = new HashMap<>();
+//        } else {
+//            mTabMap.clear();
+//        }
+//
+//        if (mTabMapInverse == null) {
+//            mTabMapInverse = new HashMap<>();
+//        } else {
+//            mTabMap.clear();
+//        }
 
         if (mValveMap == null) {
             if (NetworkUtilities.isOnline(this.getApplication())) {
@@ -194,9 +193,10 @@ public class ManualFragPresenter extends AndroidViewModel
         ArrayList<Valve> valves = new ArrayList<>(mValveMap.values());
         for (int i = 0; i < valves.size(); i++) {
             Valve currValve = valves.get(i);
-            String tabText = formatValveDescription(currValve);
-            addToTabMaps(i, currValve.getId());
-            mView.addTab(i, tabText, currValve.isOpen());
+            String description = formatValveDescription(currValve);
+//            addToTabMaps(i, currValve.getId());
+//            mView.addTab(i, tabText, currValve.isOpen());
+            mView.addValve(currValve.getId(), description, currValve.isOpen());
         }
     }
 
@@ -226,50 +226,46 @@ public class ManualFragPresenter extends AndroidViewModel
         valve.setOnPropertyChangedCallback(new Valve.OnPropertyChangedCallback() {
             @Override
             public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
-                Integer tabId = mTabMap.get(updatedValve.getId());
+//                Integer tabId = mTabMap.get(updatedValve.getId());
 
                 switch (propertyName) {
                     case Valve.PROPERTY_DURATION:
                     case Valve.PROPERTY_LAST_ON_TIME:
                     case Valve.PROPERTY_OPEN:
-                        if (tabId != null) {
-                            mView.setTabBadge(tabId, updatedValve.isOpen());
-                        }
+//                        if (tabId != null) {
+//                            mView.setTabBadge(tabId, updatedValve.isOpen());
+//                        }
+                        mView.setValveOpen(updatedValve.getId(),updatedValve.isOpen());
+
                         if (mSelectedValve == updatedValve) {
-                            mView.setPowerButtonActiveState(mSelectedValve.isOpen());
-                            mView.setPowerButtonEditedState(!EDITED);
-                            mView.setSeekBarEditedState(!EDITED);
-                            mView.setPowerButtonEnabled(mSelectedValve.isOpen());
-                            updateFocusedValveProgressView();
+                            updateSelectedValveProgressView();
                         }
                         break;
 
                     case Valve.PROPERTY_MAX_DURATION:
                         if (mSelectedValve == updatedValve) {
-                            mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
-                            setTimeScaleMarks();
-                            updateFocusedValveProgressView();
+                            mView.setSelectedValveMaxProgress(mSelectedValve.getMaxDuration());
+                            updateSelectedValveProgressView();
                         }
                         break;
 
                     case Valve.PROPERTY_DESCRIPTION:
-                        if (mSelectedValve == updatedValve) {
-                            mView.setTitleText(mSelectedValve.getDescription());
-                        }
                     case Valve.PROPERTY_INDEX:
-                        if (tabId != null) {
-                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
-                        }
+                            mView.setValveDescription(updatedValve.getId(),formatValveDescription(updatedValve));
+
+//                        if (tabId != null) {
+//                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
+//                        }
                         break;
                 }
             }
         });
     }
 
-    private void addToTabMaps(int btnId, String valveId) {
-        mTabMap.put(valveId, btnId);
-        mTabMapInverse.put(btnId, valveId);
-    }
+//    private void addToTabMaps(int btnId, String valveId) {
+//        mTabMap.put(valveId, btnId);
+//        mTabMapInverse.put(btnId, valveId);
+//    }
 
     @Override
     public void onConnectivityChanged(final boolean isConnected) {
@@ -297,79 +293,60 @@ public class ManualFragPresenter extends AndroidViewModel
     }
 
     @Override
-    public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
+    public void onValveProgressChanged(final int progress, boolean fromUser) {
         if (fromUser) {
-            onUserSeekBarProgressChanged();
+            onUserValveProgressChanged();
         }
 
-        mView.setTimerText(StringExt.formatSecToTimeString(progress, mTimeNames));
+        mView.setSelectedValveProgress(progress);
     }
 
-    private void onUserSeekBarProgressChanged() {
+    private void onUserValveProgressChanged() {
         mTimer.stopIfRunning();
-        mView.setPowerButtonEditedState(EDITED);
-        mView.setSeekBarEditedState(EDITED);
-        if (mView.getSeekBarProgress() != 0) {
-            mView.setPowerButtonEnabled(ENABLED);
+
+        mView.setSelectedValveEdited();
+//        mView.setPowerButtonEditedState(EDITED);
+//        mView.setSeekBarEditedState(EDITED);
+
+        if (mView.getSelectedValveProgress() != 0) {
+            mView.setSendCommandEnabledState(ENABLED);
         } else if (!mSelectedValve.isOpen()) {
-            mView.setPowerButtonEnabled(!ENABLED);
+            mView.setSendCommandEnabledState(!ENABLED);
         }
     }
 
     private boolean isUserSeekBarProgressChanged() {
         long time = mSelectedValve.timeLeftOpen();
-        int progress = mView.getSeekBarProgress();
+        int progress = mView.getSelectedValveProgress();
         int diff = (int) time - progress;
         return diff >= 5 || diff <= -5;
     }
 
     @Override
-    public void onTabClicked(int tabId) {
-//        if (mSelectedValve == null) {
-//            mView.switchToValveView();
-//        }
+    public void onValveSelected(String valveId) {
+        mSelectedValve = mValveMap.get(valveId);
 
-        mSelectedValve = mValveMap.get(mTabMapInverse.get(tabId));
-        showSelectedValve();
-    }
-
-    private void showSelectedValve() {
         if (mSelectedValve != null) {
-            setTimeScaleMarks();
-            mView.setSeekBarMaxProgress(mSelectedValve.getMaxDuration());
-            mView.setTitleText(formatValveDescription(mSelectedValve));
-            mView.setPowerButtonActiveState(mSelectedValve.isOpen());
-            mView.setPowerButtonEnabled(mSelectedValve.isOpen());
-            mView.setPowerButtonEditedState(!EDITED);
-            mView.setSeekBarEditedState(!EDITED);
-            updateFocusedValveProgressView();
+            mView.showValve(formatValveDescription(mSelectedValve),
+                    mSelectedValve.isOpen(), mSelectedValve.getMaxDuration());
+            updateSelectedValveProgressView();
         } else {
             mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
     }
 
-    private void setTimeScaleMarks() {
-        for (ManualFragContract.TimeScale timeScale :
-                ManualFragContract.TimeScale.values()) {
-            mView.setTimeScaleText(timeScale,
-                    String.valueOf((int) (
-                            mSelectedValve.getMaxDuration() * timeScale.value / 60)));
-        }
-    }
-
-    private void updateFocusedValveProgressView() {
+    private void updateSelectedValveProgressView() {
         mTimer.stopIfRunning();
 
         if (mSelectedValve.isOpen()
                 && mSelectedValve.getLastOnTime().before(Calendar.getInstance().getTime())) {
 
             if (mSelectedValve.timeLeftOpen() > 0) {
-                mView.setSeekBarProgress((int) mSelectedValve.timeLeftOpen());
+                mView.setSelectedValveProgress((int) mSelectedValve.timeLeftOpen());
                 mTimer.startCountDown();
             }
         } else {
-            mView.setTimerText(StringExt.formatSecToTimeString(0, mTimeNames));
-            mView.setSeekBarProgress(0);
+            mView.setSelectedValveProgress(0);
         }
     }
 
@@ -377,32 +354,32 @@ public class ManualFragPresenter extends AndroidViewModel
     public void onTimeScaleClicked(ManualFragContract.TimeScale time) {
         switch (time) {
             case Zero:
-                mView.setSeekBarProgress(0);
+                mView.setSelectedValveProgress(0);
                 break;
             case Quarter:
-                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.25));
+                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.25));
                 break;
             case Half:
-                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.5));
+                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.5));
                 break;
             case ThreeQuarters:
-                mView.setSeekBarProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
+                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
                 break;
             case Max:
-                mView.setSeekBarProgress((mSelectedValve.getMaxDuration()));
+                mView.setSelectedValveProgress((mSelectedValve.getMaxDuration()));
                 break;
         }
 
-        onUserSeekBarProgressChanged();
+        onUserValveProgressChanged();
     }
 
     @Override
-    public void onButtonPowerClicked() {
+    public void onSendCommand() {
         Command cmnd = null;
 
         if (isUserSeekBarProgressChanged()) {
-            if (mView.getSeekBarProgress() != 0) {
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), mView.getSeekBarProgress());
+            if (mView.getSelectedValveProgress() != 0) {
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), mView.getSelectedValveProgress());
             } else {
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
             }
@@ -419,7 +396,7 @@ public class ManualFragPresenter extends AndroidViewModel
                     } else if (answer != null) {
                         Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
                         mView.showMessage(mResources.getString(R.string.command_sent));
-                        mView.setPowerButtonEnabled(!ENABLED);
+                        mView.setSendCommandEnabledState(!ENABLED);
                     }
                 }
             });
@@ -437,12 +414,12 @@ public class ManualFragPresenter extends AndroidViewModel
                     1000) {
                 @Override
                 public void onTick(long l) {
-                    mView.setSeekBarProgress((int) l / 1000);
+                    mView.setSelectedValveProgress((int) l / 1000);
                 }
 
                 @Override
                 public void onFinish() {
-                    mView.setSeekBarProgress(0);
+                    mView.setSelectedValveProgress(0);
                 }
             }.start();
             mIsTimerRunning = true;
@@ -459,8 +436,7 @@ public class ManualFragPresenter extends AndroidViewModel
                             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
                                     Calendar.getInstance().getTime().getTime() -
                                             mSelectedValve.getLastOnTime().getTime());
-                            mView.setTimerText(
-                                    StringExt.formatSecToTimeString((int) diffInSec, mTimeNames));
+                            mView.setSelectedValveProgress((int) diffInSec);
                         }
                     });
                 }

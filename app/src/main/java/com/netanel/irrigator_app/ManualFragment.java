@@ -4,7 +4,6 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatButton;
 import androidx.fragment.app.Fragment;
 import androidx.gridlayout.widget.GridLayout;
 import androidx.lifecycle.ViewModelProvider;
@@ -24,9 +23,9 @@ import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.StringExt;
 
-import org.jetbrains.annotations.NotNull;
-
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 // TODO: 27/04/2021 refactor sensor progress to increase in decimal values instead of integers for higher resolution.
 // TODO: 27/04/2021 remove custom material dimensions and use android material styles instead.
@@ -40,7 +39,7 @@ public class ManualFragment extends Fragment implements
     private GridLayout mGridSensors;
 
     private ViewSwitcher mViewSwitcher;
-
+    private String[] mTimeNames;
     private MaterialTextView mTvTimer;
     private MaterialTextView mTvTitle;
     private StateImageButton mButtonPower;
@@ -62,6 +61,12 @@ public class ManualFragment extends Fragment implements
 
         mPresenter.bindView(this);
 
+        mTimeNames = new String[]{
+                getResources().getString(R.string.time_counter_seconds),
+                getResources().getString(R.string.time_counter_minutes),
+                getResources().getString(R.string.time_counter_hours),
+                getResources().getString(R.string.time_counter_days)};
+
         return inflater.inflate(R.layout.fragment_manual, container, false);
     }
 
@@ -71,6 +76,18 @@ public class ManualFragment extends Fragment implements
 
         initUI();
         initListeners();
+
+        if (mTabMap == null) {
+            mTabMap = new HashMap<>();
+        } else {
+            mTabMap.clear();
+        }
+
+        if (mTabMapInverse == null) {
+            mTabMapInverse = new HashMap<>();
+        } else {
+            mTabMap.clear();
+        }
 
         mPresenter.onViewCreated();
     }
@@ -121,7 +138,7 @@ public class ManualFragment extends Fragment implements
         } else if (viewId == R.id.tv_time_quarter) {
             mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Quarter);
         } else if (viewId == R.id.img_btn_power) {
-            mPresenter.onButtonPowerClicked();
+            mPresenter.onSendCommand();
         }
     }
 
@@ -190,7 +207,7 @@ public class ManualFragment extends Fragment implements
 
     @Override
     public void onProgressChanged(CircularSeekBar circularSeekBar, final int progress, boolean fromUser) {
-        mPresenter.onSeekBarProgressChanged(progress, fromUser);
+        mPresenter.onValveProgressChanged(progress, fromUser);
     }
 
     @Override
@@ -210,7 +227,7 @@ public class ManualFragment extends Fragment implements
                 new Runnable() {
                     @Override
                     public void run() {
-                        mPresenter.onTabClicked(tabId);
+                        mPresenter.onValveSelected(mTabMapInverse.get(tabId));
                     }
                 }, 150
         );
@@ -227,45 +244,69 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setTitleText(String nameString) {
-        mTvTitle.setText(nameString);
-    }
+    public void setValveDescription(String valveId, String description) {
+        int valveTabId = mTabMap.get(valveId);
 
-    @Override
-    public void setTimerText(String timeString) {
-        mTvTimer.setText(timeString);
-    }
+        View tabView = mValveTabs.getChildAt(0).findViewById(valveTabId);
+        setTabText(tabView, description);
 
-    @Override
-    public void setTimeScaleText(@NotNull ManualFragContract.TimeScale timeScale, String timeString) {
-        switch (timeScale) {
-            case Quarter:
-                mTvQuarter.setText(timeString);
-                break;
-            case Half:
-                mTvHalf.setText(timeString);
-                break;
-            case ThreeQuarters:
-                mTvThreeQuarter.setText(timeString);
-                break;
-            case Max:
-                mTvMax.setText(timeString);
-                break;
+        if (isTabSelected(valveTabId)) {
+            mTvTitle.setText(description);
         }
     }
 
-    @Override
-    public void setSeekBarMaxProgress(int maxProgress) {
-        mSeekBar.setMax(maxProgress);
+    private boolean isTabSelected(int valveTabId) {
+        int selectedTabId = mValveTabs.getTabAt(mValveTabs.getSelectedTabPosition()).getId();
+        return selectedTabId == valveTabId;
     }
 
+//    @Override
+//    public void setTabDescription(Integer tabId, String description) {
+//
+//        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
+//        setTabText(tabView, description);
+//    }
+//    @Override
+//    public void setTimerText(String timeString) {
+//        mTvTimer.setText(timeString);
+//    }
+
+//    @Override
+    public void setTimeScaleMarks(int maxValue) {
+        for (ManualFragContract.TimeScale timeScale :
+                ManualFragContract.TimeScale.values()) {
+            String timeScaleText = String.valueOf((int) ( maxValue * timeScale.value / 60));
+
+            switch (timeScale) {
+                case Quarter:
+                    mTvQuarter.setText(timeScaleText);
+                    break;
+                case Half:
+                    mTvHalf.setText(timeScaleText);
+                    break;
+                case ThreeQuarters:
+                    mTvThreeQuarter.setText(timeScaleText);
+                    break;
+                case Max:
+                    mTvMax.setText(timeScaleText);
+                    break;
+            }
+        }
+    }
+
+//    @Override
+//    public void setSeekBarMaxProgress(int maxProgress) {
+//        mSeekBar.setMax(maxProgress);
+//    }
+
     @Override
-    public void setSeekBarProgress(int progress) {
+    public void setSelectedValveProgress(int progress) {
         mSeekBar.setProgress(progress);
+        mTvTimer.setText(StringExt.formatSecToTimeString(progress, mTimeNames));
     }
 
     @Override
-    public int getSeekBarProgress() {
+    public int getSelectedValveProgress() {
         return mSeekBar.getProgress();
     }
 
@@ -274,10 +315,10 @@ public class ManualFragment extends Fragment implements
         mSeekBar.setStateEdited(edited);
     }
 
-    @Override
-    public void setPowerButtonActiveState(boolean activated) {
-        mButtonPower.setStateActivated(activated);
-    }
+//    @Override
+//    public void setPowerButtonActiveState(boolean activated) {
+//        mButtonPower.setStateActivated(activated);
+//    }
 
     @Override
     public void setPowerButtonEditedState(boolean edited) {
@@ -285,7 +326,7 @@ public class ManualFragment extends Fragment implements
     }
 
     @Override
-    public void setPowerButtonEnabled(boolean enabled) {
+    public void setSendCommandEnabledState(boolean enabled) {
         mButtonPower.setEnabled(enabled);
     }
 
@@ -306,21 +347,24 @@ public class ManualFragment extends Fragment implements
     private void setTabLayoutEnabled(boolean enabled) {
         ViewGroup tabLayout = (ViewGroup) mValveTabs.getChildAt(0);
         tabLayout.setEnabled(enabled);
-        for (int i = 0; i < tabLayout.getChildCount(); i++) {
+            for (int i = 0; i < tabLayout.getChildCount(); i++) {
             tabLayout.getChildAt(i).setEnabled(enabled);
         }
     }
 
+    private Map<String, Integer> mTabMap;
+    private Map<Integer, String> mTabMapInverse;
+
     @Override
-    public void addTab(int tabId, String description, boolean isActive) {
+    public void addValve(String valveId, String description, boolean isOpen) {
         View tabView = getLayoutInflater().inflate(R.layout.tab_valve, null);
 
         TabLayout.Tab tab = mValveTabs.newTab().setCustomView(tabView);
-        tab.setId(tabId);
+        tab.setId(View.generateViewId());
 
         setTabText(tabView, description);
 
-        if (isActive) {
+        if (isOpen) {
             setTabBadgeVisibility(tabView, View.VISIBLE);
         }
 
@@ -329,28 +373,47 @@ public class ManualFragment extends Fragment implements
         if (mValveTabs.getVisibility() == View.GONE) {
             mValveTabs.setVisibility(View.VISIBLE);
         }
+
+        mTabMap.put(valveId, tab.getId());
+        mTabMapInverse.put(tab.getId(), valveId);
     }
 
-    @Override
-    public void setTabBadge(int tabId, boolean showActiveBadge) {
-        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
-        if (showActiveBadge) {
-            setTabBadgeVisibility(tabView, View.VISIBLE);
-        } else {
-            setTabBadgeVisibility(tabView, View.GONE);
-        }
-    }
+//    @Override
+//    public void addTab(int tabId, String description, boolean isActive) {
+//        View tabView = getLayoutInflater().inflate(R.layout.tab_valve, null);
+//
+//        TabLayout.Tab tab = mValveTabs.newTab().setCustomView(tabView);
+//        tab.setId(tabId);
+//
+//        setTabText(tabView, description);
+//
+//        if (isActive) {
+//            setTabBadgeVisibility(tabView, View.VISIBLE);
+//        }
+//
+//        mValveTabs.addTab(tab, mValveTabs.getTabCount());
+//
+//        if (mValveTabs.getVisibility() == View.GONE) {
+//            mValveTabs.setVisibility(View.VISIBLE);
+//        }
+//    }
+//
+//    @Override
+//    public void setTabBadge(int tabId, boolean showActiveBadge) {
+//        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
+//        if (showActiveBadge) {
+//            setTabBadgeVisibility(tabView, View.VISIBLE);
+//        } else {
+//            setTabBadgeVisibility(tabView, View.GONE);
+//        }
+//    }
 
     private void setTabBadgeVisibility(View tab, int visibility) {
         ImageView badge = tab.findViewById(R.id.tab_valve_badge);
         badge.setVisibility(visibility);
     }
 
-    @Override
-    public void setTabDescription(Integer tabId, String description) {
-        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
-        setTabText(tabView, description);
-    }
+
 
     private void setTabText(View tab, String description) {
         MaterialTextView innerTv = tab.findViewById(R.id.tab_valve_text);
@@ -373,5 +436,50 @@ public class ManualFragment extends Fragment implements
     @Override
     public void runOnUiThread(Runnable runnable) {
         this.getActivity().runOnUiThread(runnable);
+    }
+    private static final boolean EDITED = true;
+    private static final boolean ENABLED = true;
+
+    @Override
+    public void showValve(String description, boolean isOpen, int maxDuration) {
+        setTimeScaleMarks(maxDuration);
+        mSeekBar.setMax(maxDuration);
+        mTvTitle.setText(description);
+        mButtonPower.setStateActivated(isOpen);
+        mButtonPower.setEnabled(isOpen);
+        mButtonPower.setStateEdited(!EDITED);
+        mSeekBar.setStateEdited(!EDITED);
+    }
+
+    @Override
+    public void setSelectedValveMaxProgress(int maxProgress) {
+        mSeekBar.setMax(maxProgress);
+        setTimeScaleMarks(maxProgress);
+    }
+
+    @Override
+    public void setValveOpen(String valveId, boolean isOpen) {
+
+        int valveTabId = mTabMap.get(valveId);
+        View tabView = mValveTabs.getChildAt(0).findViewById(valveTabId);
+
+        if (isOpen) {
+            setTabBadgeVisibility(tabView, View.VISIBLE);
+        } else {
+            setTabBadgeVisibility(tabView, View.GONE);
+        }
+
+        if(isTabSelected(valveTabId)) {
+            mButtonPower.setStateActivated(isOpen);
+            mButtonPower.setStateEdited(!EDITED);
+            mSeekBar.setStateEdited(!EDITED);
+            mButtonPower.setEnabled(isOpen);
+        }
+    }
+
+    @Override
+    public void setSelectedValveEdited() {
+        mButtonPower.setStateEdited(EDITED);
+        mSeekBar.setStateEdited(EDITED);
     }
 }
