@@ -26,6 +26,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
 
 /**
  * <p></p>
@@ -51,7 +52,6 @@ public class ManualFragPresenter extends AndroidViewModel
     private Map<String, Valve> mValveMap;
 
     private Valve mSelectedValve;
-
     private final Resources mResources;
 
     private ManualFragContract.IView mView;
