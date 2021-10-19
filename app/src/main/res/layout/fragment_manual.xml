@@ -2,33 +2,34 @@
 <layout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools">
 <data>
     <variable
         name="manualViewModel"
         type ="com.netanel.irrigator_app.ManualFragPresenter" />
 
-</data>
+    <import type="android.view.View" />
+    <import type="com.netanel.irrigator_app.ManualFragContract.TimeScale"/>
+    </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    <com.netanel.irrigator_app.FilledTabLayout
-        android:id="@+id/tab_layout_valves"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Widget.MaterialComponents.TabLayout.Colored"
-        app:tabMode="scrollable"
-        app:tabGravity="fill"
-        app:tabIndicatorHeight="4dp"
-        app:tabIndicatorColor="@color/color_control_highlight"
-        app:tabIconTint="@color/tab_valve_icon_color_selector"
-        app:tabTextColor="@color/tab_valve_icon_color_selector"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:visibility="gone" />
+        <com.netanel.irrigator_app.FilledTabLayout
+            android:id="@+id/tab_layout_valves"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TabLayout.Colored"
+            app:tabMode="scrollable"
+            app:tabGravity="fill"
+            app:tabIndicatorHeight="4dp"
+            app:tabIndicatorColor="@color/color_control_highlight"
+            app:tabIconTint="@color/tab_valve_icon_color_selector"
+            app:tabTextColor="@color/tab_valve_icon_color_selector"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:OnTabSelected="@{manualViewModel::onTabValveSelected}"
+            android:TabMap="@{manualViewModel.valveMap}"/>
 
     <ViewSwitcher
         android:id="@+id/view_switcher"
@@ -37,7 +38,8 @@
         app:layout_constraintTop_toBottomOf="@id/tab_layout_valves"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
+        app:layout_constraintRight_toRightOf="parent"
+        android:currentView="@{manualViewModel.currentView}">
 
 
         <FrameLayout
@@ -81,6 +83,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
+                    android:text="@{manualViewModel.selectedValve.description}"
                     tools:text="Spices" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
@@ -188,7 +191,8 @@
                                 app:pointer_halo_color="@color/sb_pointer_halo_color"
                                 app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
                                 app:pointer_radius="8dp"
-                                app:use_custom_radii="true" />
+                                app:use_custom_radii="true"
+                                app:max="@{manualViewModel.selectedValve.maxDuration}"/>
 
                             <com.netanel.irrigator_app.StateImageButton
                                 android:id="@+id/img_btn_power"
@@ -205,7 +209,8 @@
                                 app:layout_constraintLeft_toLeftOf="@+id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                tools:tint="@android:color/black" />
+                                tools:tint="@android:color/black"
+                                android:states="@{manualViewModel.currentStates}"/>
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tv_elapsed_time"
@@ -227,6 +232,7 @@
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
                                 tools:text="60" />
 
                             <com.google.android.material.button.MaterialButton
@@ -236,6 +242,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
                                 tools:text="15" />
 
                             <com.google.android.material.button.MaterialButton
@@ -245,6 +252,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
+                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
                                 tools:text="45" />
 
                             <com.google.android.material.button.MaterialButton
@@ -254,6 +262,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
+                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
                                 tools:text="30" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>

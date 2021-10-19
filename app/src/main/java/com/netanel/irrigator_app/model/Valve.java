@@ -1,7 +1,6 @@
 package com.netanel.irrigator_app.model;
 
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 
 import java.util.Calendar;
@@ -73,7 +72,7 @@ public class Valve {
     public void setOpen(boolean isOpen) {
         if (mIsOpen != isOpen) {
             mIsOpen = isOpen;
-            onPropertyChanged(PROPERTY_OPEN, !mIsOpen);
+            notifyPropertyChanged(PROPERTY_OPEN, !mIsOpen);
         }
     }
 
@@ -93,7 +92,7 @@ public class Valve {
         if (this.mDurationInSec != seconds) {
             int oldDuration = this.mDurationInSec;
             this.mDurationInSec = seconds;
-            onPropertyChanged(PROPERTY_DURATION, oldDuration);
+            notifyPropertyChanged(PROPERTY_DURATION, oldDuration);
         }
     }
 
@@ -106,7 +105,7 @@ public class Valve {
             if (mLastOn == null || (mLastOn != null && !mLastOn.equals(lastOnTime))) {
                 Date oldLastOn = mLastOn;
                 mLastOn = lastOnTime;
-                onPropertyChanged(PROPERTY_LAST_ON_TIME, oldLastOn);
+                notifyPropertyChanged(PROPERTY_LAST_ON_TIME, oldLastOn);
             }
         }
     }
@@ -119,7 +118,7 @@ public class Valve {
         if (mDescription == null || !mDescription.equals(description)) {
             String oldName = this.mDescription;
             this.mDescription = description;
-            onPropertyChanged(PROPERTY_DESCRIPTION, oldName);
+            notifyPropertyChanged(PROPERTY_DESCRIPTION, oldName);
         }
     }
 
@@ -131,7 +130,7 @@ public class Valve {
         if(this.mIndex != index) {
             int oldIndex = this.mIndex;
             this.mIndex = index;
-            onPropertyChanged(PROPERTY_INDEX, oldIndex);
+            notifyPropertyChanged(PROPERTY_INDEX, oldIndex);
         }
     }
 
@@ -144,7 +143,7 @@ public class Valve {
             mDurationInSec = mDurationInSec > maxDuration ? 0 : mDurationInSec;
             int oldMaxDuration = this.mMaxDuration;
             this.mMaxDuration = maxDuration;
-            onPropertyChanged(PROPERTY_MAX_DURATION, oldMaxDuration);
+            notifyPropertyChanged(PROPERTY_MAX_DURATION, oldMaxDuration);
         }
     }
 
@@ -152,7 +151,7 @@ public class Valve {
         this.mOnPropertyChangedCallback = onPropertyChangedCallback;
     }
 
-    private void onPropertyChanged(String changedProperty, Object oldValue) {
+    private void notifyPropertyChanged(String changedProperty, Object oldValue) {
         if (mOnPropertyChangedCallback != null) {
             mOnPropertyChangedCallback.OnPropertyChanged(this, changedProperty, oldValue);
         }

@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.gridlayout.widget.GridLayout;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,6 +21,8 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
+import com.netanel.irrigator_app.databinding.FragmentManualBinding;
+import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.StringExt;
 
@@ -31,7 +34,6 @@ import java.util.Map;
 // TODO: 27/04/2021 remove custom material dimensions and use android material styles instead.
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
-        TabLayout.OnTabSelectedListener,
         CircularSeekBar.OnCircularSeekBarChangeListener,
         ManualFragContract.IView {
 
@@ -67,9 +69,12 @@ public class ManualFragment extends Fragment implements
                 getResources().getString(R.string.time_counter_hours),
                 getResources().getString(R.string.time_counter_days)};
 
-        return inflater.inflate(R.layout.fragment_manual, container, false);
+        FragmentManualBinding binding =
+                DataBindingUtil
+                        .inflate(inflater, R.layout.fragment_manual, container, false);
+        binding.setManualViewModel((ManualFragPresenter) mPresenter);
+        return binding.getRoot();
     }
-
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -111,7 +116,7 @@ public class ManualFragment extends Fragment implements
     }
 
     private void initListeners() {
-        mValveTabs.addOnTabSelectedListener(this);
+//        mValveTabs.addOnTabSelectedListener(this);
         mSeekBar.setOnSeekBarChangeListener(this);
         mTvThreeQuarter.setOnClickListener(this);
         mTvMax.setOnClickListener(this);
@@ -220,28 +225,18 @@ public class ManualFragment extends Fragment implements
 
     }
 
-    @Override
-    public void onTabSelected(TabLayout.Tab tab) {
-        final int tabId = tab.getId();
-        mValveTabs.getChildAt(0).postDelayed(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        mPresenter.onValveSelected(mTabMapInverse.get(tabId));
-                    }
-                }, 150
-        );
-    }
-
-    @Override
-    public void onTabUnselected(TabLayout.Tab tab) {
-
-    }
-
-    @Override
-    public void onTabReselected(TabLayout.Tab tab) {
-
-    }
+//    @Override
+//    public void onTabSelected(TabLayout.Tab tab) {
+//        final int tabId = tab.getId();
+//        mValveTabs.getChildAt(0).postDelayed(
+//                new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        mPresenter.onValveSelected(mTabMapInverse.get(tabId));
+//                    }
+//                }, 150
+//        );
+//    }
 
     @Override
     public void setValveDescription(String valveId, String description) {
@@ -443,11 +438,11 @@ public class ManualFragment extends Fragment implements
     @Override
     public void showValve(String description, boolean isOpen, int maxDuration) {
         setTimeScaleMarks(maxDuration);
-        mSeekBar.setMax(maxDuration);
-        mTvTitle.setText(description);
-        mButtonPower.setStateActivated(isOpen);
-        mButtonPower.setEnabled(isOpen);
-        mButtonPower.setStateEdited(!EDITED);
+//        mSeekBar.setMax(maxDuration);
+//        mTvTitle.setText(description);
+//        mButtonPower.setStateActivated(isOpen);
+//        mButtonPower.setEnabled(isOpen);
+//        mButtonPower.setStateEdited(!EDITED);
         mSeekBar.setStateEdited(!EDITED);
     }
 
