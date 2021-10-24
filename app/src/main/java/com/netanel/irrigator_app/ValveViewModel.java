@@ -1,13 +1,13 @@
 package com.netanel.irrigator_app;
 
 
-import android.app.Application;
-
 import com.netanel.irrigator_app.model.Valve;
 
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
-import androidx.annotation.NonNull;
 import androidx.databinding.Bindable;
 import androidx.databinding.Observable;
 import androidx.databinding.PropertyChangeRegistry;
@@ -22,42 +22,17 @@ import androidx.databinding.PropertyChangeRegistry;
  */
 
 public class ValveViewModel implements Observable{
+
     private final Valve mValve;
+    private EnumSet<StateFlag> mViewStates = StateFlag.NONE;
+    private Map<ManualFragContract.TimeScale,String> mTimeScales;
+    private PropertyChangeRegistry mCallBacks;
 
     public ValveViewModel(Valve valve) {
         mValve = valve;
         initializeListener();
-    }
-
-    @Bindable
-    public String getDescription() {
-        return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
-                "#" + mValve.getIndex() : mValve.getDescription();
-    }
-
-    public String getId() {
-        return mValve.getId();
-    }
-
-    public long timeLeftOpen() {
-        return mValve.timeLeftOpen();
-    }
-
-    public Date getLastOnTime() {
-        return mValve.getLastOnTime();
-    }
-
-    @Bindable
-    public boolean isOpen() {
-        return mValve.isOpen();
-    }
-
-    public int getMaxDuration() {
-        return mValve.getMaxDuration();
-    }
-
-    public int getIndex() {
-        return mValve.getIndex();
+        resetViewStates();
+        initTimeScales();
     }
 
     private void initializeListener() {
@@ -69,10 +44,9 @@ public class ValveViewModel implements Observable{
                     case Valve.PROPERTY_LAST_ON_TIME:
                     case Valve.PROPERTY_OPEN:
                         notifyPropertyChanged(BR.open);
-//                        if (tabId != null) {
-//                            mView.setTabBadge(tabId, updatedValve.isOpen());
-//                        }
-//                        mView.setValveOpen(updatedValve.getId(),updatedValve.isOpen());
+                        notifyPropertyChanged(BR.timeLeft);
+
+                        resetViewStates();
 
 //                        if (mSelectedValve == updatedValve.getId()) {
 //                            updateSelectedValveProgressView();
@@ -80,6 +54,8 @@ public class ValveViewModel implements Observable{
                         break;
 
                     case Valve.PROPERTY_MAX_DURATION:
+                        notifyPropertyChanged(BR.maxDuration);
+                        initTimeScales();
 //                        if (mSelectedValve == updatedValve) {
 //                            mView.setSelectedValveMaxProgress(mSelectedValve.getMaxDuration());
 //                            updateSelectedValveProgressView();
@@ -89,18 +65,82 @@ public class ValveViewModel implements Observable{
                     case Valve.PROPERTY_DESCRIPTION:
                     case Valve.PROPERTY_INDEX:
                         notifyPropertyChanged(BR.description);
-//                        mView.setValveDescription(updatedValve.getId(),formatValveDescription(updatedValve));
-//
-//                        if (tabId != null) {
-//                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
-//                        }
                         break;
                 }
             }
         });
     }
 
-    private PropertyChangeRegistry mCallBacks;
+    public String getId() {
+        return mValve.getId();
+    }
+
+    @Bindable
+    public String getDescription() {
+        return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
+                "#" + mValve.getIndex() : mValve.getDescription();
+    }
+
+    @Bindable
+    public int getTimeLeft() {
+        return (int) mValve.timeLeftOpen();
+    }
+
+    public Date getLastOpen() {
+        return mValve.getLastOnTime();
+    }
+
+    @Bindable
+    public boolean isOpen() {
+        return mValve.isOpen();
+    }
+
+    @Bindable
+    public int getMaxDuration() {
+        return mValve.getMaxDuration();
+    }
+
+    public int getIndex() {
+        return mValve.getIndex();
+    }
+
+    @Bindable
+    public Map<ManualFragContract.TimeScale, String> getTimeScales() {
+        return mTimeScales;
+    }
+
+    private void initTimeScales() {
+        if (mTimeScales == null) {
+            mTimeScales = new HashMap<>();
+        } else {
+            mTimeScales.clear();
+        }
+
+        for (ManualFragContract.TimeScale scale : ManualFragContract.TimeScale.values()
+        ) {
+            mTimeScales.put(scale, String.valueOf((int) (getMaxDuration() * scale.value / 60)));
+        }
+
+        notifyPropertyChanged(BR.timeScales);
+    }
+
+    @Bindable
+    public EnumSet<StateFlag> getViewStates() {
+        return mViewStates;
+    }
+
+    public void setViewStates(EnumSet<StateFlag> currentStates) {
+        mViewStates = currentStates;
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    private void resetViewStates() {
+        if(isOpen()) {
+            setViewStates(EnumSet.of(StateFlag.ACTIVATED, StateFlag.ENABLED));
+        } else {
+            setViewStates(StateFlag.NONE);
+        }
+    }
 
     @Override
     public void addOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
@@ -124,5 +164,13 @@ public class ValveViewModel implements Observable{
         }
     }
 
+    public enum StateFlag {
+        ACTIVATED,
+        ENABLED,
+        EDITED;
+
+        public static EnumSet<StateFlag> ALL_STATES = EnumSet.allOf(StateFlag.class);
+        public static EnumSet<StateFlag> NONE = EnumSet.noneOf(StateFlag.class);
+    }
 }
 

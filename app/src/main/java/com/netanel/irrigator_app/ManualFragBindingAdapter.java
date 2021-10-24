@@ -59,9 +59,9 @@ public class ManualFragBindingAdapter {
                 tabLayout.addTab(tab, tabLayout.getTabCount());
             }
 
-            if (tabLayout.getVisibility() == View.GONE) {
-                tabLayout.setVisibility(View.VISIBLE);
-            }
+//            if (tabLayout.getVisibility() == View.GONE) {
+//                tabLayout.setVisibility(View.VISIBLE);
+//            }
         }
     }
 
@@ -71,11 +71,10 @@ public class ManualFragBindingAdapter {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                    TabValveBinding binding = DataBindingUtil.getBinding(tab.getCustomView());
-                    ValveViewModel selectedVm = binding.getValveViewModel();
-                    listener.onTabSelected(selectedVm);
-                }
-
+                TabValveBinding binding = DataBindingUtil.getBinding(tab.getCustomView());
+                ValveViewModel selectedVm = binding.getValveViewModel();
+                listener.onTabSelected(selectedVm);
+            }
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
@@ -89,8 +88,8 @@ public class ManualFragBindingAdapter {
         });
     }
 
-    @BindingAdapter("android:currentView")
-    public static void setCurrentView(ViewSwitcher viewSwitcher, int viewId) {
+    @BindingAdapter("android:activeView")
+    public static void setActiveView(ViewSwitcher viewSwitcher, int viewId) {
         if(viewId == ManualFragPresenter.VIEW_EMPTY) {
             if(viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.empty_layout)) {
                 viewSwitcher.showPrevious();
@@ -103,21 +102,19 @@ public class ManualFragBindingAdapter {
     }
 
     @BindingAdapter("android:states")
-    public static void setPowerButtonState(StateImageButton powerButton, EnumSet<ManualFragPresenter.StateFlag> stateFlags) {
+    public static void setViewStates(View view, EnumSet<ValveViewModel.StateFlag> stateFlags) {
+        if(view instanceof IMultiStateView) {
+            IMultiStateView stateView = (IMultiStateView) view;
+            boolean isActivated = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.ACTIVATED);
+            boolean isEnabled = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.ENABLED);
+            boolean isEdited = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.EDITED);
 
-            boolean isActivated = stateFlags.contains(ManualFragPresenter.StateFlag.ACTIVATED);
-            boolean isEnabled = stateFlags.contains(ManualFragPresenter.StateFlag.ENABLED);
-            boolean isEdited = stateFlags.contains(ManualFragPresenter.StateFlag.EDITED);
-
-            powerButton.setEnabled(isEnabled);
-            powerButton.setStateActivated(isActivated);
-            powerButton.setStateEdited(isEdited);
+            stateView.setEnabled(isEnabled);
+            stateView.setStateActivated(isActivated);
+            stateView.setStateEdited(isEdited);
+        }
     }
 
-//    @BindingAdapter("android:text")
-//    public static void setTimeScaleButtonText(MaterialButton button, int maxValue) {
-//        button.setText(String.valueOf( maxValue / 60));
-//    }
     /**
      * <p></p>
      *

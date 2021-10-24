@@ -238,56 +238,16 @@ public class ManualFragment extends Fragment implements
 //        );
 //    }
 
-    @Override
-    public void setValveDescription(String valveId, String description) {
-        int valveTabId = mTabMap.get(valveId);
-
-        View tabView = mValveTabs.getChildAt(0).findViewById(valveTabId);
-        setTabText(tabView, description);
-
-        if (isTabSelected(valveTabId)) {
-            mTvTitle.setText(description);
-        }
-    }
-
     private boolean isTabSelected(int valveTabId) {
         int selectedTabId = mValveTabs.getTabAt(mValveTabs.getSelectedTabPosition()).getId();
         return selectedTabId == valveTabId;
     }
 
-//    @Override
-//    public void setTabDescription(Integer tabId, String description) {
-//
-//        View tabView = mValveTabs.getChildAt(0).findViewById(tabId);
-//        setTabText(tabView, description);
-//    }
+
 //    @Override
 //    public void setTimerText(String timeString) {
 //        mTvTimer.setText(timeString);
 //    }
-
-//    @Override
-    public void setTimeScaleMarks(int maxValue) {
-        for (ManualFragContract.TimeScale timeScale :
-                ManualFragContract.TimeScale.values()) {
-            String timeScaleText = String.valueOf((int) ( maxValue * timeScale.value / 60));
-
-            switch (timeScale) {
-                case Quarter:
-                    mTvQuarter.setText(timeScaleText);
-                    break;
-                case Half:
-                    mTvHalf.setText(timeScaleText);
-                    break;
-                case ThreeQuarters:
-                    mTvThreeQuarter.setText(timeScaleText);
-                    break;
-                case Max:
-                    mTvMax.setText(timeScaleText);
-                    break;
-            }
-        }
-    }
 
 //    @Override
 //    public void setSeekBarMaxProgress(int maxProgress) {
@@ -303,21 +263,6 @@ public class ManualFragment extends Fragment implements
     @Override
     public int getSelectedValveProgress() {
         return mSeekBar.getProgress();
-    }
-
-    @Override
-    public void setSeekBarEditedState(boolean edited) {
-        mSeekBar.setStateEdited(edited);
-    }
-
-//    @Override
-//    public void setPowerButtonActiveState(boolean activated) {
-//        mButtonPower.setStateActivated(activated);
-//    }
-
-    @Override
-    public void setPowerButtonEditedState(boolean edited) {
-        mButtonPower.setStateEdited(edited);
     }
 
     @Override
@@ -357,11 +302,11 @@ public class ManualFragment extends Fragment implements
         TabLayout.Tab tab = mValveTabs.newTab().setCustomView(tabView);
         tab.setId(View.generateViewId());
 
-        setTabText(tabView, description);
+//        setTabText(tabView, description);
 
-        if (isOpen) {
-            setTabBadgeVisibility(tabView, View.VISIBLE);
-        }
+//        if (isOpen) {
+//            setTabBadgeVisibility(tabView, View.VISIBLE);
+//        }
 
         mValveTabs.addTab(tab, mValveTabs.getTabCount());
 
@@ -369,8 +314,8 @@ public class ManualFragment extends Fragment implements
             mValveTabs.setVisibility(View.VISIBLE);
         }
 
-        mTabMap.put(valveId, tab.getId());
-        mTabMapInverse.put(tab.getId(), valveId);
+//        mTabMap.put(valveId, tab.getId());
+//        mTabMapInverse.put(tab.getId(), valveId);
     }
 
 //    @Override
@@ -403,25 +348,6 @@ public class ManualFragment extends Fragment implements
 //        }
 //    }
 
-    private void setTabBadgeVisibility(View tab, int visibility) {
-        ImageView badge = tab.findViewById(R.id.tab_valve_badge);
-        badge.setVisibility(visibility);
-    }
-
-
-
-    private void setTabText(View tab, String description) {
-        MaterialTextView innerTv = tab.findViewById(R.id.tab_valve_text);
-        innerTv.setText(description.toUpperCase());
-    }
-
-    @Override
-    public void switchToValveView() {
-        if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.empty_layout)) {
-            mViewSwitcher.showNext();
-        }
-    }
-
     @Override
     public void showMessage(String message) {
 //        Toast.makeText(getContext(), resString, Toast.LENGTH_LONG).show();
@@ -435,46 +361,29 @@ public class ManualFragment extends Fragment implements
     private static final boolean EDITED = true;
     private static final boolean ENABLED = true;
 
-    @Override
-    public void showValve(String description, boolean isOpen, int maxDuration) {
-        setTimeScaleMarks(maxDuration);
-//        mSeekBar.setMax(maxDuration);
-//        mTvTitle.setText(description);
-//        mButtonPower.setStateActivated(isOpen);
-//        mButtonPower.setEnabled(isOpen);
-//        mButtonPower.setStateEdited(!EDITED);
-        mSeekBar.setStateEdited(!EDITED);
-    }
+//    @Override
+//    public void setValveOpen(String valveId, boolean isOpen) {
+//
+//        int valveTabId = mTabMap.get(valveId);
+////        View tabView = mValveTabs.getChildAt(0).findViewById(valveTabId);
+////
+////        if (isOpen) {
+////            setTabBadgeVisibility(tabView, View.VISIBLE);
+////        } else {
+////            setTabBadgeVisibility(tabView, View.GONE);
+////        }
+//
+//        if(isTabSelected(valveTabId)) {
+//            mButtonPower.setStateActivated(isOpen);
+//            mButtonPower.setStateEdited(!EDITED);
+//            mSeekBar.setStateEdited(!EDITED);
+//            mButtonPower.setEnabled(isOpen);
+//        }
+//    }
 
-    @Override
-    public void setSelectedValveMaxProgress(int maxProgress) {
-        mSeekBar.setMax(maxProgress);
-        setTimeScaleMarks(maxProgress);
-    }
-
-    @Override
-    public void setValveOpen(String valveId, boolean isOpen) {
-
-        int valveTabId = mTabMap.get(valveId);
-        View tabView = mValveTabs.getChildAt(0).findViewById(valveTabId);
-
-        if (isOpen) {
-            setTabBadgeVisibility(tabView, View.VISIBLE);
-        } else {
-            setTabBadgeVisibility(tabView, View.GONE);
-        }
-
-        if(isTabSelected(valveTabId)) {
-            mButtonPower.setStateActivated(isOpen);
-            mButtonPower.setStateEdited(!EDITED);
-            mSeekBar.setStateEdited(!EDITED);
-            mButtonPower.setEnabled(isOpen);
-        }
-    }
-
-    @Override
-    public void setSelectedValveEdited() {
-        mButtonPower.setStateEdited(EDITED);
-        mSeekBar.setStateEdited(EDITED);
-    }
+//    @Override
+//    public void setSelectedValveEdited() {
+//        mButtonPower.setStateEdited(EDITED);
+//        mSeekBar.setStateEdited(EDITED);
+//    }
 }

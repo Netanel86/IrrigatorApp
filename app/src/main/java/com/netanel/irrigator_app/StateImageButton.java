@@ -16,7 +16,8 @@ import androidx.appcompat.widget.AppCompatImageButton;
  * Created on 22/02/2021
  */
 
-public class StateImageButton extends AppCompatImageButton {
+public class StateImageButton extends AppCompatImageButton
+        implements IMultiStateView {
 
     private static final int[] STATE_ACTIVATED = {R.attr.state_activated};
     private static final int[] STATE_EDITED = {R.attr.state_edited};
@@ -49,6 +50,7 @@ public class StateImageButton extends AppCompatImageButton {
         return baseState;
     }
 
+    @Override
     public void setStateActivated(boolean activated) {
         this.mIsActivated = activated;
         this.refreshDrawableState();
@@ -58,6 +60,7 @@ public class StateImageButton extends AppCompatImageButton {
         return mIsActivated;
     }
 
+    @Override
     public void setStateEdited(boolean edited) {
         this.mIsEdited = edited;
         this.refreshDrawableState();

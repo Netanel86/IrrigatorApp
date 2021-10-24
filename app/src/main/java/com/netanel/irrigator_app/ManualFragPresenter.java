@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import androidx.databinding.Bindable;
 import androidx.databinding.Observable;
 import androidx.databinding.PropertyChangeRegistry;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.ViewModelProvider;
 
 /**
  * <p></p>
@@ -57,15 +55,15 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private final IDataBaseConnection mDb;
 
-    private int mCurrentView;
-    public void setCurrentView(int viewId) {
-        mCurrentView = viewId;
-        notifyPropertyChanged(BR.currentView);
+    private int mActiveView;
+    public void setActiveView(int viewId) {
+        mActiveView = viewId;
+        notifyPropertyChanged(BR.activeView);
     }
 
     @Bindable
-    public int getCurrentView() {
-        return mCurrentView;
+    public int getActiveView() {
+        return mActiveView;
     }
 
     private Map<String, ValveViewModel> mValves;
@@ -78,8 +76,7 @@ public class ManualFragPresenter extends AndroidViewModel
         mValves = valveMap;
         notifyPropertyChanged(BR.valveMap);
 
-        setCurrentView(VIEW_VALVE);
-
+        setActiveView(VIEW_VALVE);
     }
 
     private ValveViewModel mSelectedValve;
@@ -234,23 +231,6 @@ public class ManualFragPresenter extends AndroidViewModel
         });
     }
 
-//    private void addValvesToView() {
-//        mView.switchToValveView();
-//        ArrayList<ValveViewModel> valves = new ArrayList<>(mValveViewModels.values());
-//        for (int i = 0; i < valves.size(); i++) {
-//            ValveViewModel currValve = valves.get(i);
-////            String description = formatValveDescription(currValve);
-////            addToTabMaps(i, currValve.getId());
-////            mView.addTab(i, tabText, currValve.isOpen());
-//            mView.addValve(currValve.getId(), description, currValve.isOpen());
-//        }
-//    }
-
-    private String formatValveDescription(Valve valve) {
-        return valve.getDescription() == null || valve.getDescription().isEmpty() ?
-                "#" + valve.getIndex() : valve.getDescription();
-    }
-
     private void initValveListeners(final Valve valve) {
         initValveDbListener(valve);
 //        initValveViewListener(valve);
@@ -279,7 +259,7 @@ public class ManualFragPresenter extends AndroidViewModel
                     case Valve.PROPERTY_LAST_ON_TIME:
                     case Valve.PROPERTY_OPEN:
 
-                        mView.setValveOpen(updatedValve.getId(),updatedValve.isOpen());
+//                        mView.setValveOpen(updatedValve.getId(),updatedValve.isOpen());
 
 //                        if (mSelectedValve == updatedValve.getId()) {
 //                            updateSelectedValveProgressView();
@@ -295,7 +275,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
                     case Valve.PROPERTY_DESCRIPTION:
                     case Valve.PROPERTY_INDEX:
-                            mView.setValveDescription(updatedValve.getId(),formatValveDescription(updatedValve));
+//                            mView.setValveDescription(updatedValve.getId(),formatValveDescription(updatedValve));
 
 //                        if (tabId != null) {
 //                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
@@ -348,7 +328,7 @@ public class ManualFragPresenter extends AndroidViewModel
     private void onUserValveProgressChanged() {
         mTimer.stopIfRunning();
 
-        mView.setSelectedValveEdited();
+//        mView.setSelectedValveEdited();
 
         if (mView.getSelectedValveProgress() != 0) {
             mView.setSendCommandEnabledState(ENABLED);
@@ -358,7 +338,7 @@ public class ManualFragPresenter extends AndroidViewModel
     }
 
     private boolean isUserSeekBarProgressChanged() {
-        long time = mSelectedValve.timeLeftOpen();
+        long time = mSelectedValve.getTimeLeft();
         int progress = mView.getSelectedValveProgress();
         int diff = (int) time - progress;
         return diff >= 5 || diff <= -5;
@@ -376,45 +356,34 @@ public class ManualFragPresenter extends AndroidViewModel
 //        }
     }
 
-    private EnumSet<StateFlag> mCurrentStates = StateFlag.NONE;
-    @Bindable
-    public EnumSet<StateFlag> getCurrentStates() {
-        return mCurrentStates;
-    }
-    public void setCurrentStates(EnumSet<StateFlag> currentStates) {
-        mCurrentStates = currentStates;
-        notifyPropertyChanged(BR.currentStates);
-    }
+//    private EnumSet<StateFlag> mCurrentStates = StateFlag.NONE;
+//    @Bindable
+//    public EnumSet<StateFlag> getCurrentStates() {
+//        return mCurrentStates;
+//    }
+//    public void setCurrentStates(EnumSet<StateFlag> currentStates) {
+//        mCurrentStates = currentStates;
+//        notifyPropertyChanged(BR.currentStates);
+//    }
     public void onTabValveSelected(ValveViewModel valveVm) {
         setSelectedValve(valveVm);
         if (mSelectedValve != null) {
-//            mView.showValve(mSelectedValve.getDescription(),
-//                    mSelectedValve.isOpen(), mSelectedValve.getMaxDuration());
-
-            if(mSelectedValve.isOpen()) {
-                setCurrentStates(EnumSet.of(StateFlag.ACTIVATED, StateFlag.ENABLED));
-            } else {
-                setCurrentStates(StateFlag.NONE);
-            }
-
             updateSelectedValveProgressView();
         } else {
             mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
     }
-    public String fomratTimeScaleMark(ManualFragContract.TimeScale timeScale, int maxValue) {
-        return String.valueOf((int) (maxValue * timeScale.value / 60));
-    }
+
 
 
     private void updateSelectedValveProgressView() {
         mTimer.stopIfRunning();
 
         if (mSelectedValve.isOpen()
-                && mSelectedValve.getLastOnTime().before(Calendar.getInstance().getTime())) {
+                && mSelectedValve.getLastOpen().before(Calendar.getInstance().getTime())) {
 
-            if (mSelectedValve.timeLeftOpen() > 0) {
-                mView.setSelectedValveProgress((int) mSelectedValve.timeLeftOpen());
+            if (mSelectedValve.getTimeLeft() > 0) {
+                mView.setSelectedValveProgress((int) mSelectedValve.getTimeLeft());
                 mTimer.startCountDown();
             }
         } else {
@@ -505,7 +474,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
         public void startCountDown() {
             mCountDownTimer = new CountDownTimer(
-                    mSelectedValve.timeLeftOpen() * 1000,
+                    mSelectedValve.getTimeLeft() * 1000,
                     1000) {
                 @Override
                 public void onTick(long l) {
@@ -530,7 +499,7 @@ public class ManualFragPresenter extends AndroidViewModel
                         public void run() {
                             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
                                     Calendar.getInstance().getTime().getTime() -
-                                            mSelectedValve.getLastOnTime().getTime());
+                                            mSelectedValve.getLastOpen().getTime());
                             mView.setSelectedValveProgress((int) diffInSec);
                         }
                     });
@@ -548,12 +517,12 @@ public class ManualFragPresenter extends AndroidViewModel
         }
     }
 
-    public enum StateFlag {
-        ACTIVATED,
-        ENABLED,
-        EDITED;
-
-        public static EnumSet<StateFlag> ALL_STATES = EnumSet.allOf(StateFlag.class);
-        public static EnumSet<StateFlag> NONE = EnumSet.noneOf(StateFlag.class);
-    }
+//    public enum StateFlag {
+//        ACTIVATED,
+//        ENABLED,
+//        EDITED;
+//
+//        public static EnumSet<StateFlag> ALL_STATES = EnumSet.allOf(StateFlag.class);
+//        public static EnumSet<StateFlag> NONE = EnumSet.noneOf(StateFlag.class);
+//    }
 }

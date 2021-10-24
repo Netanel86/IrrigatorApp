@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.util.Log;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
 
@@ -17,7 +18,7 @@ import com.devadvance.circularseekbar.CircularSeekBar;
  * Created on 20/03/2021
  */
 
-public class StateCircularSeekBar extends CircularSeekBar {
+public class StateCircularSeekBar extends CircularSeekBar implements IMultiStateView {
     private static final int[] STATE_EDITED = {R.attr.state_edited};
     private boolean mIsEdited = false;
 
@@ -70,6 +71,13 @@ public class StateCircularSeekBar extends CircularSeekBar {
         return baseState;
     }
 
+    @Override
+    public void setStateActivated(boolean activated) {
+        Log.i("Not Implemented",
+                this.getClass().getName() + " method setStateActivated is called but not implemented");
+    }
+
+    @Override
     public void setStateEdited(boolean edited) {
         this.mIsEdited = edited;
         this.refreshDrawableState();

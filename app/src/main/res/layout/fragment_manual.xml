@@ -28,6 +28,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            android:visibility="@{manualViewModel.valveMap.size() > 0 ? View.VISIBLE : View.GONE}"
             android:OnTabSelected="@{manualViewModel::onTabValveSelected}"
             android:TabMap="@{manualViewModel.valveMap}"/>
 
@@ -39,7 +40,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:currentView="@{manualViewModel.currentView}">
+        android:activeView="@{manualViewModel.activeView}">
 
 
         <FrameLayout
@@ -192,7 +193,8 @@
                                 app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
                                 app:pointer_radius="8dp"
                                 app:use_custom_radii="true"
-                                app:max="@{manualViewModel.selectedValve.maxDuration}"/>
+                                app:max="@{manualViewModel.selectedValve.maxDuration}"
+                                android:states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.netanel.irrigator_app.StateImageButton
                                 android:id="@+id/img_btn_power"
@@ -210,7 +212,7 @@
                                 app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:tint="@android:color/black"
-                                android:states="@{manualViewModel.currentStates}"/>
+                                android:states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tv_elapsed_time"
@@ -232,7 +234,7 @@
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
+                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Max]}"
                                 tools:text="60" />
 
                             <com.google.android.material.button.MaterialButton
@@ -242,7 +244,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
+                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Quarter]}"
                                 tools:text="15" />
 
                             <com.google.android.material.button.MaterialButton
@@ -252,7 +254,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
+                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.ThreeQuarters]}"
                                 tools:text="45" />
 
                             <com.google.android.material.button.MaterialButton
@@ -262,7 +264,7 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                                android:text="@{String.valueOf(manualViewModel.selectedValve.maxDuration)}"
+                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Half]}"
                                 tools:text="30" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
