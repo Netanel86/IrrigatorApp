@@ -73,6 +73,7 @@ public class ManualFragment extends Fragment implements
                 DataBindingUtil
                         .inflate(inflater, R.layout.fragment_manual, container, false);
         binding.setManualViewModel((ManualFragPresenter) mPresenter);
+        binding.setLifecycleOwner(this);
         return binding.getRoot();
     }
     @Override
@@ -117,7 +118,7 @@ public class ManualFragment extends Fragment implements
 
     private void initListeners() {
 //        mValveTabs.addOnTabSelectedListener(this);
-        mSeekBar.setOnSeekBarChangeListener(this);
+//        mSeekBar.setOnSeekBarChangeListener(this);
         mTvThreeQuarter.setOnClickListener(this);
         mTvMax.setOnClickListener(this);
         mTvHalf.setOnClickListener(this);

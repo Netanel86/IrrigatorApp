@@ -10,6 +10,7 @@
 
     <import type="android.view.View" />
     <import type="com.netanel.irrigator_app.ManualFragContract.TimeScale"/>
+    <import type="com.netanel.irrigator_app.services.StringExt"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -193,6 +194,7 @@
                                 app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
                                 app:pointer_radius="8dp"
                                 app:use_custom_radii="true"
+                                app:progress="@={manualViewModel.selectedValve.progress}"
                                 app:max="@{manualViewModel.selectedValve.maxDuration}"
                                 android:states="@{manualViewModel.selectedValve.viewStates}"/>
 

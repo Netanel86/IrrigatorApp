@@ -110,12 +110,6 @@ public class ManualFragPresenter extends AndroidViewModel
         mConnectivityChangedCallback = new ConnectivityCallback(this, app.getApplicationContext());
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
-//        mTimeNames = new String[]{
-//                mResources.getString(R.string.time_counter_seconds),
-//                mResources.getString(R.string.time_counter_minutes),
-//                mResources.getString(R.string.time_counter_hours),
-//                mResources.getString(R.string.time_counter_days)};
-
     }
 
     @Override
@@ -368,7 +362,7 @@ public class ManualFragPresenter extends AndroidViewModel
     public void onTabValveSelected(ValveViewModel valveVm) {
         setSelectedValve(valveVm);
         if (mSelectedValve != null) {
-            updateSelectedValveProgressView();
+//            updateSelectedValveProgressView();
         } else {
             mView.showMessage(mResources.getString(R.string.error_loading_valve));
         }
@@ -516,13 +510,4 @@ public class ManualFragPresenter extends AndroidViewModel
             }
         }
     }
-
-//    public enum StateFlag {
-//        ACTIVATED,
-//        ENABLED,
-//        EDITED;
-//
-//        public static EnumSet<StateFlag> ALL_STATES = EnumSet.allOf(StateFlag.class);
-//        public static EnumSet<StateFlag> NONE = EnumSet.noneOf(StateFlag.class);
-//    }
 }

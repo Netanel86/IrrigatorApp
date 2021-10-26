@@ -95,6 +95,36 @@ public class ValveViewModel implements Observable{
         return mValve.isOpen();
     }
 
+    private int mProgress;
+
+    @Bindable
+    public int getProgress() {
+        return mProgress > 0 ? mProgress : getTimeLeft();
+    }
+
+    public void setProgress(int progress) {
+        if(this.mProgress != progress) {
+            this.mProgress = progress;
+            notifyPropertyChanged(BR.progress);
+            onProgressChanged();
+        }
+    }
+
+    private void onProgressChanged() {
+        if(isUserProgressChange()) {
+            if (isOpen()) {
+                setViewStates(StateFlag.ALL_STATES);
+            } else {
+                setViewStates(EnumSet.of(StateFlag.ENABLED,StateFlag.EDITED));
+            }
+        }
+    }
+    private boolean isUserProgressChange() {
+        long time = getTimeLeft();
+        int progress = getProgress();
+        int diff = (int) time - progress;
+        return diff >= 5 || diff <= -5;
+    }
     @Bindable
     public int getMaxDuration() {
         return mValve.getMaxDuration();
@@ -163,6 +193,8 @@ public class ValveViewModel implements Observable{
             mCallBacks.notifyCallbacks(this, fieldId, null);
         }
     }
+
+
 
     public enum StateFlag {
         ACTIVATED,
