@@ -9,10 +9,10 @@
     <string name="msg_connection_lost">Connection lost</string>
     <string name="msg_no_connection">Internet connection is not available</string>
 
-    <string name="time_counter_seconds">sec</string>
-    <string name="time_counter_minutes">min</string>
-    <string name="time_counter_hours">h</string>
-    <string name="time_counter_days">days</string>
+    <string name="time_unit_seconds">sec</string>
+    <string name="time_unit_minutes">min</string>
+    <string name="time_unit_hours">h</string>
+    <string name="time_unit_days">days</string>
 
     <string name="command_sent">Request was sent to server</string>
 

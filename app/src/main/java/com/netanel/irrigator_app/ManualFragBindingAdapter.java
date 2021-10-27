@@ -4,6 +4,7 @@ package com.netanel.irrigator_app;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
 import com.google.android.material.button.MaterialButton;
@@ -11,6 +12,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.model.Valve;
+import com.netanel.irrigator_app.services.StringExt;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -18,6 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import androidx.databinding.BindingAdapter;
+import androidx.databinding.BindingConversion;
 import androidx.databinding.BindingMethod;
 import androidx.databinding.BindingMethods;
 import androidx.databinding.DataBindingUtil;
@@ -115,6 +118,16 @@ public class ManualFragBindingAdapter {
         }
     }
 
+
+    @BindingAdapter("formatTime")
+    public static void formatSecToTimeString(TextView textView, int seconds) {
+        String[] mTimeNames = new String[]{
+                textView.getResources().getString(R.string.time_unit_seconds),
+                textView.getResources().getString(R.string.time_unit_minutes),
+                textView.getResources().getString(R.string.time_unit_hours),
+                textView.getResources().getString(R.string.time_unit_days)};
+        textView.setText(StringExt.formatSecToTimeString(seconds, mTimeNames));
+    }
     /**
      * <p></p>
      *
