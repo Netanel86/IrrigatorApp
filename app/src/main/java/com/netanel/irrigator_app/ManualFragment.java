@@ -13,7 +13,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.ImageView;
 import android.widget.ViewSwitcher;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
@@ -22,7 +21,6 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.databinding.FragmentManualBinding;
-import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.StringExt;
 
@@ -34,7 +32,6 @@ import java.util.Map;
 // TODO: 27/04/2021 remove custom material dimensions and use android material styles instead.
 public class ManualFragment extends Fragment implements
         View.OnClickListener,
-        CircularSeekBar.OnCircularSeekBarChangeListener,
         ManualFragContract.IView {
 
     private FilledTabLayout mValveTabs;
@@ -63,11 +60,11 @@ public class ManualFragment extends Fragment implements
 
         mPresenter.bindView(this);
 
-        mTimeNames = new String[]{
-                getResources().getString(R.string.time_counter_seconds),
-                getResources().getString(R.string.time_counter_minutes),
-                getResources().getString(R.string.time_counter_hours),
-                getResources().getString(R.string.time_counter_days)};
+//        mTimeNames = new String[]{
+//                getResources().getString(R.string.time_counter_seconds),
+//                getResources().getString(R.string.time_counter_minutes),
+//                getResources().getString(R.string.time_counter_hours),
+//                getResources().getString(R.string.time_counter_days)};
 
         FragmentManualBinding binding =
                 DataBindingUtil
@@ -100,7 +97,7 @@ public class ManualFragment extends Fragment implements
 
     private void initUI() {
         mValveTabs = getView().findViewById(R.id.tab_layout_valves);
-        mSeekBar = getView().findViewById(R.id.seekbar_timer);
+//        mSeekBar = getView().findViewById(R.id.seekbar_timer);
 
         mButtonPower = getView().findViewById(R.id.img_btn_power);
 
@@ -211,20 +208,6 @@ public class ManualFragment extends Fragment implements
     }
 
 
-    @Override
-    public void onProgressChanged(CircularSeekBar circularSeekBar, final int progress, boolean fromUser) {
-        mPresenter.onValveProgressChanged(progress, fromUser);
-    }
-
-    @Override
-    public void onStopTrackingTouch(CircularSeekBar seekBar) {
-
-    }
-
-    @Override
-    public void onStartTrackingTouch(CircularSeekBar seekBar) {
-
-    }
 
 //    @Override
 //    public void onTabSelected(TabLayout.Tab tab) {
@@ -244,27 +227,10 @@ public class ManualFragment extends Fragment implements
         return selectedTabId == valveTabId;
     }
 
-
-//    @Override
-//    public void setTimerText(String timeString) {
-//        mTvTimer.setText(timeString);
-//    }
-
 //    @Override
 //    public void setSeekBarMaxProgress(int maxProgress) {
 //        mSeekBar.setMax(maxProgress);
 //    }
-
-    @Override
-    public void setSelectedValveProgress(int progress) {
-        mSeekBar.setProgress(progress);
-        mTvTimer.setText(StringExt.formatSecToTimeString(progress, mTimeNames));
-    }
-
-    @Override
-    public int getSelectedValveProgress() {
-        return mSeekBar.getProgress();
-    }
 
     @Override
     public void setSendCommandEnabledState(boolean enabled) {

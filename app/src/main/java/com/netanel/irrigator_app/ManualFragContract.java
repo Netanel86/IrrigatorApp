@@ -12,9 +12,9 @@ package com.netanel.irrigator_app;
 
 public interface ManualFragContract {
     interface IView {
-        int getSelectedValveProgress();
+//        int getSelectedValveProgress();
 
-        void setSelectedValveProgress(int progress);
+//        void setSelectedValveProgress(int progress);
 
 //        void setSeekBarEditedState(boolean edited);
 
@@ -52,7 +52,7 @@ public interface ManualFragContract {
     }
 
     interface IPresenter {
-        void onValveProgressChanged(final int progress, boolean fromUser);
+        void onSeekBarProgressChanged(final int progress, boolean fromUser);
 
         void onValveSelected(String valveId);
 

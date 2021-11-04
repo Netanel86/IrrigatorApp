@@ -21,15 +21,22 @@ import androidx.databinding.PropertyChangeRegistry;
  * Created on 10/10/2021
  */
 
-public class ValveViewModel implements Observable{
+public class ValveViewModel implements Observable {
 
     private final Valve mValve;
-    private EnumSet<StateFlag> mViewStates = StateFlag.NONE;
-    private Map<ManualFragContract.TimeScale,String> mTimeScales;
+
+    private int mEditedProgress;
+
+    private EnumSet<StateFlag> mViewStates;
+
+    private Map<ManualFragContract.TimeScale, String> mTimeScales;
+
     private PropertyChangeRegistry mCallBacks;
 
     public ValveViewModel(Valve valve) {
         mValve = valve;
+        mViewStates = EnumSet.noneOf(StateFlag.class);
+
         initializeListener();
         resetViewStates();
         initTimeScales();
@@ -43,23 +50,15 @@ public class ValveViewModel implements Observable{
                     case Valve.PROPERTY_DURATION:
                     case Valve.PROPERTY_LAST_ON_TIME:
                     case Valve.PROPERTY_OPEN:
-                        notifyPropertyChanged(BR.open);
-                        notifyPropertyChanged(BR.timeLeft);
-
                         resetViewStates();
-
-//                        if (mSelectedValve == updatedValve.getId()) {
-//                            updateSelectedValveProgressView();
-//                        }
+                        mEditedProgress = 0;
+                        notifyPropertyChanged(BR.open);
+                        notifyPropertyChanged(BR.progress);
                         break;
 
                     case Valve.PROPERTY_MAX_DURATION:
-                        notifyPropertyChanged(BR.maxDuration);
                         initTimeScales();
-//                        if (mSelectedValve == updatedValve) {
-//                            mView.setSelectedValveMaxProgress(mSelectedValve.getMaxDuration());
-//                            updateSelectedValveProgressView();
-//                        }
+                        notifyPropertyChanged(BR.maxDuration);
                         break;
 
                     case Valve.PROPERTY_DESCRIPTION:
@@ -75,19 +74,38 @@ public class ValveViewModel implements Observable{
         return mValve.getId();
     }
 
+    public int getIndex() {
+        return mValve.getIndex();
+    }
+
+    public Date getLastOpen() {
+        return mValve.getLastOnTime();
+    }
+
+    public int getEditedProgress() {
+        return mEditedProgress;
+    }
+
+    @Bindable
+    public int getProgress() {
+        return mEditedProgress > 0 ? mEditedProgress : getTimeLeft();
+    }
+
+    public void setProgress(int progress) {
+        if (this.mEditedProgress != progress) {
+            this.mEditedProgress = progress;
+            notifyPropertyChanged(BR.progress);
+        }
+    }
+
     @Bindable
     public String getDescription() {
         return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
                 "#" + mValve.getIndex() : mValve.getDescription();
     }
 
-    @Bindable
     public int getTimeLeft() {
         return (int) mValve.timeLeftOpen();
-    }
-
-    public Date getLastOpen() {
-        return mValve.getLastOnTime();
     }
 
     @Bindable
@@ -95,43 +113,9 @@ public class ValveViewModel implements Observable{
         return mValve.isOpen();
     }
 
-    private int mProgress;
-
-    @Bindable
-    public int getProgress() {
-        return mProgress > 0 ? mProgress : getTimeLeft();
-    }
-
-    public void setProgress(int progress) {
-        if(this.mProgress != progress) {
-            this.mProgress = progress;
-            notifyPropertyChanged(BR.progress);
-            onProgressChanged();
-        }
-    }
-
-    private void onProgressChanged() {
-        if(isUserProgressChange()) {
-            if (isOpen()) {
-                setViewStates(StateFlag.ALL_STATES);
-            } else {
-                setViewStates(EnumSet.of(StateFlag.ENABLED,StateFlag.EDITED));
-            }
-        }
-    }
-    private boolean isUserProgressChange() {
-        long time = getTimeLeft();
-        int progress = getProgress();
-        int diff = (int) time - progress;
-        return diff >= 5 || diff <= -5;
-    }
     @Bindable
     public int getMaxDuration() {
         return mValve.getMaxDuration();
-    }
-
-    public int getIndex() {
-        return mValve.getIndex();
     }
 
     @Bindable
@@ -164,17 +148,40 @@ public class ValveViewModel implements Observable{
         notifyPropertyChanged(BR.viewStates);
     }
 
-    private void resetViewStates() {
-        if(isOpen()) {
+    public void removeViewState(StateFlag state) {
+        mViewStates.remove(state);
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    public void addViewState(StateFlag state) {
+        mViewStates.add(state);
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    public void resetViewStates() {
+        if (isOpen()) {
             setViewStates(EnumSet.of(StateFlag.ACTIVATED, StateFlag.ENABLED));
         } else {
-            setViewStates(StateFlag.NONE);
+            setViewStates(EnumSet.noneOf(StateFlag.class));
+        }
+    }
+
+    public boolean isEdited() {
+        return mViewStates.contains(StateFlag.EDITED);
+    }
+
+    public void setEdited(boolean isEdited) {
+        if (isEdited) {
+            addViewState(StateFlag.ENABLED);
+            addViewState(StateFlag.EDITED);
+        } else {
+            resetViewStates();
         }
     }
 
     @Override
     public void addOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if(mCallBacks == null) {
+        if (mCallBacks == null) {
             mCallBacks = new PropertyChangeRegistry();
         }
 
@@ -183,7 +190,7 @@ public class ValveViewModel implements Observable{
 
     @Override
     public void removeOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if(mCallBacks != null) {
+        if (mCallBacks != null) {
             mCallBacks.remove(callback);
         }
     }
@@ -194,15 +201,10 @@ public class ValveViewModel implements Observable{
         }
     }
 
-
-
     public enum StateFlag {
         ACTIVATED,
         ENABLED,
         EDITED;
-
-        public static EnumSet<StateFlag> ALL_STATES = EnumSet.allOf(StateFlag.class);
-        public static EnumSet<StateFlag> NONE = EnumSet.noneOf(StateFlag.class);
     }
 }
 
