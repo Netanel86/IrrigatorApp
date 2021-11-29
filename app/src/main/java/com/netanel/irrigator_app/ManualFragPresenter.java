@@ -238,44 +238,6 @@ public class ManualFragPresenter extends AndroidViewModel
         });
     }
 
-    private void initValveViewListener(Valve valve) {
-        valve.setOnPropertyChangedCallback(new Valve.OnPropertyChangedCallback() {
-            @Override
-            public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
-//                Integer tabId = mTabMap.get(updatedValve.getId());
-
-                switch (propertyName) {
-                    case Valve.PROPERTY_DURATION:
-                    case Valve.PROPERTY_LAST_ON_TIME:
-                    case Valve.PROPERTY_OPEN:
-
-//                        mView.setValveOpen(updatedValve.getId(),updatedValve.isOpen());
-
-//                        if (mSelectedValve == updatedValve.getId()) {
-//                            updateSelectedValveProgressView();
-//                        }
-                        break;
-
-                    case Valve.PROPERTY_MAX_DURATION:
-//                        if (mSelectedValve == updatedValve) {
-//                            mView.setSelectedValveMaxProgress(mSelectedValve.getMaxDuration());
-//                            updateSelectedValveProgressView();
-//                        }
-                        break;
-
-                    case Valve.PROPERTY_DESCRIPTION:
-                    case Valve.PROPERTY_INDEX:
-//                            mView.setValveDescription(updatedValve.getId(),formatValveDescription(updatedValve));
-
-//                        if (tabId != null) {
-//                            mView.setTabDescription(tabId, formatValveDescription(updatedValve));
-//                        }
-                        break;
-                }
-            }
-        });
-    }
-
     @Override
     public void onConnectivityChanged(final boolean isConnected) {
         mView.runOnUiThread(new Runnable() {
