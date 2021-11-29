@@ -43,21 +43,22 @@ public class ValveViewModel implements Observable {
     }
 
     private void initializeListener() {
-        mValve.setOnPropertyChangedCallback(new Valve.OnPropertyChangedCallback() {
+        mValve.setOnPropertyChangedCallback(new PropertyChangedCallback() {
             @Override
-            public void OnPropertyChanged(Valve updatedValve, String propertyName, Object oldValue) {
-                switch (propertyName) {
+            public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
+                switch (propertyId) {
                     case Valve.PROPERTY_DURATION:
-                    case Valve.PROPERTY_LAST_ON_TIME:
-                    case Valve.PROPERTY_OPEN:
+                    case Valve.PROPERTY_LAST_ON:
                         resetViewStates();
                         mEditedProgress = 0;
+
                         notifyPropertyChanged(BR.open);
                         notifyPropertyChanged(BR.progress);
                         break;
 
                     case Valve.PROPERTY_MAX_DURATION:
                         initTimeScales();
+
                         notifyPropertyChanged(BR.maxDuration);
                         break;
 
@@ -79,7 +80,7 @@ public class ValveViewModel implements Observable {
     }
 
     public Date getLastOpen() {
-        return mValve.getLastOnTime();
+        return mValve.getLastOpen();
     }
 
     public int getEditedProgress() {
@@ -105,7 +106,7 @@ public class ValveViewModel implements Observable {
     }
 
     public int getTimeLeft() {
-        return (int) mValve.timeLeftOpen();
+        return (int) mValve.getTimeLeft();
     }
 
     @Bindable
