@@ -124,9 +124,6 @@ public class ManualFragPresenter extends AndroidViewModel
                 mView.showMessage(mResources.getString(R.string.msg_no_connection));
             }
         }
-//        else {
-//            addValvesToView();
-//        }
 
         testSensors();
     }
@@ -188,29 +185,17 @@ public class ManualFragPresenter extends AndroidViewModel
                 if (ex != null) {
                     mView.showMessage(ex.getMessage());
                 } else if (answer != null) {
-//                    setValveMap(answer);
                     if (!answer.isEmpty()) {
                         LinkedHashMap<String, ValveViewModel> valvesMap = new LinkedHashMap<>();
                         ArrayList<Valve> valves = new ArrayList<>(answer.values());
                         for (int i = 0; i < valves.size(); i++) {
-                            initValveListeners(valves.get(i));
+                            initValveDbListener(valves.get(i));
 
                             ValveViewModel valveVm = new ValveViewModel(valves.get(i));
-                            valveVm.addOnPropertyChangedCallback(new OnPropertyChangedCallback() {
-                                @Override
-                                public void onPropertyChanged(Observable sender, int propertyId) {
-                                    if(propertyId == BR.progress) {
-                                        if(sender.equals(mSelectedValve) &&
-                                                !isTimerProgressChanged()) {
-                                            resetTimer();
-                                        }
-                                    }
-                                }
-                            });
+
                             valvesMap.put(valveVm.getId(), valveVm);
                         }
                         setValveMap(valvesMap);
-//                        addValvesToView();
                     } else {
                         mView.showMessage(mResources.getString(R.string.error_no_valves));
                     }
@@ -219,11 +204,6 @@ public class ManualFragPresenter extends AndroidViewModel
                 }
             }
         });
-    }
-
-    private void initValveListeners(final Valve valve) {
-        initValveDbListener(valve);
-//        initValveViewListener(valve);
     }
 
     private void initValveDbListener(@NotNull final Valve valve) {
@@ -265,13 +245,27 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
-        if (fromUser) {
-            onUserProgressChange();
+        if (fromUser || mIsFromScaleButton) {
+            mIsFromScaleButton = false;
+            onProgressChangedByUser();
+        } else if (!hasProgressChangedByTimer()) {
+            resetTimer();
         }
     }
 
-    private void onUserProgressChange() {
-        mTimer.stopIfRunning();
+    private boolean hasProgressChangedByTimer() {
+        return mTimer.isActive() && mTimer.getProgress() == mSelectedValve.getProgress();
+    }
+
+    private boolean mIsFromScaleButton;
+
+    public void setRelativeProgress(double relativeProgress) {
+        mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
+        mIsFromScaleButton = true;
+    }
+
+    private void onProgressChangedByUser() {
+        mTimer.stopIfActive();
 
         if (mSelectedValve.getProgress() != mSelectedValve.getTimeLeft()) {
             mSelectedValve.setEdited(EDITED);
@@ -289,19 +283,14 @@ public class ManualFragPresenter extends AndroidViewModel
     }
 
     private void resetTimer() {
-        mTimer.stopIfRunning();
+        mTimer.stopIfActive();
 
         if (mSelectedValve.isOpen() && !mSelectedValve.isEdited()) {
             mTimer.startCountDown();
         }
     }
 
-    private boolean isTimerProgressChanged() {
-        long time = mSelectedValve.getTimeLeft();
-        int progress = mSelectedValve.getEditedProgress();
-        int diff = (int) time - progress;
-        return diff == 1;
-    }
+
 
     @Override
     public void onValveSelected(String valveId) {
@@ -317,17 +306,11 @@ public class ManualFragPresenter extends AndroidViewModel
 
     public void onTabValveSelected(ValveViewModel valveVm) {
         setSelectedValve(valveVm);
-
-        if (mSelectedValve != null) {
-            resetTimer();
-        } else {
-            mView.showMessage(mResources.getString(R.string.error_loading_valve));
-        }
     }
 
 
     @Override
-    public void onTimeScaleClicked(ManualFragContract.TimeScale time) {
+    public void onTimeScaleClicked(ManualFragContract.Scale time) {
         switch (time) {
             case Zero:
 //                mView.setSelectedValveProgress(0);
@@ -342,11 +325,12 @@ public class ManualFragPresenter extends AndroidViewModel
 //                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
                 break;
             case Max:
+                setRelativeProgress(ManualFragContract.Scale.Max.value);
 //                mView.setSelectedValveProgress((mSelectedValve.getMaxDuration()));
                 break;
         }
 
-        onUserProgressChange();
+        onProgressChangedByUser();
     }
 
     @Override
@@ -406,7 +390,14 @@ public class ManualFragPresenter extends AndroidViewModel
     public class ProgressTimer {
         private CountDownTimer mCountDownTimer;
         private Timer mElapsedTimer;
-        private boolean mIsTimerRunning = false;
+        private boolean mIsActive = false;
+        public boolean isActive() {
+            return mIsActive;
+        }
+        public int getProgress() {
+            return mProgress;
+        }
+        private int mProgress;
 
         public void startCountDown() {
             mCountDownTimer = new CountDownTimer(
@@ -414,16 +405,17 @@ public class ManualFragPresenter extends AndroidViewModel
                     1000) {
                 @Override
                 public void onTick(long l) {
-                    mSelectedValve.setProgress((int) l / 1000);
+                    mSelectedValve.setProgress(mProgress = (int) l / 1000);
                 }
 
                 @Override
                 public void onFinish() {
+                    mProgress = 0;
                     mSelectedValve.setProgress(0);
-                    mIsTimerRunning = false;
+                    mIsActive = false;
                 }
             }.start();
-            mIsTimerRunning = true;
+            mIsActive = true;
         }
 
         public void startElapsedTimer() {
@@ -442,14 +434,14 @@ public class ManualFragPresenter extends AndroidViewModel
                     });
                 }
             }, 0, 1000);
-            mIsTimerRunning = true;
+            mIsActive = true;
         }
 
-        public void stopIfRunning() {
-            if (mIsTimerRunning) {
+        public void stopIfActive() {
+            if (mIsActive) {
                 if (mCountDownTimer != null) mCountDownTimer.cancel();
                 if (mElapsedTimer != null) mElapsedTimer.cancel();
-                mIsTimerRunning = false;
+                mIsActive = false;
             }
         }
     }

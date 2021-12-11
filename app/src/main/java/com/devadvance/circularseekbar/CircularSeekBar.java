@@ -1042,7 +1042,7 @@ public class CircularSeekBar extends View {
 	 */
 	public void setMax(int max) {
 		if (!(max <= 0)) { // Check to make sure it's greater than zero
-			if (max <= mProgress) {
+			if (max < mProgress) {
 				mProgress = 0; // If the new max is less than current progress, set progress to zero
 				if (mOnCircularSeekBarChangeListener != null) {
 					mOnCircularSeekBarChangeListener.onProgressChanged(this, mProgress, false);

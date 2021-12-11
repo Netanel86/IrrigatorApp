@@ -56,7 +56,7 @@ public interface ManualFragContract {
 
         void onValveSelected(String valveId);
 
-        void onTimeScaleClicked(TimeScale time);
+        void onTimeScaleClicked(Scale time);
 
         void onSendCommand();
 
@@ -69,7 +69,7 @@ public interface ManualFragContract {
         void onDestroy();
     }
 
-    enum TimeScale {
+    enum Scale {
         Zero(0),
         Quarter(0.25),
         Half(0.5),
@@ -77,7 +77,7 @@ public interface ManualFragContract {
         Max(1);
 
         public final double value;
-        TimeScale(double val) {
+        Scale(double val) {
             value = val;
         }
     }

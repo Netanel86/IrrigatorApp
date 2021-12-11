@@ -29,7 +29,7 @@ public class ValveViewModel implements Observable {
 
     private EnumSet<StateFlag> mViewStates;
 
-    private Map<ManualFragContract.TimeScale, String> mTimeScales;
+    private Map<ManualFragContract.Scale, String> mScaleStrings;
 
     private PropertyChangeRegistry mCallBacks;
 
@@ -120,23 +120,23 @@ public class ValveViewModel implements Observable {
     }
 
     @Bindable
-    public Map<ManualFragContract.TimeScale, String> getTimeScales() {
-        return mTimeScales;
+    public Map<ManualFragContract.Scale, String> getScaleStrings() {
+        return mScaleStrings;
     }
 
     private void initTimeScales() {
-        if (mTimeScales == null) {
-            mTimeScales = new HashMap<>();
+        if (mScaleStrings == null) {
+            mScaleStrings = new HashMap<>();
         } else {
-            mTimeScales.clear();
+            mScaleStrings.clear();
         }
 
-        for (ManualFragContract.TimeScale scale : ManualFragContract.TimeScale.values()
+        for (ManualFragContract.Scale scale : ManualFragContract.Scale.values()
         ) {
-            mTimeScales.put(scale, String.valueOf((int) (getMaxDuration() * scale.value / 60)));
+            mScaleStrings.put(scale, String.valueOf((int) (getMaxDuration() * scale.value / 60)));
         }
 
-        notifyPropertyChanged(BR.timeScales);
+        notifyPropertyChanged(BR.scaleStrings);
     }
 
     @Bindable

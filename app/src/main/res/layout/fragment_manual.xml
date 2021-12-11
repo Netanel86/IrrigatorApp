@@ -9,7 +9,7 @@
         type ="com.netanel.irrigator_app.ManualFragPresenter" />
 
     <import type="android.view.View" />
-    <import type="com.netanel.irrigator_app.ManualFragContract.TimeScale"/>
+    <import type="com.netanel.irrigator_app.ManualFragContract.Scale"/>
     <import type="com.netanel.irrigator_app.services.StringExt"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -238,7 +238,8 @@
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Max]}"
+                                android:text="@{manualViewModel.selectedValve.scaleStrings[Scale.Max]}"
+                                android:onClick="@{() -> manualViewModel.setRelativeProgress(Scale.Max.value)}"
                                 tools:text="60" />
 
                             <com.google.android.material.button.MaterialButton
@@ -248,7 +249,8 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Quarter]}"
+                                android:text="@{manualViewModel.selectedValve.scaleStrings[Scale.Quarter]}"
+                                android:onClick="@{() -> manualViewModel.setRelativeProgress(Scale.Quarter.value)}"
                                 tools:text="15" />
 
                             <com.google.android.material.button.MaterialButton
@@ -258,7 +260,8 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
-                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.ThreeQuarters]}"
+                                android:text="@{manualViewModel.selectedValve.scaleStrings[Scale.ThreeQuarters]}"
+                                android:onClick="@{() -> manualViewModel.setRelativeProgress(Scale.ThreeQuarters.value)}"
                                 tools:text="45" />
 
                             <com.google.android.material.button.MaterialButton
@@ -268,7 +271,8 @@
                                 app:layout_constraintBottom_toBottomOf="@id/seekbar_timer"
                                 app:layout_constraintLeft_toLeftOf="@id/seekbar_timer"
                                 app:layout_constraintRight_toRightOf="@id/seekbar_timer"
-                                android:text="@{manualViewModel.selectedValve.timeScales[TimeScale.Half]}"
+                                android:text="@{manualViewModel.selectedValve.scaleStrings[Scale.Half]}"
+                                android:onClick="@{() -> manualViewModel.setRelativeProgress(Scale.Half.value)}"
                                 tools:text="30" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>

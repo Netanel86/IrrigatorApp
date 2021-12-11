@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ViewSwitcher;
 
-import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -133,13 +132,13 @@ public class ManualFragment extends Fragment implements
     public void onClick(View view) {
         int viewId = view.getId();
         if (viewId == R.id.tv_time_max) {
-            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Max);
+            mPresenter.onTimeScaleClicked(ManualFragContract.Scale.Max);
         } else if (viewId == R.id.tv_time_three_quarter) {
-            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.ThreeQuarters);
+            mPresenter.onTimeScaleClicked(ManualFragContract.Scale.ThreeQuarters);
         } else if (viewId == R.id.tv_time_half) {
-            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Half);
+            mPresenter.onTimeScaleClicked(ManualFragContract.Scale.Half);
         } else if (viewId == R.id.tv_time_quarter) {
-            mPresenter.onTimeScaleClicked(ManualFragContract.TimeScale.Quarter);
+            mPresenter.onTimeScaleClicked(ManualFragContract.Scale.Quarter);
         } else if (viewId == R.id.img_btn_power) {
             mPresenter.onSendCommand();
         }

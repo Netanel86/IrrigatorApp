@@ -31,7 +31,7 @@ public class StateCircularSeekBarBindingAdapter {
             @Override
             public void onProgressChanged(CircularSeekBar circularSeekBar, int progress, boolean fromUser) {
 
-                //notify only when change was prompted by the user, to avoid an infinite loop
+                //InverseListener: notify only when change was prompted by the user(UI), to avoid an infinite loop
                 if (fromUser && progressAttrChanged != null) {
                     progressAttrChanged.onChange();
                 }
