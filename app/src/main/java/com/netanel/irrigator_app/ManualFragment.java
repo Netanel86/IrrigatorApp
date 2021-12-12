@@ -115,10 +115,10 @@ public class ManualFragment extends Fragment implements
     private void initListeners() {
 //        mValveTabs.addOnTabSelectedListener(this);
 //        mSeekBar.setOnSeekBarChangeListener(this);
-        mTvThreeQuarter.setOnClickListener(this);
-        mTvMax.setOnClickListener(this);
-        mTvHalf.setOnClickListener(this);
-        mTvQuarter.setOnClickListener(this);
+//        mTvThreeQuarter.setOnClickListener(this);
+//        mTvMax.setOnClickListener(this);
+//        mTvHalf.setOnClickListener(this);
+//        mTvQuarter.setOnClickListener(this);
         mButtonPower.setOnClickListener(this);
     }
 
@@ -232,11 +232,6 @@ public class ManualFragment extends Fragment implements
 //    }
 
     @Override
-    public void setSendCommandEnabledState(boolean enabled) {
-        mButtonPower.setEnabled(enabled);
-    }
-
-    @Override
     public void setUiEnabled(boolean enabled) {
         if (!enabled) {
             if (mViewSwitcher.getCurrentView() == getView().findViewById(R.id.manual_layout)) {
@@ -314,16 +309,6 @@ public class ManualFragment extends Fragment implements
 //        }
 //    }
 
-    @Override
-    public void showMessage(String message) {
-//        Toast.makeText(getContext(), resString, Toast.LENGTH_LONG).show();
-        Snackbar.make(this.getView(), message, Snackbar.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void runOnUiThread(Runnable runnable) {
-        this.getActivity().runOnUiThread(runnable);
-    }
     private static final boolean EDITED = true;
     private static final boolean ENABLED = true;
 

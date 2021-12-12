@@ -14,7 +14,9 @@
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        messageRes="@{manualViewModel.messageRes}"
+        messageStr="@{manualViewModel.message}">
         <com.netanel.irrigator_app.FilledTabLayout
             android:id="@+id/tab_layout_valves"
             android:layout_width="match_parent"
@@ -215,6 +217,7 @@
                                 app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:tint="@android:color/black"
+                                android:onClick="@{()->manualViewModel.onSendCommand()}"
                                 android:states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.google.android.material.textview.MaterialTextView

@@ -8,6 +8,7 @@ import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textview.MaterialTextView;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
@@ -19,6 +20,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.databinding.BindingAdapter;
 import androidx.databinding.BindingConversion;
 import androidx.databinding.BindingMethod;
@@ -127,6 +129,15 @@ public class ManualFragBindingAdapter {
                 textView.getResources().getString(R.string.time_unit_hours),
                 textView.getResources().getString(R.string.time_unit_days)};
         textView.setText(StringExt.formatSecToTimeString(seconds, mTimeNames));
+    }
+
+    @BindingAdapter(value = {"messageRes","messageStr"},requireAll = false)
+    public static void showMessage(View parentView, int messageRes, String messageStr) {
+        if (messageRes != 0) {
+            Snackbar.make(parentView, messageRes, Snackbar.LENGTH_LONG).show();
+        } else if (messageStr != null) {
+            Snackbar.make(parentView, messageStr, Snackbar.LENGTH_LONG).show();
+        }
     }
     /**
      * <p></p>

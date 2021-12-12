@@ -3,6 +3,8 @@ package com.netanel.irrigator_app;
 import android.app.Application;
 import android.content.res.Resources;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.netanel.irrigator_app.model.Command;
@@ -33,14 +35,13 @@ import androidx.lifecycle.AndroidViewModel;
 
 /**
  * <p></p>
- *
+ *{
  * @author Netanel Iting
  * @version %I%, %G%
  * @since 1.0
  * Created on 23/09/2020
  */
-// TODO: 13/03/2021 build a joined parent for presenters to handle global values for all fragments.
-// TODO: 27/04/2021 remove all resource handling from presenter and implement them in the view.
+// TODO: 12/12/2021 build a global data access class for all view models, across all fragments.
 
 public class ManualFragPresenter extends AndroidViewModel
         implements ManualFragContract.IPresenter,
@@ -56,6 +57,27 @@ public class ManualFragPresenter extends AndroidViewModel
     private final IDataBaseConnection mDb;
 
     private int mActiveView;
+
+    private int mMessageRes;
+    private String mMessage;
+
+    @Bindable
+    public int getMessageRes() {
+        return mMessageRes;
+    }
+
+    @Bindable
+    public String getMessage() {
+        return mMessage;
+    }
+    public void setMessage(String message) {
+        mMessage = message;
+        notifyPropertyChanged(BR.message);
+    }
+    public void setMessageRes(int messageRes) {
+        mMessageRes = messageRes;
+        notifyPropertyChanged(BR.messageRes);
+    }
 
     public void setActiveView(int viewId) {
         mActiveView = viewId;
@@ -105,6 +127,7 @@ public class ManualFragPresenter extends AndroidViewModel
         mTimer = new ProgressTimer();
         mResources = getApplication().getResources();
         mConnectivityChangedCallback = new ConnectivityCallback(this, app.getApplicationContext());
+        mHandler = new Handler(Looper.getMainLooper());
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
     }
@@ -119,9 +142,8 @@ public class ManualFragPresenter extends AndroidViewModel
         if (mValves == null) {
             if (NetworkUtilities.isOnline(this.getApplication())) {
                 fetchValves();
-
             } else {
-                mView.showMessage(mResources.getString(R.string.msg_no_connection));
+                setMessageRes(R.string.msg_no_connection);
             }
         }
 
@@ -183,7 +205,7 @@ public class ManualFragPresenter extends AndroidViewModel
             @Override
             public void onComplete(Map<String, Valve> answer, Exception ex) {
                 if (ex != null) {
-                    mView.showMessage(ex.getMessage());
+                    setMessage(ex.getMessage());
                 } else if (answer != null) {
                     if (!answer.isEmpty()) {
                         LinkedHashMap<String, ValveViewModel> valvesMap = new LinkedHashMap<>();
@@ -196,11 +218,12 @@ public class ManualFragPresenter extends AndroidViewModel
                             valvesMap.put(valveVm.getId(), valveVm);
                         }
                         setValveMap(valvesMap);
+                        setMessageRes(R.string.msg_loaded_successful);
                     } else {
-                        mView.showMessage(mResources.getString(R.string.error_no_valves));
+                        setMessageRes(R.string.error_no_valves);
                     }
                 } else {
-                    mView.showMessage("Something went wrong, db returned empty result");
+                    setMessageRes(R.string.msg_returned_empty_result);
                 }
             }
         });
@@ -211,7 +234,7 @@ public class ManualFragPresenter extends AndroidViewModel
             @Override
             public void onDataChanged(Valve changedObject, Exception ex) {
                 if (ex != null) {
-                    mView.showMessage(ex.getMessage());
+                    setMessage(ex.getMessage());
                 }
                 valve.update(changedObject);
             }
@@ -220,29 +243,31 @@ public class ManualFragPresenter extends AndroidViewModel
 
     @Override
     public void onConnectivityChanged(final boolean isConnected) {
-        mView.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (isConnected) {
-                    if (mValves == null || mValves.isEmpty()) {
-                        mView.showMessage(mResources.getString(R.string.msg_connection_resumed)
-                                + StringExt.COMMA + StringExt.SPACE
-                                + mResources.getString(R.string.msg_loading_valves));
-                        fetchValves();
-                    } else {
-                        mView.showMessage(mResources.getString(R.string.msg_connection_resumed));
-                        mView.setUiEnabled(true);
-                    }
+        runOnUiThread(() -> {
+            if (isConnected) {
+                if (mValves == null || mValves.isEmpty()) {
+                    // TODO: 12/12/2021 remove reference to Resources from viewmodel
+                    setMessage(mResources.getString(R.string.msg_connection_resumed)
+                            + StringExt.COMMA + StringExt.SPACE
+                            + mResources.getString(R.string.msg_loading_valves));
+                    fetchValves();
                 } else {
-                    mView.showMessage(mResources.getString(R.string.msg_connection_lost));
-//                    mTimer.stopIfRunning();
-                    mView.setUiEnabled(false);
+                    setMessageRes(R.string.msg_connection_resumed);
+                    mView.setUiEnabled(true);
                 }
+            } else {
+                setMessageRes(R.string.msg_connection_lost);
+//                    mTimer.stopIfRunning();
+                mView.setUiEnabled(false);
             }
         });
 
     }
 
+    private final Handler mHandler;
+    private void runOnUiThread(Runnable action) {
+        mHandler.post(action);
+    }
     @Override
     public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
         if (fromUser || mIsFromScaleButton) {
@@ -274,7 +299,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
             if (mSelectedValve.isOpen()) {
                 if (mSelectedValve.getEditedProgress() == 0) {
-                    mView.showMessage("Tip: use the power button to turn off a valve");
+                    setMessage("Tip: use the power button to turn off a valve");
                 }
 
                 mTimer.startCountDown();
@@ -339,6 +364,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
         if (mSelectedValve.isEdited()) {
             if (mSelectedValve.getEditedProgress() != 0) {
+                // TODO: 12/12/2021 implement Command with builder pattern
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), mSelectedValve.getEditedProgress());
             } else {
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
@@ -348,15 +374,16 @@ public class ManualFragPresenter extends AndroidViewModel
         }
 
         if (cmnd != null) {
+            mSelectedValve.removeViewState(ValveViewModel.StateFlag.ENABLED);
             AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
                 @Override
                 public void onComplete(Command answer, Exception ex) {
                     if (ex != null) {
-                        mView.showMessage(ex.getMessage());
+                        setMessage(ex.getMessage());
+                        mSelectedValve.addViewState(ValveViewModel.StateFlag.ENABLED);
                     } else if (answer != null) {
                         Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
-                        mView.showMessage(mResources.getString(R.string.command_sent));
-                        mView.setSendCommandEnabledState(!ENABLED);
+                        setMessageRes(R.string.command_sent);
                     }
                 }
             });
@@ -423,7 +450,7 @@ public class ManualFragPresenter extends AndroidViewModel
             mElapsedTimer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    mView.runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(

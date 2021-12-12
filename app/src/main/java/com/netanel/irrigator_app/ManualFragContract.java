@@ -20,7 +20,7 @@ public interface ManualFragContract {
 
 //        void setPowerButtonEditedState(boolean edited);
 
-        void setSendCommandEnabledState(boolean enabled);
+//        void setSendCommandEnabledState(boolean enabled);
 
         void addValve(String valveId, String description, boolean isOpen);
 
@@ -34,11 +34,11 @@ public interface ManualFragContract {
 
         void addPhSensorView(float value, float maxValue);
 
-        void showMessage(String message);
+//        void showMessage(String message);
 
 //        void switchToValveView();
 
-        void runOnUiThread(Runnable runnable);
+//        void runOnUiThread(Runnable runnable);
 
         void setUiEnabled(boolean focusable);
 
