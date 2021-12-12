@@ -3,6 +3,7 @@ package com.netanel.irrigator_app;
 
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
@@ -95,12 +96,12 @@ public class ManualFragBindingAdapter {
 
     @BindingAdapter("android:activeView")
     public static void setActiveView(ViewSwitcher viewSwitcher, int viewId) {
-        if(viewId == ManualFragPresenter.VIEW_EMPTY) {
-            if(viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.empty_layout)) {
+        if (viewId == ManualFragPresenter.VIEW_EMPTY) {
+            if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.empty_layout)) {
                 viewSwitcher.showPrevious();
             }
-        } else if( viewId == ManualFragPresenter.VIEW_VALVE) {
-            if(viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.manual_layout)) {
+        } else if (viewId == ManualFragPresenter.VIEW_VALVE) {
+            if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.manual_layout)) {
                 viewSwitcher.showNext();
             }
         }
@@ -131,12 +132,41 @@ public class ManualFragBindingAdapter {
         textView.setText(StringExt.formatSecToTimeString(seconds, mTimeNames));
     }
 
-    @BindingAdapter(value = {"messageRes","messageStr"},requireAll = false)
+    @BindingAdapter("enabled")
+    public static void setTabLayoutEnabled(TabLayout tabView, boolean enabled) {
+        ViewGroup tabLayout = (ViewGroup) tabView.getChildAt(0);
+        tabLayout.setEnabled(enabled);
+        for (int i = 0; i < tabLayout.getChildCount(); i++) {
+            tabLayout.getChildAt(i).setEnabled(enabled);
+        }
+    }
+
+    @BindingAdapter(value = {"messageRes","messageStr"}, requireAll = false)
     public static void showMessage(View parentView, int messageRes, String messageStr) {
-        if (messageRes != 0) {
+         if (messageRes != 0) {
             Snackbar.make(parentView, messageRes, Snackbar.LENGTH_LONG).show();
         } else if (messageStr != null) {
             Snackbar.make(parentView, messageStr, Snackbar.LENGTH_LONG).show();
+        }
+    }
+
+    @BindingAdapter("messageArr")
+    public static void showComposedMessage(View parentView, Object[] messageArr) {
+        if (messageArr != null) {
+            StringBuilder builder = new StringBuilder();
+            for (Object obj :
+                    messageArr) {
+                {
+                    String append = null;
+                    if(obj instanceof Integer) {
+                        append = parentView.getResources().getString((int)obj);
+                    } else if(obj instanceof String) {
+                        append = (String) obj;
+                    }
+                    builder.append(append);
+                }
+            }
+            Snackbar.make(parentView, builder.toString(), Snackbar.LENGTH_LONG).show();
         }
     }
     /**

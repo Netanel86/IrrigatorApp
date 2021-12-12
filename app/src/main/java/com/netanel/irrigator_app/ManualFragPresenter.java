@@ -60,7 +60,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private int mMessageRes;
     private String mMessage;
-
+    private Object[] mMessageArr;
     @Bindable
     public int getMessageRes() {
         return mMessageRes;
@@ -70,13 +70,23 @@ public class ManualFragPresenter extends AndroidViewModel
     public String getMessage() {
         return mMessage;
     }
+    @Bindable
+    public Object[] getMessageArr() {
+        return mMessageArr;
+    }
+
     public void setMessage(String message) {
         mMessage = message;
         notifyPropertyChanged(BR.message);
     }
-    public void setMessageRes(int messageRes) {
+    public void setMessage(int messageRes) {
         mMessageRes = messageRes;
         notifyPropertyChanged(BR.messageRes);
+    }
+
+    public void setMessage(Object[] compose) {
+        mMessageArr = compose;
+        notifyPropertyChanged(BR.messageArr);
     }
 
     public void setActiveView(int viewId) {
@@ -115,7 +125,6 @@ public class ManualFragPresenter extends AndroidViewModel
         notifyPropertyChanged(BR.selectedValve);
     }
 
-    private final Resources mResources;
 
     private ManualFragContract.IView mView;
 
@@ -125,9 +134,9 @@ public class ManualFragPresenter extends AndroidViewModel
         super(app);
         mDb = AppServices.getInstance().getDbConnection();
         mTimer = new ProgressTimer();
-        mResources = getApplication().getResources();
         mConnectivityChangedCallback = new ConnectivityCallback(this, app.getApplicationContext());
         mHandler = new Handler(Looper.getMainLooper());
+
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
     }
@@ -143,7 +152,7 @@ public class ManualFragPresenter extends AndroidViewModel
             if (NetworkUtilities.isOnline(this.getApplication())) {
                 fetchValves();
             } else {
-                setMessageRes(R.string.msg_no_connection);
+                setMessage(R.string.msg_no_connection);
             }
         }
 
@@ -218,12 +227,12 @@ public class ManualFragPresenter extends AndroidViewModel
                             valvesMap.put(valveVm.getId(), valveVm);
                         }
                         setValveMap(valvesMap);
-                        setMessageRes(R.string.msg_loaded_successful);
+                        setMessage(R.string.msg_loaded_successful);
                     } else {
-                        setMessageRes(R.string.error_no_valves);
+                        setMessage(R.string.error_no_valves);
                     }
                 } else {
-                    setMessageRes(R.string.msg_returned_empty_result);
+                    setMessage(R.string.msg_returned_empty_result);
                 }
             }
         });
@@ -246,24 +255,38 @@ public class ManualFragPresenter extends AndroidViewModel
         runOnUiThread(() -> {
             if (isConnected) {
                 if (mValves == null || mValves.isEmpty()) {
-                    // TODO: 12/12/2021 remove reference to Resources from viewmodel
-                    setMessage(mResources.getString(R.string.msg_connection_resumed)
-                            + StringExt.COMMA + StringExt.SPACE
-                            + mResources.getString(R.string.msg_loading_valves));
+                    setMessage(new Object[]{R.string.msg_connection_resumed,
+                            StringExt.COMMA, StringExt.SPACE,
+                            R.string.msg_loading_valves});
                     fetchValves();
                 } else {
-                    setMessageRes(R.string.msg_connection_resumed);
-                    mView.setUiEnabled(true);
+                    setMessage(R.string.msg_connection_resumed);
+                    setUiEnabled(ENABLED);
                 }
             } else {
-                setMessageRes(R.string.msg_connection_lost);
-//                    mTimer.stopIfRunning();
-                mView.setUiEnabled(false);
+                setMessage(R.string.msg_connection_lost);
+                mTimer.stopIfActive();
+                setUiEnabled(!ENABLED);
             }
         });
 
     }
 
+    private boolean isUiEnabled;
+
+    @Bindable
+    public boolean getIsUiEnabled() {
+        return isUiEnabled;
+    }
+    public void setUiEnabled(boolean enabled) {
+        isUiEnabled = enabled;
+        if (enabled) {
+            setActiveView(VIEW_VALVE);
+        } else {
+            setActiveView(VIEW_EMPTY);
+        }
+        notifyPropertyChanged(BR.isUiEnabled);
+    }
     private final Handler mHandler;
     private void runOnUiThread(Runnable action) {
         mHandler.post(action);
@@ -299,7 +322,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
             if (mSelectedValve.isOpen()) {
                 if (mSelectedValve.getEditedProgress() == 0) {
-                    setMessage("Tip: use the power button to turn off a valve");
+                    setMessage(R.string.tip_use_power_button);
                 }
 
                 mTimer.startCountDown();
@@ -383,7 +406,7 @@ public class ManualFragPresenter extends AndroidViewModel
                         mSelectedValve.addViewState(ValveViewModel.StateFlag.ENABLED);
                     } else if (answer != null) {
                         Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
-                        setMessageRes(R.string.command_sent);
+                        setMessage(R.string.command_sent);
                     }
                 }
             });

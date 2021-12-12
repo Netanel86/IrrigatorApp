@@ -10,6 +10,9 @@
     <string name="msg_no_connection">Internet connection is not available</string>
     <string name="msg_loaded_successful">Data loaded successfully</string>
     <string name="msg_returned_empty_result">Something went wrong, data base returned empty result</string>
+
+    <string name="tip_use_power_button">Tip: use the power button to turn off a valve</string>
+
     <string name="time_unit_seconds">sec</string>
     <string name="time_unit_minutes">min</string>
     <string name="time_unit_hours">h</string>
