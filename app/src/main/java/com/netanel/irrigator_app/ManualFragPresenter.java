@@ -56,6 +56,16 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private final IDataBaseConnection mDb;
 
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+
+        NetworkUtilities.unregisterConnectivityCallback(
+                this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
+
+    }
+
     private int mActiveView;
 
     private int mMessageRes;
@@ -126,8 +136,6 @@ public class ManualFragPresenter extends AndroidViewModel
     }
 
 
-    private ManualFragContract.IView mView;
-
     private final ProgressTimer mTimer;
 
     public ManualFragPresenter(Application app) {
@@ -139,15 +147,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
         NetworkUtilities.registerConnectivityCallback(
                 app.getApplicationContext(), mConnectivityChangedCallback);
-    }
 
-    @Override
-    public void bindView(ManualFragContract.IView view) {
-        this.mView = view;
-    }
-
-    @Override
-    public void onViewCreated() {
         if (mValves == null) {
             if (NetworkUtilities.isOnline(this.getApplication())) {
                 fetchValves();
@@ -158,6 +158,7 @@ public class ManualFragPresenter extends AndroidViewModel
 
         testSensors();
     }
+
 
     private void testSensors() {
         List<Sensor> sensors = new ArrayList<>();
@@ -183,31 +184,27 @@ public class ManualFragPresenter extends AndroidViewModel
             sensors.add(s1);
         }
 
-        for (Sensor s :
-                sensors) {
-            switch (s.getMeasureType()) {
-                case HUMIDITY:
-                    mView.addHumiditySensorView(s.getValue(), s.getMaxValue());
-                    break;
-                case TEMPERATURE:
-                    mView.addTemperatureSensorView(s.getValue(), s.getMaxValue());
-                    break;
-                case FLOW:
-                    mView.addFlowSensorView(s.getValue(), s.getMaxValue());
-                    break;
-                case PH:
-                    mView.addPhSensorView(s.getValue(), s.getMaxValue());
-                    break;
-            }
-        }
+//        for (Sensor s :
+//                sensors) {
+//            switch (s.getMeasureType()) {
+//                case HUMIDITY:
+//                    mView.addHumiditySensorView(s.getValue(), s.getMaxValue());
+//                    break;
+//                case TEMPERATURE:
+//                    mView.addTemperatureSensorView(s.getValue(), s.getMaxValue());
+//                    break;
+//                case FLOW:
+//                    mView.addFlowSensorView(s.getValue(), s.getMaxValue());
+//                    break;
+//                case PH:
+//                    mView.addPhSensorView(s.getValue(), s.getMaxValue());
+//                    break;
+//            }
+//        }
 
     }
 
-    @Override
-    public void onDestroy() {
-        NetworkUtilities.unregisterConnectivityCallback(
-                this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
-    }
+
 
     public void fetchValves() {
         mDb.getValves(new IDataBaseConnection.TaskListener<Map<String, Valve>>() {
