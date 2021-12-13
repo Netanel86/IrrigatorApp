@@ -1,6 +1,8 @@
 package com.netanel.irrigator_app;
 
 
+import android.app.Application;
+
 import com.netanel.irrigator_app.model.Valve;
 
 import java.util.Date;
@@ -21,7 +23,7 @@ import androidx.databinding.PropertyChangeRegistry;
  * Created on 10/10/2021
  */
 
-public class ValveViewModel implements Observable {
+public class ValveViewModel extends ObservableViewModel {
 
     private final Valve mValve;
 
@@ -31,9 +33,8 @@ public class ValveViewModel implements Observable {
 
     private Map<ManualFragContract.Scale, String> mScaleStrings;
 
-    private PropertyChangeRegistry mCallBacks;
-
     public ValveViewModel(Valve valve) {
+        super();
         mValve = valve;
         mViewStates = EnumSet.noneOf(StateFlag.class);
 
@@ -177,28 +178,6 @@ public class ValveViewModel implements Observable {
             addViewState(StateFlag.EDITED);
         } else {
             resetViewStates();
-        }
-    }
-
-    @Override
-    public void addOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if (mCallBacks == null) {
-            mCallBacks = new PropertyChangeRegistry();
-        }
-
-        mCallBacks.add(callback);
-    }
-
-    @Override
-    public void removeOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if (mCallBacks != null) {
-            mCallBacks.remove(callback);
-        }
-    }
-
-    protected void notifyPropertyChanged(int fieldId) {
-        if (mCallBacks != null) {
-            mCallBacks.notifyCallbacks(this, fieldId, null);
         }
     }
 

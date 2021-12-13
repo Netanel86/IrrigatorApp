@@ -43,10 +43,10 @@ import androidx.lifecycle.AndroidViewModel;
  */
 // TODO: 12/12/2021 build a global data access class for all view models, across all fragments.
 
-public class ManualFragPresenter extends AndroidViewModel
+public class ManualFragPresenter extends ObservableViewModel
         implements ManualFragContract.IPresenter,
-        ConnectivityCallback.IConnectivityChangedCallback,
-        Observable {
+        ConnectivityCallback.IConnectivityChangedCallback{
+
     public static final int VIEW_EMPTY = 0;
     public static final int VIEW_VALVE = 1;
     private static final boolean EDITED = true;
@@ -138,15 +138,15 @@ public class ManualFragPresenter extends AndroidViewModel
 
     private final ProgressTimer mTimer;
 
-    public ManualFragPresenter(Application app) {
-        super(app);
+    public ManualFragPresenter(Application application) {
+        super(application);
         mDb = AppServices.getInstance().getDbConnection();
         mTimer = new ProgressTimer();
-        mConnectivityChangedCallback = new ConnectivityCallback(this, app.getApplicationContext());
+        mConnectivityChangedCallback = new ConnectivityCallback(this, getApplication().getApplicationContext());
         mHandler = new Handler(Looper.getMainLooper());
 
         NetworkUtilities.registerConnectivityCallback(
-                app.getApplicationContext(), mConnectivityChangedCallback);
+                getApplication().getApplicationContext(), mConnectivityChangedCallback);
 
         if (mValves == null) {
             if (NetworkUtilities.isOnline(this.getApplication())) {
@@ -410,29 +410,29 @@ public class ManualFragPresenter extends AndroidViewModel
         }
     }
 
-    private PropertyChangeRegistry mCallBacks;
-
-    @Override
-    public void addOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
-        if (mCallBacks == null) {
-            mCallBacks = new PropertyChangeRegistry();
-        }
-
-        mCallBacks.add(callback);
-    }
-
-    @Override
-    public void removeOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
-        if (mCallBacks != null) {
-            mCallBacks.remove(callback);
-        }
-    }
-
-    private void notifyPropertyChanged(int fieldId) {
-        if (mCallBacks != null) {
-            mCallBacks.notifyCallbacks(this, fieldId, null);
-        }
-    }
+//    private PropertyChangeRegistry mCallBacks;
+//
+//    @Override
+//    public void addOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
+//        if (mCallBacks == null) {
+//            mCallBacks = new PropertyChangeRegistry();
+//        }
+//
+//        mCallBacks.add(callback);
+//    }
+//
+//    @Override
+//    public void removeOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
+//        if (mCallBacks != null) {
+//            mCallBacks.remove(callback);
+//        }
+//    }
+//
+//    private void notifyPropertyChanged(int fieldId) {
+//        if (mCallBacks != null) {
+//            mCallBacks.notifyCallbacks(this, fieldId, null);
+//        }
+//    }
 
     public class ProgressTimer {
         private CountDownTimer mCountDownTimer;
