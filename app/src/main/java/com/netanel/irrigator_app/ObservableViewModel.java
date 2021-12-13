@@ -3,6 +3,8 @@ package com.netanel.irrigator_app;
 
 import android.app.Application;
 
+import com.netanel.irrigator_app.services.AppServices;
+
 import androidx.annotation.NonNull;
 import androidx.databinding.Observable;
 import androidx.databinding.PropertyChangeRegistry;
@@ -27,8 +29,8 @@ public class ObservableViewModel extends AndroidViewModel implements Observable 
 
     private PropertyChangeRegistry mCallBacks;
 
-    public ObservableViewModel(@NonNull Application application) {
-        super(application);
+    public ObservableViewModel() {
+        super(AppServices.getInstance().getApplication());
     }
 
     @Override
@@ -51,5 +53,11 @@ public class ObservableViewModel extends AndroidViewModel implements Observable 
         if (mCallBacks != null) {
             mCallBacks.notifyCallbacks(this, fieldId, null);
         }
+    }
+
+    @Override
+    protected void onCleared() {
+        mCallBacks.clear();
+        super.onCleared();
     }
 }

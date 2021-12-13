@@ -1,5 +1,6 @@
 package com.netanel.irrigator_app.services;
 
+import android.app.Application;
 import android.util.Log;
 
 import com.netanel.irrigator_app.ViewModelFactory;
@@ -39,6 +40,7 @@ public class AppServices {
     private IJsonParser mJsonParser;
     private IDataBaseConnection mDatabaseConnection;
     private ViewModelProvider.AndroidViewModelFactory mViewModelFactory;
+    private Application mApplication;
 
     public IJsonParser getJsonParser() {
         if(mJsonParser == null) {
@@ -54,6 +56,14 @@ public class AppServices {
         }
 
         return mDatabaseConnection;
+    }
+
+    public Application getApplication() {
+        return mApplication;
+    }
+
+    public void setApplication(Application application) {
+        mApplication = application;
     }
 
     public ViewModelProvider.AndroidViewModelFactory getViewModelFactory(){

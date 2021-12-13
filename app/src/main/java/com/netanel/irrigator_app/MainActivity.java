@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             AppServices.getInstance()
                     .setViewModelFactory(new ViewModelProvider.AndroidViewModelFactory(getApplication()));
+            AppServices.getInstance().setApplication(getApplication());
 
 
         }
