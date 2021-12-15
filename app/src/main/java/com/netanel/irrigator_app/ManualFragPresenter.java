@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -69,7 +70,7 @@ public class ManualFragPresenter extends ObservableViewModel
 
     private boolean mIsFromScaleButton;
 
-    private Map<String, ValveViewModel> mValves;
+    private List<ValveViewModel> mValves;
 
     private List<SensorViewModel> mSensors;
 
@@ -146,7 +147,7 @@ public class ManualFragPresenter extends ObservableViewModel
     }
 
     @Bindable
-    public Map<String, ValveViewModel> getValveMap() {
+    public List<ValveViewModel> getValveMap() {
         return mValves;
     }
 
@@ -161,8 +162,8 @@ public class ManualFragPresenter extends ObservableViewModel
         notifyPropertyChanged(BR.sensors);
     }
 
-    public void setValveMap(Map<String, ValveViewModel> valveMap) {
-        mValves = valveMap;
+    public void setValves(List<ValveViewModel> valves) {
+        mValves = valves;
         notifyPropertyChanged(BR.valveMap);
 
         setActiveView(VIEW_VALVE);
@@ -216,23 +217,23 @@ public class ManualFragPresenter extends ObservableViewModel
 
 
     public void fetchValves() {
-        mDb.getValves(new IDataBaseConnection.TaskListener<Map<String, Valve>>() {
+        mDb.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
             @Override
-            public void onComplete(Map<String, Valve> answer, Exception ex) {
+            public void onComplete(List<Valve> answer, Exception ex) {
                 if (ex != null) {
                     setMessage(ex.getMessage());
                 } else if (answer != null) {
                     if (!answer.isEmpty()) {
-                        LinkedHashMap<String, ValveViewModel> valvesMap = new LinkedHashMap<>();
-                        ArrayList<Valve> valves = new ArrayList<>(answer.values());
-                        for (int i = 0; i < valves.size(); i++) {
-                            initValveDbListener(valves.get(i));
+                        LinkedList<ValveViewModel> valves = new LinkedList<>();
+                        for (Valve valve :
+                                answer) {
 
-                            ValveViewModel valveVm = new ValveViewModel(valves.get(i));
-
-                            valvesMap.put(valveVm.getId(), valveVm);
+                            initValveDbListener(valve);
+                            ValveViewModel valveVm = new ValveViewModel(valve);
+                            valves.add(valveVm);
                         }
-                        setValveMap(valvesMap);
+
+                        setValves(valves);
                         setMessage(R.string.msg_loaded_successful);
                     } else {
                         setMessage(R.string.error_no_valves);

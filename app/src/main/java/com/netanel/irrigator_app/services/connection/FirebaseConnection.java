@@ -14,8 +14,8 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Valve;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,7 +44,7 @@ public class FirebaseConnection implements IDataBaseConnection {
     }
 
     @Override
-    public void getValves(final TaskListener<Map<String, Valve>> result) {
+    public void getValves(final TaskListener<List<Valve>> result) {
 
         mDb.collection(PATH_VALVES).orderBy("index", Query.Direction.ASCENDING).get().addOnCompleteListener(
                 new OnCompleteListener<QuerySnapshot>() {
@@ -52,10 +52,10 @@ public class FirebaseConnection implements IDataBaseConnection {
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
                             //task is successful and has a non empty result
-                            LinkedHashMap<String, Valve> valves = new LinkedHashMap<>();
+                            LinkedList<Valve> valves = new LinkedList<>();
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Valve valve = document.toObject(Valve.class);
-                                valves.put(valve.getId(), valve);
+                                valves.add(valve);
                             }
                             result.onComplete(valves, null);
                         } else {

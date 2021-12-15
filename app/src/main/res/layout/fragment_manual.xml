@@ -33,9 +33,9 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             enabled="@{manualViewModel.isEnabled}"
-            android:visibility="@{manualViewModel.valveMap.size() > 0 ? View.VISIBLE : View.GONE}"
+            android:visibility="@{manualViewModel.valves.size() > 0 ? View.VISIBLE : View.GONE}"
             android:OnTabSelected="@{manualViewModel::onTabValveSelected}"
-            android:TabMap="@{manualViewModel.valveMap}"/>
+            android:TabMap="@{manualViewModel.valves}"/>
 
     <ViewSwitcher
         android:id="@+id/view_switcher"

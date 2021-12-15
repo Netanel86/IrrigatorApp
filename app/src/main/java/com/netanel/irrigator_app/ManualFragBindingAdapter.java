@@ -42,12 +42,11 @@ public class ManualFragBindingAdapter {
     private static int mSensorDimensions = 0;
 
     @BindingAdapter("android:TabMap")
-    public static void setValveTabs(FilledTabLayout tabLayout, Map<String, ValveViewModel> valveMap) {
+    public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valveMap) {
 
         if(valveMap != null) {
-            ArrayList<ValveViewModel> valves = new ArrayList<>(valveMap.values());
-            for (int i = 0; i < valves.size(); i++) {
-                ValveViewModel currValve = valves.get(i);
+            for (ValveViewModel viewModel :
+            valveMap) {
 
                 TabValveBinding binding =
                         DataBindingUtil.inflate(
@@ -56,7 +55,7 @@ public class ManualFragBindingAdapter {
                                 tabLayout,
                                 false);
 
-                binding.setValveViewModel(currValve);
+                binding.setValveViewModel(viewModel);
                 binding.setLifecycleOwner(FragmentManager.findFragment(tabLayout));
 
                 TabLayout.Tab tab = tabLayout.newTab().setCustomView(binding.getRoot());
