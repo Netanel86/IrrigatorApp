@@ -1,7 +1,6 @@
 package com.netanel.irrigator_app;
 
 import android.app.Application;
-import android.content.res.Resources;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
@@ -29,9 +28,6 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import androidx.databinding.Bindable;
-import androidx.databinding.Observable;
-import androidx.databinding.PropertyChangeRegistry;
-import androidx.lifecycle.AndroidViewModel;
 
 /**
  * <p></p>
@@ -47,96 +43,37 @@ public class ManualFragPresenter extends ObservableViewModel
         implements ManualFragContract.IPresenter,
         ConnectivityCallback.IConnectivityChangedCallback{
 
-    public static final int VIEW_EMPTY = 0;
-    public static final int VIEW_VALVE = 1;
     private static final boolean EDITED = true;
     private static final boolean ENABLED = true;
+
+    public static final int VIEW_EMPTY = 0;
+    public static final int VIEW_VALVE = 1;
 
     private final ConnectivityCallback mConnectivityChangedCallback;
 
     private final IDataBaseConnection mDb;
 
+    private final Handler mHandler;
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
+    private final ProgressTimer mTimer;
 
-        NetworkUtilities.unregisterConnectivityCallback(
-                this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
+    private String mMessage;
 
-    }
+    private int mMessageRes;
+
+    private Object[] mMessageArr;
 
     private int mActiveView;
 
-    private int mMessageRes;
-    private String mMessage;
-    private Object[] mMessageArr;
-    @Bindable
-    public int getMessageRes() {
-        return mMessageRes;
-    }
+    private boolean isEnabled;
 
-    @Bindable
-    public String getMessage() {
-        return mMessage;
-    }
-    @Bindable
-    public Object[] getMessageArr() {
-        return mMessageArr;
-    }
-
-    public void setMessage(String message) {
-        mMessage = message;
-        notifyPropertyChanged(BR.message);
-    }
-    public void setMessage(int messageRes) {
-        mMessageRes = messageRes;
-        notifyPropertyChanged(BR.messageRes);
-    }
-
-    public void setMessage(Object[] compose) {
-        mMessageArr = compose;
-        notifyPropertyChanged(BR.messageArr);
-    }
-
-    public void setActiveView(int viewId) {
-        mActiveView = viewId;
-        notifyPropertyChanged(BR.activeView);
-    }
-
-    @Bindable
-    public int getActiveView() {
-        return mActiveView;
-    }
+    private boolean mIsFromScaleButton;
 
     private Map<String, ValveViewModel> mValves;
 
-    @Bindable
-    public Map<String, ValveViewModel> getValveMap() {
-        return mValves;
-    }
-
-    public void setValveMap(Map<String, ValveViewModel> valveMap) {
-        mValves = valveMap;
-        notifyPropertyChanged(BR.valveMap);
-
-        setActiveView(VIEW_VALVE);
-    }
+    private List<SensorViewModel> mSensors;
 
     private ValveViewModel mSelectedValve;
-
-    @Bindable
-    public ValveViewModel getSelectedValve() {
-        return mSelectedValve;
-    }
-
-    public void setSelectedValve(ValveViewModel valve) {
-        mSelectedValve = valve;
-        notifyPropertyChanged(BR.selectedValve);
-    }
-
-
-    private final ProgressTimer mTimer;
 
     public ManualFragPresenter(Application application) {
         super(application);
@@ -159,49 +96,121 @@ public class ManualFragPresenter extends ObservableViewModel
         testSensors();
     }
 
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+
+        NetworkUtilities.unregisterConnectivityCallback(
+                this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
+
+    }
+
+    @Bindable
+    public int getMessageRes() {
+        return mMessageRes;
+    }
+
+    public void setMessage(int messageRes) {
+        mMessageRes = messageRes;
+        notifyPropertyChanged(BR.messageRes);
+    }
+
+    @Bindable
+    public String getMessage() {
+        return mMessage;
+    }
+
+    @Bindable
+    public Object[] getMessageArr() {
+        return mMessageArr;
+    }
+
+    public void setMessage(String message) {
+        mMessage = message;
+        notifyPropertyChanged(BR.message);
+    }
+
+    public void setMessage(Object[] compose) {
+        mMessageArr = compose;
+        notifyPropertyChanged(BR.messageArr);
+    }
+
+    public void setActiveView(int viewId) {
+        mActiveView = viewId;
+        notifyPropertyChanged(BR.activeView);
+    }
+
+    @Bindable
+    public int getActiveView() {
+        return mActiveView;
+    }
+
+    @Bindable
+    public Map<String, ValveViewModel> getValveMap() {
+        return mValves;
+    }
+
+
+    @Bindable
+    public List<SensorViewModel> getSensors() {
+        return mSensors;
+    }
+
+    public void setSensors(List<SensorViewModel> mSensors) {
+        this.mSensors = mSensors;
+        notifyPropertyChanged(BR.sensors);
+    }
+
+    public void setValveMap(Map<String, ValveViewModel> valveMap) {
+        mValves = valveMap;
+        notifyPropertyChanged(BR.valveMap);
+
+        setActiveView(VIEW_VALVE);
+    }
+
+
+    @Bindable
+    public ValveViewModel getSelectedValve() {
+        return mSelectedValve;
+    }
+
+    public void setSelectedValve(ValveViewModel valve) {
+        mSelectedValve = valve;
+        notifyPropertyChanged(BR.selectedValve);
+    }
+
+
+
 
     private void testSensors() {
-        List<Sensor> sensors = new ArrayList<>();
+        List<SensorViewModel> sensors = new ArrayList<>();
 
         for (int i = 0; i < 2; i++) {
             Sensor s1 = new Sensor(Sensor.Measure.HUMIDITY, 100);
             s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
-            sensors.add(s1);
+            SensorViewModel viewModel = new SensorViewModel(s1);
+            sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
             Sensor s1 = new Sensor(Sensor.Measure.TEMPERATURE, 99);
             s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
-            sensors.add(s1);
+            SensorViewModel viewModel = new SensorViewModel(s1);
+            sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
             Sensor s1 = new Sensor(Sensor.Measure.FLOW, 9);
-            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
-            sensors.add(s1);
+            s1.setValue(0.5);
+            SensorViewModel viewModel = new SensorViewModel(s1);
+            sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
             Sensor s1 = new Sensor(Sensor.Measure.PH, 15);
             s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
-            sensors.add(s1);
+            SensorViewModel viewModel = new SensorViewModel(s1);
+            sensors.add(viewModel);
         }
 
-//        for (Sensor s :
-//                sensors) {
-//            switch (s.getMeasureType()) {
-//                case HUMIDITY:
-//                    mView.addHumiditySensorView(s.getValue(), s.getMaxValue());
-//                    break;
-//                case TEMPERATURE:
-//                    mView.addTemperatureSensorView(s.getValue(), s.getMaxValue());
-//                    break;
-//                case FLOW:
-//                    mView.addFlowSensorView(s.getValue(), s.getMaxValue());
-//                    break;
-//                case PH:
-//                    mView.addPhSensorView(s.getValue(), s.getMaxValue());
-//                    break;
-//            }
-//        }
-
+        setSensors(sensors);
     }
 
 
@@ -258,36 +267,34 @@ public class ManualFragPresenter extends ObservableViewModel
                     fetchValves();
                 } else {
                     setMessage(R.string.msg_connection_resumed);
-                    setUiEnabled(ENABLED);
+                    setEnabled(ENABLED);
                 }
             } else {
                 setMessage(R.string.msg_connection_lost);
                 mTimer.stopIfActive();
-                setUiEnabled(!ENABLED);
+                setEnabled(!ENABLED);
             }
         });
 
     }
 
-    private boolean isUiEnabled;
-
     @Bindable
-    public boolean getIsUiEnabled() {
-        return isUiEnabled;
+    public boolean getIsEnabled() {
+        return isEnabled;
     }
-    public void setUiEnabled(boolean enabled) {
-        isUiEnabled = enabled;
+    public void setEnabled(boolean enabled) {
+        isEnabled = enabled;
         if (enabled) {
             setActiveView(VIEW_VALVE);
         } else {
             setActiveView(VIEW_EMPTY);
         }
-        notifyPropertyChanged(BR.isUiEnabled);
+        notifyPropertyChanged(BR.isEnabled);
     }
-    private final Handler mHandler;
     private void runOnUiThread(Runnable action) {
         mHandler.post(action);
     }
+
     @Override
     public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
         if (fromUser || mIsFromScaleButton) {
@@ -301,8 +308,6 @@ public class ManualFragPresenter extends ObservableViewModel
     private boolean hasProgressChangedByTimer() {
         return mTimer.isActive() && mTimer.getProgress() == mSelectedValve.getProgress();
     }
-
-    private boolean mIsFromScaleButton;
 
     public void setRelativeProgress(double relativeProgress) {
         mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
@@ -335,47 +340,8 @@ public class ManualFragPresenter extends ObservableViewModel
         }
     }
 
-
-
-    @Override
-    public void onValveSelected(String valveId) {
-//        mSelectedValve = mValves.get(valveId);
-//        if (mSelectedValve != null) {
-//            mView.showValve(mSelectedValve.getDescription(),
-//                    mSelectedValve.isOpen(), mSelectedValve.getMaxDuration());
-//            updateSelectedValveProgressView();
-//        } else {
-//            mView.showMessage(mResources.getString(R.string.error_loading_valve));
-//        }
-    }
-
     public void onTabValveSelected(ValveViewModel valveVm) {
         setSelectedValve(valveVm);
-    }
-
-
-    @Override
-    public void onTimeScaleClicked(ManualFragContract.Scale time) {
-        switch (time) {
-            case Zero:
-//                mView.setSelectedValveProgress(0);
-                break;
-            case Quarter:
-//                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.25));
-                break;
-            case Half:
-//                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.5));
-                break;
-            case ThreeQuarters:
-//                mView.setSelectedValveProgress((int) (mSelectedValve.getMaxDuration() * 0.75));
-                break;
-            case Max:
-                setRelativeProgress(ManualFragContract.Scale.Max.value);
-//                mView.setSelectedValveProgress((mSelectedValve.getMaxDuration()));
-                break;
-        }
-
-        onProgressChangedByUser();
     }
 
     @Override
@@ -409,30 +375,6 @@ public class ManualFragPresenter extends ObservableViewModel
             });
         }
     }
-
-//    private PropertyChangeRegistry mCallBacks;
-//
-//    @Override
-//    public void addOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
-//        if (mCallBacks == null) {
-//            mCallBacks = new PropertyChangeRegistry();
-//        }
-//
-//        mCallBacks.add(callback);
-//    }
-//
-//    @Override
-//    public void removeOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
-//        if (mCallBacks != null) {
-//            mCallBacks.remove(callback);
-//        }
-//    }
-//
-//    private void notifyPropertyChanged(int fieldId) {
-//        if (mCallBacks != null) {
-//            mCallBacks.notifyCallbacks(this, fieldId, null);
-//        }
-//    }
 
     public class ProgressTimer {
         private CountDownTimer mCountDownTimer;

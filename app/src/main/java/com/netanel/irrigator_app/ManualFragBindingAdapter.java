@@ -4,30 +4,28 @@ package com.netanel.irrigator_app;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
-import com.google.android.material.button.MaterialButton;
+import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.textview.MaterialTextView;
+import com.netanel.irrigator_app.databinding.SensorViewBinding;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
-import com.netanel.irrigator_app.model.Valve;
 import com.netanel.irrigator_app.services.StringExt;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.databinding.Bindable;
 import androidx.databinding.BindingAdapter;
-import androidx.databinding.BindingConversion;
-import androidx.databinding.BindingMethod;
-import androidx.databinding.BindingMethods;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.FragmentManager;
+import androidx.gridlayout.widget.GridLayout;
 
 
 /**
@@ -40,6 +38,8 @@ import androidx.fragment.app.FragmentManager;
  */
 
 public class ManualFragBindingAdapter {
+
+    private static int mSensorDimensions = 0;
 
     @BindingAdapter("android:TabMap")
     public static void setValveTabs(FilledTabLayout tabLayout, Map<String, ValveViewModel> valveMap) {
@@ -64,10 +64,27 @@ public class ManualFragBindingAdapter {
 
                 tabLayout.addTab(tab, tabLayout.getTabCount());
             }
+        }
+    }
 
-//            if (tabLayout.getVisibility() == View.GONE) {
-//                tabLayout.setVisibility(View.VISIBLE);
-//            }
+    @BindingAdapter("sensors")
+    public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
+        if(sensors != null) {
+            for (SensorViewModel sensor :
+                    sensors) {
+
+                SensorViewBinding binding =
+                        DataBindingUtil.inflate(LayoutInflater.from(grid.getContext()),
+                                R.layout.sensor_view,
+                                grid,
+                                false);
+                binding.setSensorVM(sensor);
+                binding.setLifecycleOwner(FragmentManager.findFragment(grid));
+                View sensorView = binding.getRoot();
+
+                grid.addView(sensorView);
+                calculateSensorViewOptimalDimen(binding.getRoot(), grid);
+            }
         }
     }
 
@@ -121,7 +138,6 @@ public class ManualFragBindingAdapter {
         }
     }
 
-
     @BindingAdapter("formatTime")
     public static void formatSecToTimeString(TextView textView, int seconds) {
         String[] mTimeNames = new String[]{
@@ -130,15 +146,6 @@ public class ManualFragBindingAdapter {
                 textView.getResources().getString(R.string.time_unit_hours),
                 textView.getResources().getString(R.string.time_unit_days)};
         textView.setText(StringExt.formatSecToTimeString(seconds, mTimeNames));
-    }
-
-    @BindingAdapter("enabled")
-    public static void setTabLayoutEnabled(TabLayout tabView, boolean enabled) {
-        ViewGroup tabLayout = (ViewGroup) tabView.getChildAt(0);
-        tabLayout.setEnabled(enabled);
-        for (int i = 0; i < tabLayout.getChildCount(); i++) {
-            tabLayout.getChildAt(i).setEnabled(enabled);
-        }
     }
 
     @BindingAdapter(value = {"messageRes","messageStr"}, requireAll = false)
@@ -169,6 +176,41 @@ public class ManualFragBindingAdapter {
             Snackbar.make(parentView, builder.toString(), Snackbar.LENGTH_LONG).show();
         }
     }
+
+    public static void setViewDimensions(View sensorView,int widthAndHeight) {
+        CircularSeekBar seekBar = sensorView.findViewById(R.id.seekbar_sensor);
+        ViewGroup.LayoutParams params = seekBar.getLayoutParams();
+        params.width = widthAndHeight;
+        params.height = widthAndHeight;
+        seekBar.setLayoutParams(params);
+        seekBar.setCircleRadius((float) widthAndHeight / 2);
+    }
+
+    private static void calculateSensorViewOptimalDimen(final View sensorView, GridLayout grid) {
+        final View parentView = (View) grid.getParent().getParent();
+        ViewTreeObserver viewTreeObserver = parentView.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    parentView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                    if (mSensorDimensions == 0) {
+                        ViewGroup.MarginLayoutParams gridParams =
+                                (ViewGroup.MarginLayoutParams) grid.getLayoutParams();
+                        int parentWidth = parentView.getMeasuredWidth();
+                        int columnCount = grid.getColumnCount();
+                        int gridMargins = gridParams.leftMargin + gridParams.rightMargin +
+                                (gridParams.rightMargin * (columnCount - 1));
+                        int padding = sensorView.getPaddingStart() * columnCount * 2;
+                        mSensorDimensions = (parentWidth - gridMargins - padding) / columnCount;
+                    }
+                    setViewDimensions(sensorView, mSensorDimensions);
+                }
+            });
+        }
+    }
+
     /**
      * <p></p>
      *

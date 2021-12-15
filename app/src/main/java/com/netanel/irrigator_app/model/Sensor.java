@@ -1,6 +1,10 @@
 package com.netanel.irrigator_app.model;
 
 
+import com.netanel.irrigator_app.PropertyChangedCallback;
+import com.netanel.irrigator_app.services.StringExt;
+
+
 /**
  * <p></p>
  *
@@ -11,11 +15,18 @@ package com.netanel.irrigator_app.model;
  */
 
 public class Sensor {
+    public static final int PROP_MEASURE = 0x1;
+    public static final int PROP_MAX_VALUE = 0x2;
+    public static final int PROP_VALUE = 0x3;
+    public static final int PROP_PARENT_ID = 0x4;
+
     private String mParentControllerId;
     private String mId;
     private Measure mMeasure;
-    private float mValue;
-    private float mMaxValue;
+    private double mValue;
+    private double mMaxValue;
+
+    private PropertyChangedCallback mCallback;
 
     public Sensor() {}
 
@@ -24,20 +35,28 @@ public class Sensor {
         mMaxValue = maxValue;
     }
 
-    public Measure getMeasureType() {
+    public Measure getMeasures() {
         return this.mMeasure;
     }
 
-    public void setMeasureType(Measure measure) {
-        this.mMeasure = measure;
+    public void setMeasures(Measure measure) {
+        if(mMeasure != measure) {
+            Measure oldVal = mMeasure;
+            mMeasure = measure;
+            notifyPropertyChange(PROP_MEASURE, oldVal, mMeasure);
+        }
     }
 
-    public float getValue() {
+    public double getValue() {
         return mValue;
     }
 
-    public void setValue(float value) {
-        mValue = value;
+    public void setValue(double value) {
+        if(mValue != value) {
+            double oldVal = mValue;
+            mValue = value;
+            notifyPropertyChange(PROP_VALUE, oldVal, mValue);
+        }
     }
 
     public String getParentControllerId() {
@@ -45,22 +64,43 @@ public class Sensor {
     }
 
     public void setParentControllerId(String parentId) {
-        mParentControllerId = parentId;
+        if(!mParentControllerId.equals(parentId)) {
+            String oldVal = mParentControllerId;
+            mParentControllerId = parentId;
+            notifyPropertyChange(PROP_PARENT_ID, oldVal, mParentControllerId);
+        }
     }
 
-    public float getMaxValue() {
+    public double getMaxValue() {
         return mMaxValue;
     }
 
-    public void setMaxValue(int mMaxValue) {
-        this.mMaxValue = mMaxValue;
+    public void setMaxValue(double maxValue) {
+        if(mMaxValue != maxValue) {
+            double oldVal = mMaxValue;
+            mMaxValue = maxValue;
+            notifyPropertyChange(PROP_MAX_VALUE, oldVal, mMaxValue);
+        }
+    }
+
+    public void setOnPropertyChangedCallback(PropertyChangedCallback mCallback) {
+        this.mCallback = mCallback;
+    }
+
+    private void notifyPropertyChange(int propertyId, Object oldValue,Object newValue) {
+        if (mCallback != null) {
+            mCallback.onPropertyChanged(this, propertyId, oldValue, newValue);
+        }
     }
 
     public enum Measure {
-        HUMIDITY,
-        TEMPERATURE,
-        PH,
-        EC,
-        FLOW
+        HUMIDITY("%"),
+        TEMPERATURE(StringExt.SYMBOL_CELSIUS),
+        PH("pH"),
+        EC("EC"),
+        FLOW("L/s");
+
+        public final String symbol;
+        Measure(String symbol) {this.symbol = symbol;}
     }
 }

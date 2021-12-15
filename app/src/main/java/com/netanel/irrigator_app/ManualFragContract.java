@@ -15,9 +15,9 @@ public interface ManualFragContract {
     interface IPresenter {
         void onSeekBarProgressChanged(final int progress, boolean fromUser);
 
-        void onValveSelected(String valveId);
+//        void onValveSelected(String valveId);
 
-        void onTimeScaleClicked(Scale time);
+//        void onTimeScaleClicked(Scale time);
 
         void onSendCommand();
     }

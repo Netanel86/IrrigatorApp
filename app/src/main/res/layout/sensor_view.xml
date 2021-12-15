@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="sensorVM"
+            type="com.netanel.irrigator_app.SensorViewModel" />
+    </data>
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    paddingInDp="@{3}">
+
 
     <com.devadvance.circularseekbar.CircularSeekBar
         android:id="@+id/seekbar_sensor"
@@ -13,6 +22,8 @@
         app:circle_stroke_width="5dp"
         tools:circle_x_radius="45dp"
         tools:circle_y_radius="45dp"
+        app:max="@{sensorVM.maxProgress}"
+        app:progress="@{sensorVM.progress}"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -20,18 +31,20 @@
         app:pointer_halo_border_width="0dp"
         app:pointer_halo_width="0dp"
         app:pointer_radius="0dp"
-        app:use_custom_radii="true"/>
+        app:use_custom_radii="true"
+        enabled="@{false}"/>
 
     <ImageView
         android:id="@+id/iv_sensor"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        tools:src="@drawable/ic_humidity_filled"
         app:layout_constraintBottom_toBottomOf="@id/seekbar_sensor"
         app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
         app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
         app:layout_constraintTop_toTopOf="@id/seekbar_sensor"
-        app:layout_constraintVertical_bias="0.3" />
+        app:layout_constraintVertical_bias="0.3"
+        src="@{sensorVM.iconRes}"
+        tools:src="@drawable/ic_humidity_filled"/>
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tv_sensor_value"
@@ -43,6 +56,7 @@
         app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
         app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
         app:layout_constraintTop_toBottomOf="@id/iv_sensor"
+        android:text="@{sensorVM.valueText}"
         tools:text="52%" />
-</merge>
-
+</androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
