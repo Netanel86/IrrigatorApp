@@ -11,7 +11,7 @@ package com.netanel.irrigator_app;
  */
 
 interface IMultiStateView {
-    void setStateActivated(boolean activated);
-    void setStateEdited(boolean edited);
+    void setActivated(boolean activated);
+    void setEdited(boolean edited);
     void setEnabled(boolean enabled);
 }

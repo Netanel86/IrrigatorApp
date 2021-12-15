@@ -24,9 +24,9 @@ public class SensorViewModel extends ObservableViewModel {
 
     private final Sensor mSensor;
 
-    private String mValueFormat;
+    private String mTextFormat;
 
-    private int mIconRes;
+    private int mDrawable;
 
     private int mResolution;
 
@@ -48,12 +48,12 @@ public class SensorViewModel extends ObservableViewModel {
                         notifyPropertyChanged(BR.maxProgress);
                     case Sensor.PROP_VALUE:
                         notifyPropertyChanged(BR.progress);
-                        notifyPropertyChanged(BR.valueText);
+                        notifyPropertyChanged(BR.textValue);
                         break;
 
                     case Sensor.PROP_MEASURE:
-                        notifyPropertyChanged(BR.valueText);
-                        notifyPropertyChanged(BR.iconRes);
+                        notifyPropertyChanged(BR.textValue);
+                        notifyPropertyChanged(BR.drawable);
                         break;
                 }
             }
@@ -63,31 +63,31 @@ public class SensorViewModel extends ObservableViewModel {
     private void assignResources() {
         switch (mSensor.getMeasures()) {
             case EC:
-                mValueFormat = "%.1f";
+                mTextFormat = "%.1f";
                 mResolution = 10;
                 mValueType = DOUBLE;
                 break;
             case PH:
-                setIconRes(R.drawable.ic_ph_meter);
-                mValueFormat = "%.1f";
+                setDrawable(R.drawable.ic_ph_meter);
+                mTextFormat = "%.1f";
                 mResolution = 10;
                 mValueType = DOUBLE;
                 break;
             case HUMIDITY:
-                setIconRes(R.drawable.ic_humidity_filled);
-                mValueFormat = "%d";
+                setDrawable(R.drawable.ic_humidity_filled);
+                mTextFormat = "%d";
                 mResolution = 1;
                 mValueType = INTEGER;
                 break;
             case TEMPERATURE:
-                setIconRes(R.drawable.ic_thermometer);
-                mValueFormat = "%d";
+                setDrawable(R.drawable.ic_thermometer);
+                mTextFormat = "%d";
                 mResolution = 1;
                 mValueType = INTEGER;
                 break;
             case FLOW:
-                setIconRes(R.drawable.ic_flow_meter);
-                mValueFormat = "%.1f";
+                setDrawable(R.drawable.ic_flow_meter);
+                mTextFormat = "%.1f";
                 mResolution = 10;
                 mValueType = DOUBLE;
                 break;
@@ -95,25 +95,25 @@ public class SensorViewModel extends ObservableViewModel {
     }
 
     @Bindable
-    public String getValueText() {
+    public String getTextValue() {
         String value;
         if (mValueType == DOUBLE) {
-            value = String.format(Locale.getDefault(), mValueFormat, mSensor.getValue());
+            value = String.format(Locale.getDefault(), mTextFormat, mSensor.getValue());
         } else {
-            value = String.format(Locale.getDefault(), mValueFormat, (int)mSensor.getValue());
+            value = String.format(Locale.getDefault(), mTextFormat, (int)mSensor.getValue());
         }
         return value + mSensor.getMeasures().symbol;
     }
 
     @Bindable
-    public int getIconRes() {
-        return mIconRes;
+    public int getDrawable() {
+        return mDrawable;
     }
 
-    public void setIconRes(int resId) {
-        if(mIconRes != resId) {
-            mIconRes = resId;
-            notifyPropertyChanged(BR.iconRes);
+    public void setDrawable(int resource) {
+        if(mDrawable != resource) {
+            mDrawable = resource;
+            notifyPropertyChanged(BR.drawable);
         }
     }
 

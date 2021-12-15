@@ -6,18 +6,18 @@
 <data>
     <variable
         name="manualViewModel"
-        type ="com.netanel.irrigator_app.ManualFragPresenter" />
+        type ="com.netanel.irrigator_app.IManualViewModel" />
 
     <import type="android.view.View" />
-    <import type="com.netanel.irrigator_app.ManualFragContract.Scale"/>
+    <import type="com.netanel.irrigator_app.IManualViewModel.Scale"/>
     <import type="com.netanel.irrigator_app.services.StringExt"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        messageRes="@{manualViewModel.messageRes}"
-        messageStr="@{manualViewModel.message}"
-        messageArr="@{manualViewModel.messageArr}">
+        messageResource="@{manualViewModel.messageResource}"
+        message="@{manualViewModel.message}"
+        messageComposed="@{manualViewModel.messageArray}">
         <com.netanel.irrigator_app.FilledTabLayout
             android:id="@+id/tab_layout_valves"
             android:layout_width="match_parent"
@@ -32,10 +32,10 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            enabled="@{manualViewModel.isEnabled}"
+            enabled="@{manualViewModel.enabled}"
             android:visibility="@{manualViewModel.valves.size() > 0 ? View.VISIBLE : View.GONE}"
-            android:OnTabSelected="@{manualViewModel::onTabValveSelected}"
-            android:TabMap="@{manualViewModel.valves}"/>
+            onTabSelected="@{manualViewModel::onTabValveSelected}"
+            tabs="@{manualViewModel.valves}"/>
 
     <ViewSwitcher
         android:id="@+id/view_switcher"
@@ -45,7 +45,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:activeView="@{manualViewModel.activeView}">
+        activeView="@{manualViewModel.activeView}">
 
 
         <FrameLayout
@@ -178,7 +178,7 @@
 
                             </androidx.appcompat.widget.LinearLayoutCompat>
 
-                            <com.netanel.irrigator_app.StateCircularSeekBar
+                            <com.netanel.irrigator_app.ExtCircularSeekBar
                                 android:id="@+id/seekbar_timer"
                                 android:layout_width="300dp"
                                 android:layout_height="300dp"
@@ -201,9 +201,9 @@
                                 onProgressChanged="@{manualViewModel::onSeekBarProgressChanged}"
                                 app:progress="@={manualViewModel.selectedValve.progress}"
                                 app:max="@{manualViewModel.selectedValve.maxDuration}"
-                                android:states="@{manualViewModel.selectedValve.viewStates}"/>
+                                states="@{manualViewModel.selectedValve.viewStates}"/>
 
-                            <com.netanel.irrigator_app.StateImageButton
+                            <com.netanel.irrigator_app.ExtImageButton
                                 android:id="@+id/img_btn_power"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
@@ -220,7 +220,7 @@
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:tint="@android:color/black"
                                 android:onClick="@{()->manualViewModel.onSendCommand()}"
-                                android:states="@{manualViewModel.selectedValve.viewStates}"/>
+                                states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tv_elapsed_time"
@@ -348,7 +348,7 @@
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/card_sensor_title"
                                 app:layout_constraintBottom_toBottomOf="parent"
-                                sensors="@{manualViewModel.sensors}"/>
+                                items="@{manualViewModel.sensors}"/>
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>

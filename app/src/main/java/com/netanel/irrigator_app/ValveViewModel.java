@@ -1,8 +1,6 @@
 package com.netanel.irrigator_app;
 
 
-import android.app.Application;
-
 import com.netanel.irrigator_app.model.Valve;
 
 import java.util.Date;
@@ -11,8 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import androidx.databinding.Bindable;
-import androidx.databinding.Observable;
-import androidx.databinding.PropertyChangeRegistry;
 
 /**
  * <p></p>
@@ -29,18 +25,112 @@ public class ValveViewModel extends ObservableViewModel {
 
     private int mEditedProgress;
 
-    private EnumSet<StateFlag> mViewStates;
+    private EnumSet<State> mViewStates;
 
-    private Map<ManualFragContract.Scale, String> mScaleStrings;
+    private Map<IManualViewModel.Scale, String> mScaleStrings;
 
     public ValveViewModel(Valve valve) {
         super();
         mValve = valve;
-        mViewStates = EnumSet.noneOf(StateFlag.class);
+        mViewStates = EnumSet.noneOf(State.class);
 
         initializeListener();
         resetViewStates();
         initTimeScales();
+    }
+
+    public String getId() {
+        return mValve.getId();
+    }
+
+    public int getIndex() {
+        return mValve.getIndex();
+    }
+
+    public Date getLastOpen() {
+        return mValve.getLastOpen();
+    }
+
+    public int getTimeLeft() {
+        return (int) mValve.getTimeLeft();
+    }
+
+    @Bindable
+    public boolean isOpen() {
+        return mValve.isOpen();
+    }
+
+    @Bindable
+    public String getDescription() {
+        return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
+                "#" + mValve.getIndex() : mValve.getDescription();
+    }
+
+    @Bindable
+    public int getMaxDuration() {
+        return mValve.getMaxDuration();
+    }
+
+    @Bindable
+    public int getProgress() {
+        return mEditedProgress > 0 ? mEditedProgress : getTimeLeft();
+    }
+
+    public void setProgress(int progress) {
+        if (this.mEditedProgress != progress) {
+            this.mEditedProgress = progress;
+            notifyPropertyChanged(BR.progress);
+        }
+    }
+
+    public int getEditedProgress() {
+        return mEditedProgress;
+    }
+
+    @Bindable
+    public Map<IManualViewModel.Scale, String> getScaleStrings() {
+        return mScaleStrings;
+    }
+
+    @Bindable
+    public EnumSet<State> getViewStates() {
+        return mViewStates;
+    }
+
+    public void setViewStates(EnumSet<State> currentStates) {
+        mViewStates = currentStates;
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    public void addViewState(State state) {
+        mViewStates.add(state);
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    public void removeViewState(State state) {
+        mViewStates.remove(state);
+        notifyPropertyChanged(BR.viewStates);
+    }
+
+    public void resetViewStates() {
+        if (isOpen()) {
+            setViewStates(EnumSet.of(State.ACTIVATED, State.ENABLED));
+        } else {
+            setViewStates(EnumSet.noneOf(State.class));
+        }
+    }
+
+    public boolean isEdited() {
+        return mViewStates.contains(State.EDITED);
+    }
+
+    public void setEdited(boolean isEdited) {
+        if (isEdited) {
+            addViewState(State.ENABLED);
+            addViewState(State.EDITED);
+        } else {
+            resetViewStates();
+        }
     }
 
     private void initializeListener() {
@@ -72,59 +162,6 @@ public class ValveViewModel extends ObservableViewModel {
         });
     }
 
-    public String getId() {
-        return mValve.getId();
-    }
-
-    public int getIndex() {
-        return mValve.getIndex();
-    }
-
-    public Date getLastOpen() {
-        return mValve.getLastOpen();
-    }
-
-    public int getEditedProgress() {
-        return mEditedProgress;
-    }
-
-    @Bindable
-    public int getProgress() {
-        return mEditedProgress > 0 ? mEditedProgress : getTimeLeft();
-    }
-
-    public void setProgress(int progress) {
-        if (this.mEditedProgress != progress) {
-            this.mEditedProgress = progress;
-            notifyPropertyChanged(BR.progress);
-        }
-    }
-
-    @Bindable
-    public String getDescription() {
-        return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
-                "#" + mValve.getIndex() : mValve.getDescription();
-    }
-
-    public int getTimeLeft() {
-        return (int) mValve.getTimeLeft();
-    }
-
-    @Bindable
-    public boolean isOpen() {
-        return mValve.isOpen();
-    }
-
-    @Bindable
-    public int getMaxDuration() {
-        return mValve.getMaxDuration();
-    }
-
-    @Bindable
-    public Map<ManualFragContract.Scale, String> getScaleStrings() {
-        return mScaleStrings;
-    }
-
     private void initTimeScales() {
         if (mScaleStrings == null) {
             mScaleStrings = new HashMap<>();
@@ -132,7 +169,7 @@ public class ValveViewModel extends ObservableViewModel {
             mScaleStrings.clear();
         }
 
-        for (ManualFragContract.Scale scale : ManualFragContract.Scale.values()
+        for (IManualViewModel.Scale scale : IManualViewModel.Scale.values()
         ) {
             mScaleStrings.put(scale, String.valueOf((int) (getMaxDuration() * scale.value / 60)));
         }
@@ -140,48 +177,7 @@ public class ValveViewModel extends ObservableViewModel {
         notifyPropertyChanged(BR.scaleStrings);
     }
 
-    @Bindable
-    public EnumSet<StateFlag> getViewStates() {
-        return mViewStates;
-    }
-
-    public void setViewStates(EnumSet<StateFlag> currentStates) {
-        mViewStates = currentStates;
-        notifyPropertyChanged(BR.viewStates);
-    }
-
-    public void removeViewState(StateFlag state) {
-        mViewStates.remove(state);
-        notifyPropertyChanged(BR.viewStates);
-    }
-
-    public void addViewState(StateFlag state) {
-        mViewStates.add(state);
-        notifyPropertyChanged(BR.viewStates);
-    }
-
-    public void resetViewStates() {
-        if (isOpen()) {
-            setViewStates(EnumSet.of(StateFlag.ACTIVATED, StateFlag.ENABLED));
-        } else {
-            setViewStates(EnumSet.noneOf(StateFlag.class));
-        }
-    }
-
-    public boolean isEdited() {
-        return mViewStates.contains(StateFlag.EDITED);
-    }
-
-    public void setEdited(boolean isEdited) {
-        if (isEdited) {
-            addViewState(StateFlag.ENABLED);
-            addViewState(StateFlag.EDITED);
-        } else {
-            resetViewStates();
-        }
-    }
-
-    public enum StateFlag {
+    public enum State {
         ACTIVATED,
         ENABLED,
         EDITED;

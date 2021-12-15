@@ -20,15 +20,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-
-import androidx.databinding.Bindable;
 
 /**
  * <p></p>
@@ -39,9 +35,11 @@ import androidx.databinding.Bindable;
  * Created on 23/09/2020
  */
 // TODO: 12/12/2021 build a global data access class for all view models, across all fragments.
+// TODO: 15/12/2021 global data access object should handle subscribing to db,
+//  would have two methods for data requests, onComplete and onError.
 
-public class ManualFragPresenter extends ObservableViewModel
-        implements ManualFragContract.IPresenter,
+public class ManualViewModel extends ObservableViewModel
+        implements IManualViewModel,
         ConnectivityCallback.IConnectivityChangedCallback{
 
     private static final boolean EDITED = true;
@@ -60,7 +58,7 @@ public class ManualFragPresenter extends ObservableViewModel
 
     private String mMessage;
 
-    private int mMessageRes;
+    private int mMessageResource;
 
     private Object[] mMessageArr;
 
@@ -68,7 +66,7 @@ public class ManualFragPresenter extends ObservableViewModel
 
     private boolean isEnabled;
 
-    private boolean mIsFromScaleButton;
+    private boolean mIsScaleButtonChange;
 
     private List<ValveViewModel> mValves;
 
@@ -76,7 +74,7 @@ public class ManualFragPresenter extends ObservableViewModel
 
     private ValveViewModel mSelectedValve;
 
-    public ManualFragPresenter(Application application) {
+    public ManualViewModel(Application application) {
         super(application);
         mDb = AppServices.getInstance().getDbConnection();
         mTimer = new ProgressTimer();
@@ -90,7 +88,7 @@ public class ManualFragPresenter extends ObservableViewModel
             if (NetworkUtilities.isOnline(this.getApplication())) {
                 fetchValves();
             } else {
-                setMessage(R.string.msg_no_connection);
+                setMessageResource(R.string.msg_no_connection);
             }
         }
 
@@ -106,24 +104,41 @@ public class ManualFragPresenter extends ObservableViewModel
 
     }
 
-    @Bindable
-    public int getMessageRes() {
-        return mMessageRes;
+    @Override
+    public void onConnectivityChanged(final boolean isConnected) {
+        runOnUiThread(() -> {
+            if (isConnected) {
+                if (mValves == null || mValves.isEmpty()) {
+                    setMessageArray(new Object[]{R.string.msg_connection_resumed,
+                            StringExt.COMMA, StringExt.SPACE,
+                            R.string.msg_loading_valves});
+                    fetchValves();
+                } else {
+                    setMessageResource(R.string.msg_connection_resumed);
+                    setEnabled(ENABLED);
+                }
+            } else {
+                setMessageResource(R.string.msg_connection_lost);
+                mTimer.stopIfActive();
+                setEnabled(!ENABLED);
+            }
+        });
+
     }
 
-    public void setMessage(int messageRes) {
-        mMessageRes = messageRes;
-        notifyPropertyChanged(BR.messageRes);
+    @Override
+    public int getMessageResource() {
+        return mMessageResource;
     }
 
-    @Bindable
+    public void setMessageResource(int resource) {
+        mMessageResource = resource;
+        notifyPropertyChanged(BR.messageResource);
+    }
+
+    @Override
     public String getMessage() {
         return mMessage;
-    }
-
-    @Bindable
-    public Object[] getMessageArr() {
-        return mMessageArr;
     }
 
     public void setMessage(String message) {
@@ -131,9 +146,19 @@ public class ManualFragPresenter extends ObservableViewModel
         notifyPropertyChanged(BR.message);
     }
 
-    public void setMessage(Object[] compose) {
+    @Override
+    public Object[] getMessageArray() {
+        return mMessageArr;
+    }
+
+    public void setMessageArray(Object[] compose) {
         mMessageArr = compose;
-        notifyPropertyChanged(BR.messageArr);
+        notifyPropertyChanged(BR.messageArray);
+    }
+
+    @Override
+    public int getActiveView() {
+        return mActiveView;
     }
 
     public void setActiveView(int viewId) {
@@ -141,18 +166,19 @@ public class ManualFragPresenter extends ObservableViewModel
         notifyPropertyChanged(BR.activeView);
     }
 
-    @Bindable
-    public int getActiveView() {
-        return mActiveView;
-    }
-
-    @Bindable
-    public List<ValveViewModel> getValveMap() {
+    @Override
+    public List<ValveViewModel> getValves() {
         return mValves;
     }
 
+    public void setValves(List<ValveViewModel> valves) {
+        mValves = valves;
+        notifyPropertyChanged(BR.valves);
 
-    @Bindable
+        setActiveView(VIEW_VALVE);
+    }
+
+    @Override
     public List<SensorViewModel> getSensors() {
         return mSensors;
     }
@@ -162,15 +188,7 @@ public class ManualFragPresenter extends ObservableViewModel
         notifyPropertyChanged(BR.sensors);
     }
 
-    public void setValves(List<ValveViewModel> valves) {
-        mValves = valves;
-        notifyPropertyChanged(BR.valveMap);
-
-        setActiveView(VIEW_VALVE);
-    }
-
-
-    @Bindable
+    @Override
     public ValveViewModel getSelectedValve() {
         return mSelectedValve;
     }
@@ -180,8 +198,102 @@ public class ManualFragPresenter extends ObservableViewModel
         notifyPropertyChanged(BR.selectedValve);
     }
 
+    @Override
+    public boolean getEnabled() {
+        return isEnabled;
+    }
 
+    public void setEnabled(boolean enabled) {
+        isEnabled = enabled;
+        if (enabled) {
+            setActiveView(VIEW_VALVE);
+        } else {
+            setActiveView(VIEW_EMPTY);
+        }
+        notifyPropertyChanged(BR.enabled);
+    }
 
+    @Override
+    public void setRelativeProgress(double relativeProgress) {
+        mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
+        mIsScaleButtonChange = true;
+    }
+
+    public void fetchValves() {
+        mDb.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
+            @Override
+            public void onComplete(List<Valve> answer, Exception ex) {
+                if (ex != null) {
+                    setMessage(ex.getMessage());
+                } else if (answer != null) {
+                    if (!answer.isEmpty()) {
+                        LinkedList<ValveViewModel> valves = new LinkedList<>();
+                        for (Valve valve :
+                                answer) {
+
+                            initValveDbListener(valve);
+                            ValveViewModel valveVm = new ValveViewModel(valve);
+                            valves.add(valveVm);
+                        }
+
+                        setValves(valves);
+                        setMessageResource(R.string.msg_loaded_successful);
+                    } else {
+                        setMessageResource(R.string.error_no_valves);
+                    }
+                } else {
+                    setMessageResource(R.string.msg_returned_empty_result);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onTabValveSelected(ValveViewModel valveVm) {
+        setSelectedValve(valveVm);
+    }
+
+    @Override
+    public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
+        if (fromUser || mIsScaleButtonChange) {
+            mIsScaleButtonChange = false;
+            onProgressChangedByUser();
+        } else if (!hasProgressChangedByTimer()) {
+            resetTimer();
+        }
+    }
+
+    @Override
+    public void onSendCommand() {
+        Command cmnd = null;
+
+        if (mSelectedValve.isEdited()) {
+            if (mSelectedValve.getEditedProgress() != 0) {
+                // TODO: 12/12/2021 implement Command with builder pattern
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), mSelectedValve.getEditedProgress());
+            } else {
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
+            }
+        } else if (mSelectedValve.isOpen()) {
+            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
+        }
+
+        if (cmnd != null) {
+            mSelectedValve.removeViewState(ValveViewModel.State.ENABLED);
+            AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
+                @Override
+                public void onComplete(Command answer, Exception ex) {
+                    if (ex != null) {
+                        setMessage(ex.getMessage());
+                        mSelectedValve.addViewState(ValveViewModel.State.ENABLED);
+                    } else if (answer != null) {
+                        Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
+                        setMessageResource(R.string.command_sent);
+                    }
+                }
+            });
+        }
+    }
 
     private void testSensors() {
         List<SensorViewModel> sensors = new ArrayList<>();
@@ -214,37 +326,6 @@ public class ManualFragPresenter extends ObservableViewModel
         setSensors(sensors);
     }
 
-
-
-    public void fetchValves() {
-        mDb.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
-            @Override
-            public void onComplete(List<Valve> answer, Exception ex) {
-                if (ex != null) {
-                    setMessage(ex.getMessage());
-                } else if (answer != null) {
-                    if (!answer.isEmpty()) {
-                        LinkedList<ValveViewModel> valves = new LinkedList<>();
-                        for (Valve valve :
-                                answer) {
-
-                            initValveDbListener(valve);
-                            ValveViewModel valveVm = new ValveViewModel(valve);
-                            valves.add(valveVm);
-                        }
-
-                        setValves(valves);
-                        setMessage(R.string.msg_loaded_successful);
-                    } else {
-                        setMessage(R.string.error_no_valves);
-                    }
-                } else {
-                    setMessage(R.string.msg_returned_empty_result);
-                }
-            }
-        });
-    }
-
     private void initValveDbListener(@NotNull final Valve valve) {
         mDb.addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
             @Override
@@ -257,62 +338,12 @@ public class ManualFragPresenter extends ObservableViewModel
         });
     }
 
-    @Override
-    public void onConnectivityChanged(final boolean isConnected) {
-        runOnUiThread(() -> {
-            if (isConnected) {
-                if (mValves == null || mValves.isEmpty()) {
-                    setMessage(new Object[]{R.string.msg_connection_resumed,
-                            StringExt.COMMA, StringExt.SPACE,
-                            R.string.msg_loading_valves});
-                    fetchValves();
-                } else {
-                    setMessage(R.string.msg_connection_resumed);
-                    setEnabled(ENABLED);
-                }
-            } else {
-                setMessage(R.string.msg_connection_lost);
-                mTimer.stopIfActive();
-                setEnabled(!ENABLED);
-            }
-        });
-
-    }
-
-    @Bindable
-    public boolean getIsEnabled() {
-        return isEnabled;
-    }
-    public void setEnabled(boolean enabled) {
-        isEnabled = enabled;
-        if (enabled) {
-            setActiveView(VIEW_VALVE);
-        } else {
-            setActiveView(VIEW_EMPTY);
-        }
-        notifyPropertyChanged(BR.isEnabled);
-    }
     private void runOnUiThread(Runnable action) {
         mHandler.post(action);
     }
 
-    @Override
-    public void onSeekBarProgressChanged(final int progress, boolean fromUser) {
-        if (fromUser || mIsFromScaleButton) {
-            mIsFromScaleButton = false;
-            onProgressChangedByUser();
-        } else if (!hasProgressChangedByTimer()) {
-            resetTimer();
-        }
-    }
-
     private boolean hasProgressChangedByTimer() {
         return mTimer.isActive() && mTimer.getProgress() == mSelectedValve.getProgress();
-    }
-
-    public void setRelativeProgress(double relativeProgress) {
-        mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
-        mIsFromScaleButton = true;
     }
 
     private void onProgressChangedByUser() {
@@ -325,7 +356,7 @@ public class ManualFragPresenter extends ObservableViewModel
 
             if (mSelectedValve.isOpen()) {
                 if (mSelectedValve.getEditedProgress() == 0) {
-                    setMessage(R.string.tip_use_power_button);
+                    setMessageResource(R.string.tip_use_power_button);
                 }
 
                 mTimer.startCountDown();
@@ -338,42 +369,6 @@ public class ManualFragPresenter extends ObservableViewModel
 
         if (mSelectedValve.isOpen() && !mSelectedValve.isEdited()) {
             mTimer.startCountDown();
-        }
-    }
-
-    public void onTabValveSelected(ValveViewModel valveVm) {
-        setSelectedValve(valveVm);
-    }
-
-    @Override
-    public void onSendCommand() {
-        Command cmnd = null;
-
-        if (mSelectedValve.isEdited()) {
-            if (mSelectedValve.getEditedProgress() != 0) {
-                // TODO: 12/12/2021 implement Command with builder pattern
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), mSelectedValve.getEditedProgress());
-            } else {
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
-            }
-        } else if (mSelectedValve.isOpen()) {
-            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
-        }
-
-        if (cmnd != null) {
-            mSelectedValve.removeViewState(ValveViewModel.StateFlag.ENABLED);
-            AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
-                @Override
-                public void onComplete(Command answer, Exception ex) {
-                    if (ex != null) {
-                        setMessage(ex.getMessage());
-                        mSelectedValve.addViewState(ValveViewModel.StateFlag.ENABLED);
-                    } else if (answer != null) {
-                        Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
-                        setMessage(R.string.command_sent);
-                    }
-                }
-            });
         }
     }
 

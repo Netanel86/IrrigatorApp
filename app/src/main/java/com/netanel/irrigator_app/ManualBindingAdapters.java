@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
@@ -16,12 +15,9 @@ import com.netanel.irrigator_app.databinding.SensorViewBinding;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.services.StringExt;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 
-import androidx.databinding.Bindable;
 import androidx.databinding.BindingAdapter;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.FragmentManager;
@@ -37,11 +33,11 @@ import androidx.gridlayout.widget.GridLayout;
  * Created on 10/05/2021
  */
 
-public class ManualFragBindingAdapter {
+public class ManualBindingAdapters {
 
     private static int mSensorDimensions = 0;
 
-    @BindingAdapter("android:TabMap")
+    @BindingAdapter("tabs")
     public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valveMap) {
 
         if(valveMap != null) {
@@ -66,7 +62,7 @@ public class ManualFragBindingAdapter {
         }
     }
 
-    @BindingAdapter("sensors")
+    @BindingAdapter("items")
     public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
         if(sensors != null) {
             for (SensorViewModel sensor :
@@ -82,13 +78,13 @@ public class ManualFragBindingAdapter {
                 View sensorView = binding.getRoot();
 
                 grid.addView(sensorView);
-                calculateSensorViewOptimalDimen(binding.getRoot(), grid);
+                calculateSensorOptimalDimen(binding.getRoot(), grid);
             }
         }
     }
 
-    @BindingAdapter("android:OnTabSelected")
-    public static void setOnTabSelectedListener(FilledTabLayout tabLayout, ManualFragBindingAdapter.OnTabSelectedListener listener) {
+    @BindingAdapter("onTabSelected")
+    public static void setOnTabSelectedListener(FilledTabLayout tabLayout, ManualBindingAdapters.OnTabSelectedListener listener) {
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -110,30 +106,30 @@ public class ManualFragBindingAdapter {
         });
     }
 
-    @BindingAdapter("android:activeView")
+    @BindingAdapter("activeView")
     public static void setActiveView(ViewSwitcher viewSwitcher, int viewId) {
-        if (viewId == ManualFragPresenter.VIEW_EMPTY) {
+        if (viewId == ManualViewModel.VIEW_EMPTY) {
             if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.empty_layout)) {
                 viewSwitcher.showPrevious();
             }
-        } else if (viewId == ManualFragPresenter.VIEW_VALVE) {
+        } else if (viewId == ManualViewModel.VIEW_VALVE) {
             if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.manual_layout)) {
                 viewSwitcher.showNext();
             }
         }
     }
 
-    @BindingAdapter("android:states")
-    public static void setViewStates(View view, EnumSet<ValveViewModel.StateFlag> stateFlags) {
+    @BindingAdapter("states")
+    public static void setViewStates(View view, EnumSet<ValveViewModel.State> states) {
         if(view instanceof IMultiStateView) {
             IMultiStateView stateView = (IMultiStateView) view;
-            boolean isActivated = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.ACTIVATED);
-            boolean isEnabled = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.ENABLED);
-            boolean isEdited = stateFlags != null && stateFlags.contains(ValveViewModel.StateFlag.EDITED);
+            boolean isActivated = states != null && states.contains(ValveViewModel.State.ACTIVATED);
+            boolean isEnabled = states != null && states.contains(ValveViewModel.State.ENABLED);
+            boolean isEdited = states != null && states.contains(ValveViewModel.State.EDITED);
 
             stateView.setEnabled(isEnabled);
-            stateView.setStateActivated(isActivated);
-            stateView.setStateEdited(isEdited);
+            stateView.setActivated(isActivated);
+            stateView.setEdited(isEdited);
         }
     }
 
@@ -147,16 +143,21 @@ public class ManualFragBindingAdapter {
         textView.setText(StringExt.formatSecToTimeString(seconds, mTimeNames));
     }
 
-    @BindingAdapter(value = {"messageRes","messageStr"}, requireAll = false)
-    public static void showMessage(View parentView, int messageRes, String messageStr) {
-         if (messageRes != 0) {
-            Snackbar.make(parentView, messageRes, Snackbar.LENGTH_LONG).show();
-        } else if (messageStr != null) {
-            Snackbar.make(parentView, messageStr, Snackbar.LENGTH_LONG).show();
+    @BindingAdapter("message")
+    public static void showMessage(View parentView, String message) {
+        if (message != null && !message.isEmpty()) {
+            Snackbar.make(parentView, message, Snackbar.LENGTH_LONG).show();
         }
     }
 
-    @BindingAdapter("messageArr")
+    @BindingAdapter("messageResource")
+    public static void showResourceMessage(View parentView, int resource) {
+        if(resource != 0) {
+            Snackbar.make(parentView, resource, Snackbar.LENGTH_LONG).show();
+        }
+    }
+
+    @BindingAdapter("messageComposed")
     public static void showComposedMessage(View parentView, Object[] messageArr) {
         if (messageArr != null) {
             StringBuilder builder = new StringBuilder();
@@ -176,8 +177,8 @@ public class ManualFragBindingAdapter {
         }
     }
 
-    public static void setViewDimensions(View sensorView,int widthAndHeight) {
-        CircularSeekBar seekBar = sensorView.findViewById(R.id.seekbar_sensor);
+    public static void setCircularSeekBarDimensions(CircularSeekBar seekBar, int widthAndHeight) {
+
         ViewGroup.LayoutParams params = seekBar.getLayoutParams();
         params.width = widthAndHeight;
         params.height = widthAndHeight;
@@ -185,7 +186,7 @@ public class ManualFragBindingAdapter {
         seekBar.setCircleRadius((float) widthAndHeight / 2);
     }
 
-    private static void calculateSensorViewOptimalDimen(final View sensorView, GridLayout grid) {
+    private static void calculateSensorOptimalDimen(final View sensorView, GridLayout grid) {
         final View parentView = (View) grid.getParent().getParent();
         ViewTreeObserver viewTreeObserver = parentView.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -204,7 +205,8 @@ public class ManualFragBindingAdapter {
                         int padding = sensorView.getPaddingStart() * columnCount * 2;
                         mSensorDimensions = (parentWidth - gridMargins - padding) / columnCount;
                     }
-                    setViewDimensions(sensorView, mSensorDimensions);
+                    CircularSeekBar seekBar = sensorView.findViewById(R.id.seekbar_sensor);
+                    setCircularSeekBarDimensions(seekBar, mSensorDimensions);
                 }
             });
         }

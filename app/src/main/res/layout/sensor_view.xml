@@ -43,7 +43,7 @@
         app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
         app:layout_constraintTop_toTopOf="@id/seekbar_sensor"
         app:layout_constraintVertical_bias="0.3"
-        src="@{sensorVM.iconRes}"
+        src="@{sensorVM.drawable}"
         tools:src="@drawable/ic_humidity_filled"/>
 
     <com.google.android.material.textview.MaterialTextView
@@ -56,7 +56,7 @@
         app:layout_constraintEnd_toEndOf="@id/seekbar_sensor"
         app:layout_constraintStart_toStartOf="@id/seekbar_sensor"
         app:layout_constraintTop_toBottomOf="@id/iv_sensor"
-        android:text="@{sensorVM.valueText}"
+        android:text="@{sensorVM.textValue}"
         tools:text="52%" />
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

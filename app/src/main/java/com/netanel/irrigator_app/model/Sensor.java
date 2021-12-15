@@ -1,6 +1,7 @@
 package com.netanel.irrigator_app.model;
 
 
+import com.google.firebase.firestore.DocumentId;
 import com.netanel.irrigator_app.PropertyChangedCallback;
 import com.netanel.irrigator_app.services.StringExt;
 
@@ -15,13 +16,15 @@ import com.netanel.irrigator_app.services.StringExt;
  */
 
 public class Sensor {
-    public static final int PROP_MEASURE = 0x1;
-    public static final int PROP_MAX_VALUE = 0x2;
-    public static final int PROP_VALUE = 0x3;
-    public static final int PROP_PARENT_ID = 0x4;
+    public static final int PROP_MEASURE = 0;
+    public static final int PROP_MAX_VALUE = 1;
+    public static final int PROP_VALUE = 2;
+    public static final int PROP_PARENT_ID = 3;
 
-    private String mParentControllerId;
-    private String mId;
+    @DocumentId
+    public String mId;
+
+    private String mControllerId;
     private Measure mMeasure;
     private double mValue;
     private double mMaxValue;
@@ -59,15 +62,15 @@ public class Sensor {
         }
     }
 
-    public String getParentControllerId() {
-        return mParentControllerId;
+    public String getControllerId() {
+        return mControllerId;
     }
 
-    public void setParentControllerId(String parentId) {
-        if(!mParentControllerId.equals(parentId)) {
-            String oldVal = mParentControllerId;
-            mParentControllerId = parentId;
-            notifyPropertyChange(PROP_PARENT_ID, oldVal, mParentControllerId);
+    public void setControllerId(String parentId) {
+        if(!mControllerId.equals(parentId)) {
+            String oldVal = mControllerId;
+            mControllerId = parentId;
+            notifyPropertyChange(PROP_PARENT_ID, oldVal, mControllerId);
         }
     }
 

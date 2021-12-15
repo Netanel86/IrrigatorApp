@@ -17,14 +17,14 @@ import androidx.databinding.adapters.ListenerUtil;
  * Created on 26/10/2021
  */
 
-public class StateCircularSeekBarBindingAdapter {
+public class CircularSeekBarBindingAdapters {
     @InverseBindingAdapter(attribute = "progress")
-    public static int getProgress(StateCircularSeekBar seekBar) {
+    public static int getProgress(CircularSeekBar seekBar) {
         return seekBar.getProgress();
     }
 
     @BindingAdapter(value = {"onProgressChanged", "progressAttrChanged"}, requireAll = false)
-    public static void setProgressChangedListener(StateCircularSeekBar seekBar,
+    public static void setProgressChangedListener(CircularSeekBar seekBar,
                                                   final OnProgressChanged onProgressChanged,
                                                   final InverseBindingListener progressAttrChanged) {
         seekBar.setOnSeekBarChangeListener(new CircularSeekBar.OnCircularSeekBarChangeListener() {

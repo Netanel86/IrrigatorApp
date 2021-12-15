@@ -3,13 +3,7 @@ package com.netanel.irrigator_app;
 
 import android.app.Application;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import javax.annotation.Nonnull;
-
 import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -35,8 +29,8 @@ public class ViewModelFactory extends ViewModelProvider.NewInstanceFactory {
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
         T viewModel = null;
         try {
-            if (modelClass == ManualFragPresenter.class) {
-                viewModel = (T) new ManualFragPresenter(mApplication);
+            if (modelClass == ManualViewModel.class) {
+                viewModel = (T) new ManualViewModel(mApplication);
             }
         } catch (Exception e) {
             e.printStackTrace();
