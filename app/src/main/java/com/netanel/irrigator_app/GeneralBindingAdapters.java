@@ -9,6 +9,8 @@ import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.tabs.TabLayout;
 
 import androidx.databinding.BindingAdapter;
+import androidx.databinding.BindingConversion;
+import androidx.transition.Visibility;
 
 /**
  * <p></p>
@@ -45,5 +47,10 @@ public class GeneralBindingAdapters {
         float scale = view.getResources().getDisplayMetrics().density;
         int paddingInPx = (int) (paddingDp * scale + 0.5f);
         view.setPadding(paddingInPx, paddingInPx, paddingInPx, paddingInPx);
+    }
+
+    @BindingConversion
+    public static int convertBooleanToVisibility(boolean visible) {
+        return visible ? View.VISIBLE : View.GONE;
     }
 }

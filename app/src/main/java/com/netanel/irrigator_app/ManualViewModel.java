@@ -45,9 +45,6 @@ public class ManualViewModel extends ObservableViewModel
     private static final boolean EDITED = true;
     private static final boolean ENABLED = true;
 
-    public static final int VIEW_EMPTY = 0;
-    public static final int VIEW_VALVE = 1;
-
     private final ConnectivityCallback mConnectivityChangedCallback;
 
     private final IDataBaseConnection mDb;
@@ -62,9 +59,7 @@ public class ManualViewModel extends ObservableViewModel
 
     private Object[] mMessageArr;
 
-    private int mActiveView;
-
-    private boolean isEnabled;
+    private boolean mIsEnabled;
 
     private boolean mIsScaleButtonChange;
 
@@ -157,16 +152,6 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     @Override
-    public int getActiveView() {
-        return mActiveView;
-    }
-
-    public void setActiveView(int viewId) {
-        mActiveView = viewId;
-        notifyPropertyChanged(BR.activeView);
-    }
-
-    @Override
     public List<ValveViewModel> getValves() {
         return mValves;
     }
@@ -174,8 +159,6 @@ public class ManualViewModel extends ObservableViewModel
     public void setValves(List<ValveViewModel> valves) {
         mValves = valves;
         notifyPropertyChanged(BR.valves);
-
-        setActiveView(VIEW_VALVE);
     }
 
     @Override
@@ -200,16 +183,11 @@ public class ManualViewModel extends ObservableViewModel
 
     @Override
     public boolean getEnabled() {
-        return isEnabled;
+        return mIsEnabled;
     }
 
     public void setEnabled(boolean enabled) {
-        isEnabled = enabled;
-        if (enabled) {
-            setActiveView(VIEW_VALVE);
-        } else {
-            setActiveView(VIEW_EMPTY);
-        }
+        mIsEnabled = enabled;
         notifyPropertyChanged(BR.enabled);
     }
 
@@ -237,11 +215,14 @@ public class ManualViewModel extends ObservableViewModel
                         }
 
                         setValves(valves);
+                        setEnabled(ENABLED);
                         setMessageResource(R.string.msg_loaded_successful);
                     } else {
+                        setEnabled(!ENABLED);
                         setMessageResource(R.string.error_no_valves);
                     }
                 } else {
+                    setEnabled(!ENABLED);
                     setMessageResource(R.string.msg_returned_empty_result);
                 }
             }

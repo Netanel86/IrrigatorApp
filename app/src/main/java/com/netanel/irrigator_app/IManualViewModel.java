@@ -27,9 +27,6 @@ public interface IManualViewModel extends Observable {
     Object[] getMessageArray();
 
     @Bindable
-    int getActiveView();
-
-    @Bindable
     List<ValveViewModel> getValves();
 
     @Bindable

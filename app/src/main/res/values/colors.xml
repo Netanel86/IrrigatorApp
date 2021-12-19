@@ -16,7 +16,9 @@
     <color name="color_valve_state_deactivated">#9E9E9E</color>
     <color name="color_valve_state_edited">#01579B</color>
 
-    <color name="sb_circle_color">#9E9E9E</color>
+    <color name="color_sensor_progress">#D84315</color>
+
+    <color name="sb_circle_color">@color/color_valve_state_deactivated</color>
     <color name="sb_circle_progress_color">@color/color_valve_state_activated</color>
     <color name="sb_pointer_color">#FF5722</color>
     <color name="sb_pointer_halo_color">#D84315</color>

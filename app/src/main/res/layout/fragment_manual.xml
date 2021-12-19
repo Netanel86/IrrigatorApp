@@ -33,7 +33,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             enabled="@{manualViewModel.enabled}"
-            android:visibility="@{manualViewModel.valves.size() > 0 ? View.VISIBLE : View.GONE}"
+            android:visibility="@{manualViewModel.enabled}"
             onTabSelected="@{manualViewModel::onTabValveSelected}"
             tabs="@{manualViewModel.valves}"/>
 
@@ -45,7 +45,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        activeView="@{manualViewModel.activeView}">
+        activeView="@{manualViewModel.enabled}">
 
 
         <FrameLayout
@@ -198,9 +198,9 @@
                                 app:pointer_halo_color_ontouch="@color/sb_pointer_halo_color_ontouch"
                                 app:pointer_radius="8dp"
                                 app:use_custom_radii="true"
-                                onProgressChanged="@{manualViewModel::onSeekBarProgressChanged}"
                                 app:progress="@={manualViewModel.selectedValve.progress}"
                                 app:max="@{manualViewModel.selectedValve.maxDuration}"
+                                onProgressChanged="@{manualViewModel::onSeekBarProgressChanged}"
                                 states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.netanel.irrigator_app.ExtImageButton
@@ -219,7 +219,7 @@
                                 app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                                 app:layout_constraintTop_toTopOf="@id/seekbar_timer"
                                 tools:tint="@android:color/black"
-                                android:onClick="@{()->manualViewModel.onSendCommand()}"
+                                android:onClick="@{() -> manualViewModel.onSendCommand()}"
                                 states="@{manualViewModel.selectedValve.viewStates}"/>
 
                             <com.google.android.material.textview.MaterialTextView
@@ -233,7 +233,7 @@
                                 app:layout_constraintRight_toRightOf="@+id/seekbar_timer"
                                 app:layout_constraintTop_toBottomOf="@id/img_btn_power"
                                 app:layout_constraintVertical_bias="0.9"
-                                formatTime="@{manualViewModel.selectedValve.progress}"
+                                textTime="@{manualViewModel.selectedValve.progress}"
                                 tools:text="25:48 min" />
 
                             <com.google.android.material.button.MaterialButton
@@ -348,7 +348,7 @@
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/card_sensor_title"
                                 app:layout_constraintBottom_toBottomOf="parent"
-                                items="@{manualViewModel.sensors}"/>
+                                cells="@{manualViewModel.sensors}"/>
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>

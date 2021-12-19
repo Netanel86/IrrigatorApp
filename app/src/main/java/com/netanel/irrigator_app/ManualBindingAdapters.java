@@ -38,11 +38,11 @@ public class ManualBindingAdapters {
     private static int mSensorDimensions = 0;
 
     @BindingAdapter("tabs")
-    public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valveMap) {
+    public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valves) {
 
-        if(valveMap != null) {
+        if(valves != null) {
             for (ValveViewModel viewModel :
-            valveMap) {
+            valves) {
 
                 TabValveBinding binding =
                         DataBindingUtil.inflate(
@@ -62,10 +62,10 @@ public class ManualBindingAdapters {
         }
     }
 
-    @BindingAdapter("items")
+    @BindingAdapter("cells")
     public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
         if(sensors != null) {
-            for (SensorViewModel sensor :
+            for (SensorViewModel viewModel :
                     sensors) {
 
                 SensorViewBinding binding =
@@ -73,12 +73,12 @@ public class ManualBindingAdapters {
                                 R.layout.sensor_view,
                                 grid,
                                 false);
-                binding.setSensorVM(sensor);
+                binding.setSensorVM(viewModel);
                 binding.setLifecycleOwner(FragmentManager.findFragment(grid));
                 View sensorView = binding.getRoot();
 
                 grid.addView(sensorView);
-                calculateSensorOptimalDimen(binding.getRoot(), grid);
+                calculateSensorOptimalDimen(sensorView, grid);
             }
         }
     }
@@ -107,15 +107,13 @@ public class ManualBindingAdapters {
     }
 
     @BindingAdapter("activeView")
-    public static void setActiveView(ViewSwitcher viewSwitcher, int viewId) {
-        if (viewId == ManualViewModel.VIEW_EMPTY) {
+    public static void setActiveView(ViewSwitcher viewSwitcher, boolean enabled) {
+        if (!enabled) {
             if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.empty_layout)) {
                 viewSwitcher.showPrevious();
             }
-        } else if (viewId == ManualViewModel.VIEW_VALVE) {
-            if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.manual_layout)) {
-                viewSwitcher.showNext();
-            }
+        } else if (viewSwitcher.getCurrentView() != viewSwitcher.findViewById(R.id.manual_layout)) {
+            viewSwitcher.showNext();
         }
     }
 
@@ -133,7 +131,7 @@ public class ManualBindingAdapters {
         }
     }
 
-    @BindingAdapter("formatTime")
+    @BindingAdapter("textTime")
     public static void formatSecToTimeString(TextView textView, int seconds) {
         String[] mTimeNames = new String[]{
                 textView.getResources().getString(R.string.time_unit_seconds),
