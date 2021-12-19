@@ -53,7 +53,6 @@ public class ExtImageButton extends AppCompatImageButton
     @Override
     public void setActivated(boolean activated) {
         this.mIsActivated = activated;
-        this.refreshDrawableState();
     }
 
     public Boolean isStateActivated() {
@@ -63,7 +62,6 @@ public class ExtImageButton extends AppCompatImageButton
     @Override
     public void setEdited(boolean edited) {
         this.mIsEdited = edited;
-        this.refreshDrawableState();
     }
 
     public Boolean isStateEdited() {

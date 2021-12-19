@@ -128,6 +128,8 @@ public class ManualBindingAdapters {
             stateView.setEnabled(isEnabled);
             stateView.setActivated(isActivated);
             stateView.setEdited(isEdited);
+
+            view.refreshDrawableState();
         }
     }
 

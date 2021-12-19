@@ -20,7 +20,9 @@ import com.devadvance.circularseekbar.CircularSeekBar;
 
 public class ExtCircularSeekBar extends CircularSeekBar implements IMultiStateView {
     private static final int[] STATE_EDITED = {R.attr.state_edited};
+    private static final int[] STATE_ACTIVATED = {R.attr.state_activated};
     private boolean mIsEdited = false;
+    private boolean mIsActivated = false;
 
     private ColorStateList mCircleProgressColorStates;
 
@@ -63,24 +65,26 @@ public class ExtCircularSeekBar extends CircularSeekBar implements IMultiStateVi
 
     @Override
     public int[] onCreateDrawableState(int extraSpace) {
-        int[] baseState = super.onCreateDrawableState(extraSpace + 1);
+        int[] baseState = super.onCreateDrawableState(extraSpace + 2);
 
         if (mIsEdited) {
             mergeDrawableStates(baseState, STATE_EDITED);
         }
+        if (mIsActivated) {
+            mergeDrawableStates(baseState,STATE_ACTIVATED);
+        }
+
         return baseState;
     }
 
     @Override
     public void setActivated(boolean activated) {
-        Log.i("Not Implemented",
-                this.getClass().getName() + " method setStateActivated is called but not implemented");
+        mIsActivated = activated;
     }
 
     @Override
     public void setEdited(boolean edited) {
         this.mIsEdited = edited;
-        this.refreshDrawableState();
     }
 
     public Boolean isStateEdited() {

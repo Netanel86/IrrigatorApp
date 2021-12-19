@@ -25,13 +25,9 @@
         <attr name="circle_fill" format="color"/>
     </declare-styleable>
 
-    <declare-styleable name="StateView">
+    <declare-styleable name="IMultiStateView.States">
         <attr name="state_activated" format="boolean"/>
         <attr name="state_edited" format="boolean" />
     </declare-styleable>
-
-<declare-styleable name="SensorView">
-    <attr name="sensor_drawable" format="reference"/>
-</declare-styleable>
 
 </resources>

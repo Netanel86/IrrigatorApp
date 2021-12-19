@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
     <item app:state_edited="true" android:color="@color/color_valve_state_edited" />
-    <item android:color="@color/color_valve_state_activated"/>
+    <item app:state_activated="true" android:color="@color/color_valve_state_activated"/>
 </selector>
