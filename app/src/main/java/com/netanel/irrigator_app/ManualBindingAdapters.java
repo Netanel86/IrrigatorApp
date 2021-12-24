@@ -11,7 +11,7 @@ import android.widget.ViewSwitcher;
 import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
-import com.netanel.irrigator_app.databinding.SensorViewBinding;
+import com.netanel.irrigator_app.databinding.SensorSeekbarBinding;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.services.StringExt;
 
@@ -36,6 +36,7 @@ import androidx.gridlayout.widget.GridLayout;
 public class ManualBindingAdapters {
 
     private static int mSensorDimensions = 0;
+    private static int mOptimizedSensorCount = 0;
 
     @BindingAdapter("tabs")
     public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valves) {
@@ -68,9 +69,9 @@ public class ManualBindingAdapters {
             for (SensorViewModel viewModel :
                     sensors) {
 
-                SensorViewBinding binding =
+                SensorSeekbarBinding binding =
                         DataBindingUtil.inflate(LayoutInflater.from(grid.getContext()),
-                                R.layout.sensor_view,
+                                R.layout.sensor_seekbar,
                                 grid,
                                 false);
                 binding.setSensorVM(viewModel);
@@ -78,7 +79,7 @@ public class ManualBindingAdapters {
                 View sensorView = binding.getRoot();
 
                 grid.addView(sensorView);
-                calculateSensorOptimalDimen(sensorView, grid);
+                calculateSensorOptimalDimen(sensorView, grid, sensors.size());
             }
         }
     }
@@ -186,7 +187,7 @@ public class ManualBindingAdapters {
         seekBar.setCircleRadius((float) widthAndHeight / 2);
     }
 
-    private static void calculateSensorOptimalDimen(final View sensorView, GridLayout grid) {
+    private static void calculateSensorOptimalDimen(final View sensorView, GridLayout grid, int sensorCount) {
         final View parentView = (View) grid.getParent().getParent();
         ViewTreeObserver viewTreeObserver = parentView.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -207,6 +208,12 @@ public class ManualBindingAdapters {
                     }
                     CircularSeekBar seekBar = sensorView.findViewById(R.id.seekbar_sensor);
                     setCircularSeekBarDimensions(seekBar, mSensorDimensions);
+
+                    mOptimizedSensorCount++;
+                    if(mOptimizedSensorCount == sensorCount) { ////reset before next state change
+                        mSensorDimensions = 0;
+                        mOptimizedSensorCount = 0;
+                    }
                 }
             });
         }
