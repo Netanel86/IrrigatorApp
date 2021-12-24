@@ -54,18 +54,18 @@ public class MainActivity extends AppCompatActivity {
 //
 //        signInLauncher.launch(signInIntent);
 
-        getSupportFragmentManager()
-                .beginTransaction().add(R.id.fragment_container_view, new ManualFragment(), TAG_FRAGMENT_MANUAL).commit();
 
-        if(savedInstanceState != null) {
-            FragmentManager manager = getSupportFragmentManager();
-            manager.beginTransaction().show(manager.findFragmentByTag(TAG_FRAGMENT_MANUAL));
-        } else {
+
+        if(savedInstanceState == null) {
             AppServices.getInstance()
                     .setViewModelFactory(new ViewModelProvider.AndroidViewModelFactory(getApplication()));
             AppServices.getInstance().setApplication(getApplication());
 
-
+            getSupportFragmentManager()
+                    .beginTransaction().add(R.id.fragment_container_view, new ManualFragment(), TAG_FRAGMENT_MANUAL).commit();
+        } else {
+            FragmentManager manager = getSupportFragmentManager();
+            manager.beginTransaction().show(manager.findFragmentByTag(TAG_FRAGMENT_MANUAL));
         }
     }
 
