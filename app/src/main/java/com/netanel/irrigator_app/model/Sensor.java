@@ -31,7 +31,8 @@ public class Sensor {
 
     private PropertyChangedCallback mCallback;
 
-    public Sensor() {}
+    public Sensor() {
+    }
 
     public Sensor(Measure measure, int maxValue) {
         mMeasure = measure;
@@ -43,7 +44,7 @@ public class Sensor {
     }
 
     public void setMeasures(Measure measure) {
-        if(mMeasure != measure) {
+        if (mMeasure != measure) {
             Measure oldVal = mMeasure;
             mMeasure = measure;
             notifyPropertyChange(PROP_MEASURE, oldVal, mMeasure);
@@ -55,7 +56,7 @@ public class Sensor {
     }
 
     public void setValue(double value) {
-        if(mValue != value) {
+        if (mValue != value) {
             double oldVal = mValue;
             mValue = value;
             notifyPropertyChange(PROP_VALUE, oldVal, mValue);
@@ -67,7 +68,7 @@ public class Sensor {
     }
 
     public void setControllerId(String parentId) {
-        if(!mControllerId.equals(parentId)) {
+        if (!mControllerId.equals(parentId)) {
             String oldVal = mControllerId;
             mControllerId = parentId;
             notifyPropertyChange(PROP_PARENT_ID, oldVal, mControllerId);
@@ -79,18 +80,22 @@ public class Sensor {
     }
 
     public void setMaxValue(double maxValue) {
-        if(mMaxValue != maxValue) {
+        if (mMaxValue != maxValue) {
             double oldVal = mMaxValue;
             mMaxValue = maxValue;
             notifyPropertyChange(PROP_MAX_VALUE, oldVal, mMaxValue);
         }
     }
 
-    public void setOnPropertyChangedCallback(PropertyChangedCallback mCallback) {
-        this.mCallback = mCallback;
+    public void setOnPropertyChangedCallback(PropertyChangedCallback callback) {
+        mCallback = callback;
     }
 
-    private void notifyPropertyChange(int propertyId, Object oldValue,Object newValue) {
+    public void clearOnPropertyChangedCallback() {
+        mCallback = null;
+    }
+
+    private void notifyPropertyChange(int propertyId, Object oldValue, Object newValue) {
         if (mCallback != null) {
             mCallback.onPropertyChanged(this, propertyId, oldValue, newValue);
         }
@@ -104,6 +109,9 @@ public class Sensor {
         FLOW("L/s");
 
         public final String symbol;
-        Measure(String symbol) {this.symbol = symbol;}
+
+        Measure(String symbol) {
+            this.symbol = symbol;
+        }
     }
 }

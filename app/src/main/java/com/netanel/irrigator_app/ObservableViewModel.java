@@ -4,8 +4,6 @@ package com.netanel.irrigator_app;
 import android.app.Application;
 
 import com.netanel.irrigator_app.services.AppServices;
-
-import androidx.annotation.NonNull;
 import androidx.databinding.Observable;
 import androidx.databinding.PropertyChangeRegistry;
 import androidx.lifecycle.AndroidViewModel;
@@ -19,14 +17,15 @@ import androidx.lifecycle.AndroidViewModel;
  * @since 1.0
  * Created on 13/10/2021
  */
-public abstract class ObservableViewModel extends AndroidViewModel implements Observable {
+public abstract class ObservableViewModel extends AndroidViewModel
+        implements Observable {
 
     private PropertyChangeRegistry mCallBacks;
 
     /**
      * Empty constructor, with no application context.
      * No need to pass Application context as a parameter as it is called at this constructor
-     * through AppServices. Use this constructor only when creation of the view model is made
+     * through AppServices. Use this constructor only when instantiation of the view model is called
      * outside of a view model factory, e.g in another view model.
      */
     public ObservableViewModel() {
@@ -36,6 +35,7 @@ public abstract class ObservableViewModel extends AndroidViewModel implements Ob
     /**
      * A standard view model constructor.
      * This constructor should be used when instantiating the view model from a view model factory.
+     *
      * @param application The application context
      */
     public ObservableViewModel(Application application) {
@@ -43,8 +43,8 @@ public abstract class ObservableViewModel extends AndroidViewModel implements Ob
     }
 
     @Override
-    public void addOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if(mCallBacks == null) {
+    public void addOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
+        if (mCallBacks == null) {
             mCallBacks = new PropertyChangeRegistry();
         }
 
@@ -52,8 +52,8 @@ public abstract class ObservableViewModel extends AndroidViewModel implements Ob
     }
 
     @Override
-    public void removeOnPropertyChangedCallback(Observable.OnPropertyChangedCallback callback) {
-        if(mCallBacks != null) {
+    public void removeOnPropertyChangedCallback(OnPropertyChangedCallback callback) {
+        if (mCallBacks != null) {
             mCallBacks.remove(callback);
         }
     }

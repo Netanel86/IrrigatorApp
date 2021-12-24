@@ -92,11 +92,14 @@ public class ManualViewModel extends ObservableViewModel
 
     @Override
     protected void onCleared() {
-        super.onCleared();
-
         NetworkUtilities.unregisterConnectivityCallback(
                 this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
 
+        for (ValveViewModel viewModel:
+             mValves) {
+            viewModel.onCleared();
+        }
+        super.onCleared();
     }
 
     @Override
@@ -193,8 +196,8 @@ public class ManualViewModel extends ObservableViewModel
 
     @Override
     public void setRelativeProgress(double relativeProgress) {
-        mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
         mIsScaleButtonChange = true;
+        mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
     }
 
     public void fetchValves() {

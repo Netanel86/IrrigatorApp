@@ -93,7 +93,7 @@ public class Valve {
 
     public void setLastOpen(Date lastOpen) {
         if(mLastOpen != lastOpen) {
-            if (mLastOpen == null || (mLastOpen != null && !mLastOpen.equals(lastOpen))) {
+            if (mLastOpen == null || !mLastOpen.equals(lastOpen)) {
                 Date oldLastOpen = mLastOpen;
                 mLastOpen = lastOpen;
                 notifyPropertyChanged(PROPERTY_LAST_ON, oldLastOpen, lastOpen);
@@ -140,6 +140,10 @@ public class Valve {
 
     public void setOnPropertyChangedCallback(PropertyChangedCallback onPropertyChangedCallback) {
         this.mPropertyChangedCallback = onPropertyChangedCallback;
+    }
+
+    public void clearOnPropertyChangedCallback() {
+        mPropertyChangedCallback = null;
     }
 
     private void notifyPropertyChanged(int propertyId, Object oldValue, Object newValue) {

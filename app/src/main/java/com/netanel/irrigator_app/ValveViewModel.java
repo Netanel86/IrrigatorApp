@@ -19,7 +19,7 @@ import androidx.databinding.Bindable;
  * Created on 10/10/2021
  */
 
-public class ValveViewModel extends ObservableViewModel {
+public class ValveViewModel extends ObservableViewModel implements PropertyChangedCallback {
 
     private final Valve mValve;
 
@@ -34,7 +34,7 @@ public class ValveViewModel extends ObservableViewModel {
         mValve = valve;
         mViewStates = EnumSet.noneOf(State.class);
 
-        initializeListener();
+        mValve.setOnPropertyChangedCallback(this);
         resetViewStates();
         initTimeScales();
     }
@@ -133,33 +133,35 @@ public class ValveViewModel extends ObservableViewModel {
         }
     }
 
-    private void initializeListener() {
-        mValve.setOnPropertyChangedCallback(new PropertyChangedCallback() {
-            @Override
-            public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
-                switch (propertyId) {
-                    case Valve.PROPERTY_DURATION:
-                    case Valve.PROPERTY_LAST_ON:
-                        resetViewStates();
-                        mEditedProgress = 0;
+    @Override
+    protected void onCleared() {
+        mValve.clearOnPropertyChangedCallback();
+        super.onCleared();
+    }
 
-                        notifyPropertyChanged(BR.open);
-                        notifyPropertyChanged(BR.progress);
-                        break;
+    @Override
+    public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
+        switch (propertyId) {
+            case Valve.PROPERTY_DURATION:
+            case Valve.PROPERTY_LAST_ON:
+                resetViewStates();
+                mEditedProgress = 0;
 
-                    case Valve.PROPERTY_MAX_DURATION:
-                        initTimeScales();
+                notifyPropertyChanged(BR.open);
+                notifyPropertyChanged(BR.progress);
+                break;
 
-                        notifyPropertyChanged(BR.maxDuration);
-                        break;
+            case Valve.PROPERTY_MAX_DURATION:
+                initTimeScales();
 
-                    case Valve.PROPERTY_DESCRIPTION:
-                    case Valve.PROPERTY_INDEX:
-                        notifyPropertyChanged(BR.description);
-                        break;
-                }
-            }
-        });
+                notifyPropertyChanged(BR.maxDuration);
+                break;
+
+            case Valve.PROPERTY_DESCRIPTION:
+            case Valve.PROPERTY_INDEX:
+                notifyPropertyChanged(BR.description);
+                break;
+        }
     }
 
     private void initTimeScales() {

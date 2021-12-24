@@ -3,6 +3,7 @@ package com.netanel.irrigator_app;
 
 import com.netanel.irrigator_app.model.Sensor;
 
+import java.lang.reflect.Type;
 import java.util.Locale;
 
 import androidx.databinding.Bindable;
@@ -18,89 +19,29 @@ import androidx.databinding.Bindable;
  * Created on 14/12/2021
  */
 
-public class SensorViewModel extends ObservableViewModel {
-    private static final int INTEGER = 0;
-    private static final int DOUBLE = 1;
+public class SensorViewModel extends ObservableViewModel 
+        implements PropertyChangedCallback{
 
     private final Sensor mSensor;
 
-    private String mTextFormat;
-
     private int mDrawable;
 
-    private int mResolution;
-
-    private int mValueType;
+    private Resolution mResolution;
 
     public SensorViewModel(Sensor sensor) {
         mSensor = sensor;
 
-        initListener();
+        mSensor.setOnPropertyChangedCallback(this);
         assignResources();
-    }
-
-    private void initListener() {
-        mSensor.setOnPropertyChangedCallback(new PropertyChangedCallback() {
-            @Override
-            public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
-                switch (propertyId) {
-                    case Sensor.PROP_MAX_VALUE:
-                        notifyPropertyChanged(BR.maxProgress);
-                    case Sensor.PROP_VALUE:
-                        notifyPropertyChanged(BR.progress);
-                        notifyPropertyChanged(BR.textValue);
-                        break;
-
-                    case Sensor.PROP_MEASURE:
-                        notifyPropertyChanged(BR.textValue);
-                        notifyPropertyChanged(BR.drawable);
-                        break;
-                }
-            }
-        });
-    }
-
-    private void assignResources() {
-        switch (mSensor.getMeasures()) {
-            case EC:
-                mTextFormat = "%.1f";
-                mResolution = 10;
-                mValueType = DOUBLE;
-                break;
-            case PH:
-                setDrawable(R.drawable.ic_ph_meter);
-                mTextFormat = "%.1f";
-                mResolution = 10;
-                mValueType = DOUBLE;
-                break;
-            case HUMIDITY:
-                setDrawable(R.drawable.ic_humidity_filled);
-                mTextFormat = "%d";
-                mResolution = 1;
-                mValueType = INTEGER;
-                break;
-            case TEMPERATURE:
-                setDrawable(R.drawable.ic_thermometer);
-                mTextFormat = "%d";
-                mResolution = 1;
-                mValueType = INTEGER;
-                break;
-            case FLOW:
-                setDrawable(R.drawable.ic_flow_meter);
-                mTextFormat = "%.1f";
-                mResolution = 10;
-                mValueType = DOUBLE;
-                break;
-        }
     }
 
     @Bindable
     public String getTextValue() {
         String value;
-        if (mValueType == DOUBLE) {
-            value = String.format(Locale.getDefault(), mTextFormat, mSensor.getValue());
+        if (mResolution.type == Double.TYPE) {
+            value = String.format(Locale.getDefault(), mResolution.format, mSensor.getValue());
         } else {
-            value = String.format(Locale.getDefault(), mTextFormat, (int)mSensor.getValue());
+            value = String.format(Locale.getDefault(), mResolution.format, (int)mSensor.getValue());
         }
         return value + mSensor.getMeasures().symbol;
     }
@@ -119,11 +60,75 @@ public class SensorViewModel extends ObservableViewModel {
 
     @Bindable
     public int getMaxProgress() {
-        return (int)(mSensor.getMaxValue() * mResolution);
+        return (int)(mSensor.getMaxValue() * mResolution.resolution);
     }
 
     @Bindable
     public int getProgress() {
-        return (int)(mSensor.getValue() * mResolution);
+        return (int)(mSensor.getValue() * mResolution.resolution);
+    }
+
+    @Override
+    protected void onCleared() {
+        mSensor.clearOnPropertyChangedCallback();
+        super.onCleared();
+    }
+
+    @Override
+    public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
+        switch (propertyId) {
+            case Sensor.PROP_MAX_VALUE:
+                notifyPropertyChanged(BR.maxProgress);
+            case Sensor.PROP_VALUE:
+                notifyPropertyChanged(BR.progress);
+                notifyPropertyChanged(BR.textValue);
+                break;
+
+            case Sensor.PROP_MEASURE:
+                notifyPropertyChanged(BR.textValue);
+                notifyPropertyChanged(BR.drawable);
+                break;
+        }
+    }
+
+    private void assignResources() {
+        switch (mSensor.getMeasures()) {
+            case EC:
+                // TODO: 19/12/2021 add drawable to EC: Electrical Conductivity
+                mResolution = Resolution.Double0x1;
+                break;
+            case PH:
+                setDrawable(R.drawable.ic_ph_meter);
+                mResolution = Resolution.Double0x1;
+                break;
+            case HUMIDITY:
+                setDrawable(R.drawable.ic_humidity_filled);
+                mResolution = Resolution.Integer;
+                break;
+            case TEMPERATURE:
+                setDrawable(R.drawable.ic_thermometer);
+                mResolution = Resolution.Integer;
+                break;
+            case FLOW:
+                setDrawable(R.drawable.ic_flow_meter);
+                mResolution = Resolution.Double0x1;
+                break;
+        }
+    }
+
+    public enum Resolution {
+        Integer("%d", 1, java.lang.Integer.TYPE),
+        Double0x1("%.1f", 10, Double.TYPE),
+        Double0x2("%.2f", 100, Double.TYPE);
+
+        public final String format;
+        public final int resolution;
+        public final Type type;
+
+        Resolution(String format, int resolution, Type type) {
+            this.format = format;
+            this.resolution = resolution;
+            this.type = type;
+        }
     }
 }
