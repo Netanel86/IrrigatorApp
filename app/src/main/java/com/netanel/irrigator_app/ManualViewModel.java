@@ -10,13 +10,13 @@ import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Sensor;
 import com.netanel.irrigator_app.model.ValveCommand;
 import com.netanel.irrigator_app.services.AppServices;
+import com.netanel.irrigator_app.services.Repository;
 import com.netanel.irrigator_app.services.StringExt;
 import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
+import com.netanel.irrigator_app.services.connection.NullResultException;
 import com.netanel.irrigator_app.model.Valve;
 import com.netanel.irrigator_app.services.connection.NetworkUtilities;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -34,9 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0
  * Created on 23/09/2020
  */
-// TODO: 12/12/2021 build a global data access class for all view models, across all fragments.
-// TODO: 15/12/2021 global data access object should handle subscribing to db,
-//  would have two methods for data requests, onComplete and onError.
+
 
 public class ManualViewModel extends ObservableViewModel
         implements IManualViewModel,
@@ -47,7 +45,7 @@ public class ManualViewModel extends ObservableViewModel
 
     private final ConnectivityCallback mConnectivityChangedCallback;
 
-    private final IDataBaseConnection mDb;
+    private final Repository mRepository;
 
     private final Handler mHandler;
 
@@ -71,7 +69,7 @@ public class ManualViewModel extends ObservableViewModel
 
     public ManualViewModel(Application application) {
         super(application);
-        mDb = AppServices.getInstance().getDbConnection();
+        mRepository = AppServices.getInstance().getRepository();
         mTimer = new ProgressTimer();
         mConnectivityChangedCallback = new ConnectivityCallback(this, getApplication().getApplicationContext());
         mHandler = new Handler(Looper.getMainLooper());
@@ -81,7 +79,7 @@ public class ManualViewModel extends ObservableViewModel
 
         if (mValves == null) {
             if (NetworkUtilities.isOnline(this.getApplication())) {
-                fetchValves();
+                initValveViewModels();
             } else {
                 setMessageResource(R.string.msg_no_connection);
             }
@@ -110,7 +108,7 @@ public class ManualViewModel extends ObservableViewModel
                     setMessageArray(new Object[]{R.string.msg_connection_resumed,
                             StringExt.COMMA, StringExt.SPACE,
                             R.string.msg_loading_valves});
-                    fetchValves();
+                    initValveViewModels();
                 } else {
                     setMessageResource(R.string.msg_connection_resumed);
                     setEnabled(ENABLED);
@@ -200,19 +198,14 @@ public class ManualViewModel extends ObservableViewModel
         mSelectedValve.setProgress((int) (mSelectedValve.getMaxDuration() * relativeProgress));
     }
 
-    public void fetchValves() {
-        mDb.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
+    public void initValveViewModels() {
+        mRepository.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
             @Override
-            public void onComplete(List<Valve> answer, Exception ex) {
-                if (ex != null) {
-                    setMessage(ex.getMessage());
-                } else if (answer != null) {
-                    if (!answer.isEmpty()) {
+            public void onComplete(List<Valve> result) {
+                    if (!result.isEmpty()) {
                         LinkedList<ValveViewModel> valves = new LinkedList<>();
                         for (Valve valve :
-                                answer) {
-
-                            initValveDbListener(valve);
+                                result) {
                             ValveViewModel valveVm = new ValveViewModel(valve);
                             valves.add(valveVm);
                         }
@@ -224,10 +217,18 @@ public class ManualViewModel extends ObservableViewModel
                         setEnabled(!ENABLED);
                         setMessageResource(R.string.error_no_valves);
                     }
-                } else {
-                    setEnabled(!ENABLED);
-                    setMessageResource(R.string.msg_returned_empty_result);
                 }
+
+            @Override
+            public void onFailure(Exception exception) {
+                setEnabled(!ENABLED);
+
+                if(exception instanceof NullResultException) {
+                    setMessageResource(R.string.msg_returned_null_result);
+                }else {
+                    setMessage(exception.getMessage());
+                }
+                exception.printStackTrace();
             }
         });
     }
@@ -264,16 +265,19 @@ public class ManualViewModel extends ObservableViewModel
 
         if (cmnd != null) {
             mSelectedValve.removeViewState(ValveViewModel.State.ENABLED);
-            AppServices.getInstance().getDbConnection().addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
+            mRepository.addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
                 @Override
-                public void onComplete(Command answer, Exception ex) {
-                    if (ex != null) {
-                        setMessage(ex.getMessage());
-                        mSelectedValve.addViewState(ValveViewModel.State.ENABLED);
-                    } else if (answer != null) {
-                        Log.println(Log.INFO, "Command", "registered with id:" + answer.getId());
+                public void onComplete(Command result) {
+                    if (result != null) {
+                        Log.println(Log.INFO, "Command", "registered with id:" + result.getId());
                         setMessageResource(R.string.command_sent);
                     }
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    setMessage(exception.getMessage());
+                    mSelectedValve.addViewState(ValveViewModel.State.ENABLED);
                 }
             });
         }
@@ -308,18 +312,6 @@ public class ManualViewModel extends ObservableViewModel
         }
 
         setSensors(sensors);
-    }
-
-    private void initValveDbListener(@NotNull final Valve valve) {
-        mDb.addOnValveChangedListener(valve.getId(), new IDataBaseConnection.OnDataChangedListener<Valve>() {
-            @Override
-            public void onDataChanged(Valve changedObject, Exception ex) {
-                if (ex != null) {
-                    setMessage(ex.getMessage());
-                }
-                valve.update(changedObject);
-            }
-        });
     }
 
     private void runOnUiThread(Runnable action) {

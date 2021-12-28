@@ -3,14 +3,10 @@ package com.netanel.irrigator_app.services;
 import android.app.Application;
 import android.util.Log;
 
-import com.netanel.irrigator_app.ViewModelFactory;
 import com.netanel.irrigator_app.services.connection.FirebaseConnection;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.services.json_parser.GsonParser;
 import com.netanel.irrigator_app.services.json_parser.IJsonParser;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 import androidx.lifecycle.ViewModelProvider;
 
@@ -24,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider;
  */
 
 public class AppServices {
+    private final static String TAG = AppServices.class.getSimpleName();
 
     private static AppServices sInstance;
 
@@ -37,6 +34,7 @@ public class AppServices {
 
     private AppServices(){}
 
+    private Repository mRepository;
     private IJsonParser mJsonParser;
     private IDataBaseConnection mDatabaseConnection;
     private ViewModelProvider.AndroidViewModelFactory mViewModelFactory;
@@ -72,10 +70,17 @@ public class AppServices {
 
     public void setViewModelFactory(ViewModelProvider.AndroidViewModelFactory factory) {
         if (mViewModelFactory != null) {
-            Log.w(AppServices.class.getSimpleName(), "ViewModelFactory has already been instantiated");
+            Log.w(TAG, "ViewModelFactory has already been instantiated");
         } else {
             mViewModelFactory = factory;
         }
+    }
+
+    public Repository getRepository() {
+        if(mRepository == null) {
+            mRepository = new Repository(getDbConnection());
+        }
+        return mRepository;
     }
 
 }

@@ -1,10 +1,9 @@
 package com.netanel.irrigator_app.services.connection;
 
 
-import com.netanel.irrigator_app.model.Command;
-import com.netanel.irrigator_app.model.Valve;
-
 import java.util.List;
+
+import androidx.annotation.NonNull;
 
 /**
  * <p></p>
@@ -16,21 +15,40 @@ import java.util.List;
  */
 
 public interface IDataBaseConnection {
-    void getValves(TaskListener<List<Valve>> result);
+    <T> IQueryBuilder<T> getCollection(Path collectionPath, @NonNull Class<T> dataType);
 
-    void addValve(final Valve valve, final TaskListener<String> onComplete);
+    <T> void addDocumentChangedListener(@NonNull Path collectionPath,
+                                        @NonNull String docId,
+                                        @NonNull Class<T> dataType,
+                                        @NonNull TaskListener<T> documentChangedListener);
 
-    void addOnValveChangedListener(String valveId, OnDataChangedListener<Valve> dataChangedListener);
-
-    void addCommand(Command command, TaskListener<Command> onComplete);
+    <T extends IMappable> void addDocument(@NonNull T document,
+                                           @NonNull Path collectionPath,
+                                           @NonNull Class<T> dataType,
+                                           TaskListener<T> taskCompletedListener);
+    void unregisterAllListeners();
 
     interface TaskListener<T> {
-        void onComplete(T answer, Exception ex);
+        void onComplete(T result);
+        void onFailure(Exception exception);
     }
 
-    interface OnDataChangedListener<T> {
-        void onDataChanged(T changedObject, Exception ex);
+    interface IQueryBuilder<T> {
+        IQueryBuilder<T> orderBy(String field, Direction direction);
+        void get(@NonNull final IDataBaseConnection.TaskListener<List<T>> taskCompletedListener);
     }
 
+    enum Direction {
+        ASCENDING,
+        DESCENDING
+    }
 
+    enum Path {
+        VALVES("valves"),
+        COMMANDS("commands"),
+        SENSORS("sensors");
+
+        String path;
+        Path(String path){ this.path = path;}
+    }
 }

@@ -1,24 +1,20 @@
 package com.netanel.irrigator_app.services.connection;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.netanel.irrigator_app.model.Command;
-import com.netanel.irrigator_app.model.Valve;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 /**
  * <p></p>
@@ -31,95 +27,130 @@ import androidx.annotation.Nullable;
 
 public class FirebaseConnection implements IDataBaseConnection {
 
-    private static final String PATH_VALVES = "valves";
-    private static final String PATH_COMMANDS = "commands";
-
     private final FirebaseFirestore mDb;
+    private final Map<String, ListenerRegistration> mDataListeners;
 
     public FirebaseConnection() {
         mDb = FirebaseFirestore.getInstance();
+        mDataListeners = new HashMap<>();
+
+        initializeDbSettings();
+    }
+
+    @Override
+    public <T> IQueryBuilder<T> getCollection(Path collectionPath, @NonNull Class<T> dataType) {
+        return new FirebaseQueryBuilder<>(collectionPath.path, dataType);
+    }
+
+    @Override
+    public <T> void addDocumentChangedListener(@NonNull Path collectionPath,
+                                               @NonNull String docId, @NonNull Class<T> dataType,
+                                               @NonNull final TaskListener<T> documentChangedListener) {
+        ListenerRegistration listener =
+                mDb.collection(collectionPath.path).document(docId).addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        documentChangedListener.onFailure(error);
+                    } else if (value != null && value.exists()) {
+                        documentChangedListener.onComplete(value.toObject(dataType));
+                    }
+                });
+
+        mDataListeners.put(docId, listener);
+    }
+
+    @Override
+    public <T extends IMappable> void addDocument(@NonNull final T document,
+                                                  @NonNull Path collectionPath,
+                                                  @NonNull Class<T> dataType,
+                                                  final TaskListener<T> taskCompletedListener) {
+        mDb.collection(collectionPath.path).add(document)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        document.setId(task.getResult().getId());
+                        if (taskCompletedListener != null) {
+                            taskCompletedListener.onComplete(document);
+                        }
+                    } else {
+                        if (taskCompletedListener != null) {
+                            taskCompletedListener.onFailure(task.getException());
+                        }
+
+                    }
+                });
+    }
+
+    @Override
+    public void unregisterAllListeners() {
+        for (ListenerRegistration listener :
+                mDataListeners.values()) {
+            listener.remove();
+        }
+        mDataListeners.clear();
+    }
+
+    private <T> void onTaskCompleted(@NonNull Task<QuerySnapshot> task,
+                                     @NonNull String collectionPath,
+                                     @NonNull Class<T> dataType,
+                                     @NonNull final TaskListener<List<T>> taskCompletedListener) {
+
+        if (task.isSuccessful()) {
+            if (task.getResult() != null) {
+                //task is successful
+                LinkedList<T> collection = new LinkedList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    T item = document.toObject(dataType);
+                    collection.add(item);
+                }
+                taskCompletedListener.onComplete(collection);
+            } else {
+                //task was successful but returned null result
+                taskCompletedListener.onFailure(new NullResultException(collectionPath));
+            }
+        } else {
+            //task is unsuccessful
+            taskCompletedListener.onFailure(task.getException());
+        }
+    }
+
+    private void initializeDbSettings() {
         FirebaseFirestoreSettings settings =
                 new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build();
         mDb.setFirestoreSettings(settings);
     }
 
-    @Override
-    public void getValves(final TaskListener<List<Valve>> result) {
+    public class FirebaseQueryBuilder<T> implements IQueryBuilder<T> {
 
-        mDb.collection(PATH_VALVES).orderBy("index", Query.Direction.ASCENDING).get().addOnCompleteListener(
-                new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                            //task is successful and has a non empty result
-                            LinkedList<Valve> valves = new LinkedList<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Valve valve = document.toObject(Valve.class);
-                                valves.add(valve);
-                            }
-                            result.onComplete(valves, null);
-                        } else {
-                            if (task.getException() != null) {
-                                //task is unsuccessful
-                                result.onComplete(null, task.getException());
-                            } else {
-                                //task was successful but returned an empty or null result
-                                result.onComplete(null, null);
-                            }
-                        }
-                    }
-                });
-    }
+        private final String mCollectionPath;
+        private final Class<T> mDataType;
 
-    @Override
-    public void addCommand(final Command command, final TaskListener<Command> onComplete) {
-        mDb.collection(PATH_COMMANDS).add(command)
-                .addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentReference> task) {
-                        if (!task.isSuccessful()) {
-                            if (onComplete != null) {
-                                onComplete.onComplete(null, task.getException());
-                            }
+        private final CollectionReference mCollectionRef;
+        private Query mQuery;
 
-                        }
-                        else if(task.getResult() != null) {
-                            if (onComplete != null) {
-                                command.setId(task.getResult().getId());
-                                onComplete.onComplete(command,null);
-                            }
-                        }
-                    }
-                });
-    }
+        public FirebaseQueryBuilder(@NonNull String collectionPath, @NonNull Class<T> dataType) {
+            mCollectionPath = collectionPath;
+            mDataType = dataType;
+            mCollectionRef = mDb.collection(mCollectionPath);
+        }
 
-    @Override
-    public void addOnValveChangedListener(String docId, final OnDataChangedListener<Valve> dataChangedListener) {
-        mDb.collection(PATH_VALVES).document(docId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                if (error != null) {
-                    dataChangedListener.onDataChanged(null, error);
-                }
-                else if (value != null && value.exists()) {
-                    dataChangedListener.onDataChanged(value.toObject(Valve.class), null);
-                }
+        public IQueryBuilder<T> orderBy(String field, Direction direction) {
+            mQuery = mCollectionRef.orderBy(
+                    field,
+                    direction == Direction.ASCENDING ?
+                            Query.Direction.ASCENDING : Query.Direction.ASCENDING);
+            return this;
+        }
+
+        public void get(@NonNull final TaskListener<List<T>> taskCompletedListener) {
+            if (mQuery != null) {
+                mQuery.get().addOnCompleteListener(task ->
+                        onTaskCompleted(task, mCollectionPath, mDataType, taskCompletedListener))
+                        .addOnFailureListener(taskCompletedListener::onFailure);
+            } else {
+                mCollectionRef.get().addOnCompleteListener(task ->
+                        onTaskCompleted(task, mCollectionPath, mDataType, taskCompletedListener))
+                        .addOnFailureListener(taskCompletedListener::onFailure);
             }
-        });
-    }
-
-    public void addValve(final Valve valve, final TaskListener<String> onComplete) {
-        mDb.collection(PATH_VALVES).add(valve).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentReference> task) {
-                if(task.isSuccessful() && task.getResult() != null && onComplete != null) {
-                    onComplete.onComplete(task.getResult().getId(),null);
-                }
-                else {
-
-                }
-            }
-        });
+        }
     }
 }
 

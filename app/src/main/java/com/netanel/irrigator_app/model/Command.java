@@ -1,8 +1,8 @@
 package com.netanel.irrigator_app.model;
 
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
+import com.netanel.irrigator_app.services.connection.IMappable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,7 +18,7 @@ import java.util.List;
  * Created on 15/09/2020
  */
 
-public abstract class Command {
+public abstract class Command implements IMappable {
 
     @DocumentId
     private String uID;
