@@ -1,6 +1,7 @@
 package com.netanel.irrigator_app;
 
 
+import com.netanel.irrigator_app.model.ListenerRegistration;
 import com.netanel.irrigator_app.model.Valve;
 
 import java.util.Date;
@@ -19,7 +20,7 @@ import androidx.databinding.Bindable;
  * Created on 10/10/2021
  */
 
-public class ValveViewModel extends ObservableViewModel implements PropertyChangedCallback {
+public class ValveViewModel extends ObservableViewModel{
 
     private final Valve mValve;
 
@@ -29,12 +30,14 @@ public class ValveViewModel extends ObservableViewModel implements PropertyChang
 
     private Map<IManualViewModel.Scale, String> mScaleStrings;
 
+    private final ListenerRegistration mListenerRegistration;
+
     public ValveViewModel(Valve valve) {
         super();
         mValve = valve;
         mViewStates = EnumSet.noneOf(State.class);
 
-        mValve.setOnPropertyChangedCallback(this);
+        mListenerRegistration = mValve.addPropertyChangedListener(this::onPropertyChanged);
         resetViewStates();
         initTimeScales();
     }
@@ -135,11 +138,10 @@ public class ValveViewModel extends ObservableViewModel implements PropertyChang
 
     @Override
     protected void onCleared() {
-        mValve.clearOnPropertyChangedCallback();
+        mValve.removeListenerRegistration(mListenerRegistration);
         super.onCleared();
     }
 
-    @Override
     public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
             case Valve.PROPERTY_DURATION:

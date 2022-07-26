@@ -1,6 +1,8 @@
 package com.netanel.irrigator_app;
 
 
+import com.netanel.irrigator_app.model.ListenerRegistration;
+import com.netanel.irrigator_app.model.PropertyChangedListener;
 import com.netanel.irrigator_app.model.Sensor;
 
 import java.lang.reflect.Type;
@@ -19,8 +21,7 @@ import androidx.databinding.Bindable;
  * Created on 14/12/2021
  */
 
-public class SensorViewModel extends ObservableViewModel 
-        implements PropertyChangedCallback{
+public class SensorViewModel extends ObservableViewModel{
 
     private final Sensor mSensor;
 
@@ -28,10 +29,12 @@ public class SensorViewModel extends ObservableViewModel
 
     private Resolution mResolution;
 
+    private final ListenerRegistration mListenerRegistration;
+
     public SensorViewModel(Sensor sensor) {
         mSensor = sensor;
+        mListenerRegistration = mSensor.addPropertyChangedListener(this::onPropertyChanged);
 
-        mSensor.setOnPropertyChangedCallback(this);
         assignResources();
     }
 
@@ -70,11 +73,10 @@ public class SensorViewModel extends ObservableViewModel
 
     @Override
     protected void onCleared() {
-        mSensor.clearOnPropertyChangedCallback();
+        mSensor.removeListenerRegistration(mListenerRegistration);
         super.onCleared();
     }
 
-    @Override
     public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
             case Sensor.PROP_MAX_VALUE:

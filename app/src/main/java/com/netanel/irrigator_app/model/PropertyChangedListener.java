@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.model;
 
 
 /**
@@ -10,6 +10,6 @@ package com.netanel.irrigator_app;
  * Created on 04/11/2021
  */
 
-public interface PropertyChangedCallback {
+public interface PropertyChangedListener {
     void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue);
 }

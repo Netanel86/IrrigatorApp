@@ -2,7 +2,6 @@ package com.netanel.irrigator_app.model;
 
 
 import com.google.firebase.firestore.DocumentId;
-import com.netanel.irrigator_app.PropertyChangedCallback;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0
  * Created on 02/09/2020
  */
-public class Valve {
+public class Valve extends Observable {
     public static final boolean OPEN = true;
     public static final int PROPERTY_DESCRIPTION = 0;
     public static final int PROPERTY_LAST_ON = 1;
@@ -32,8 +31,6 @@ public class Valve {
     private String mDescription;
     private Date mLastOpen;
     private int mDurationInSec;
-
-    private PropertyChangedCallback mPropertyChangedCallback;
 
     public Valve(){}
 
@@ -135,20 +132,6 @@ public class Valve {
             int oldMaxDuration = this.mMaxDuration;
             this.mMaxDuration = maxDuration;
             notifyPropertyChanged(PROPERTY_MAX_DURATION, oldMaxDuration,maxDuration);
-        }
-    }
-
-    public void setOnPropertyChangedCallback(PropertyChangedCallback onPropertyChangedCallback) {
-        this.mPropertyChangedCallback = onPropertyChangedCallback;
-    }
-
-    public void clearOnPropertyChangedCallback() {
-        mPropertyChangedCallback = null;
-    }
-
-    private void notifyPropertyChanged(int propertyId, Object oldValue, Object newValue) {
-        if (mPropertyChangedCallback != null) {
-            mPropertyChangedCallback.onPropertyChanged(this, propertyId, oldValue, newValue);
         }
     }
 }
