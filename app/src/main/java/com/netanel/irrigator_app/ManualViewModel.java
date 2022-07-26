@@ -257,10 +257,10 @@ public class ManualViewModel extends ObservableViewModel
                 // TODO: 12/12/2021 implement Command with builder pattern
                 cmnd = new ValveCommand(mSelectedValve.getIndex(), mSelectedValve.getEditedProgress());
             } else {
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
+                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.ON);
             }
         } else if (mSelectedValve.isOpen()) {
-            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.OPEN);
+            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.ON);
         }
 
         if (cmnd != null) {

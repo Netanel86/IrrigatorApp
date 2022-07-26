@@ -51,7 +51,7 @@ public class ValveViewModel extends ObservableViewModel{
     }
 
     public Date getLastOpen() {
-        return mValve.getLastOpen();
+        return mValve.getOnTime();
     }
 
     public int getTimeLeft() {
@@ -60,7 +60,7 @@ public class ValveViewModel extends ObservableViewModel{
 
     @Bindable
     public boolean isOpen() {
-        return mValve.isOpen();
+        return mValve.isOn();
     }
 
     @Bindable

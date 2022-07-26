@@ -22,7 +22,7 @@ public class ValveCommand extends Command {
     private String mDescription;
 
     public ValveCommand(int valveIndex, int duration) {
-        this(valveIndex, Valve.OPEN);
+        this(valveIndex, Valve.ON);
         setDuration(duration);
     }
 

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * Created on 02/09/2020
  */
 public class Valve extends Observable {
-    public static final boolean OPEN = true;
+    public static final boolean ON = true;
     public static final int PROPERTY_DESCRIPTION = 0;
     public static final int PROPERTY_LAST_ON = 1;
     public static final int PROPERTY_DURATION = 2;
@@ -29,18 +29,18 @@ public class Valve extends Observable {
     private int mIndex;
     private int mMaxDuration;
     private String mDescription;
-    private Date mLastOpen;
+    private Date mOnTime;
     private int mDurationInSec;
 
     public Valve(){}
 
     public Valve(int index) {
         mIndex = index;
-        mLastOpen = new Date();
+        mOnTime = new Date();
     }
 
     public void update(Valve updatedValve) {
-        this.setLastOpen(updatedValve.getLastOpen());
+        this.setOnTime(updatedValve.getOnTime());
         this.setDuration(updatedValve.getDuration());
         this.setDescription(updatedValve.getDescription());
         this.setIndex(updatedValve.getIndex());
@@ -50,9 +50,9 @@ public class Valve extends Observable {
     public long getTimeLeft() {
         long leftDuration = 0;
         Date now = Calendar.getInstance().getTime();
-        if (this.mLastOpen != null && mLastOpen.before(now)) {
+        if (this.mOnTime != null && mOnTime.before(now)) {
             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
-                    Calendar.getInstance().getTime().getTime() - this.mLastOpen.getTime());
+                    Calendar.getInstance().getTime().getTime() - this.mOnTime.getTime());
             if (this.mDurationInSec - diffInSec > 0) {
                 leftDuration = this.mDurationInSec - diffInSec;
             }
@@ -60,7 +60,7 @@ public class Valve extends Observable {
         return leftDuration;
     }
 
-    public boolean isOpen() {
+    public boolean isOn() {
         return getTimeLeft() > 0;
     }
 
@@ -84,15 +84,15 @@ public class Valve extends Observable {
         }
     }
 
-    public Date getLastOpen() {
-        return mLastOpen;
+    public Date getOnTime() {
+        return mOnTime;
     }
 
-    public void setLastOpen(Date lastOpen) {
-        if(mLastOpen != lastOpen) {
-            if (mLastOpen == null || !mLastOpen.equals(lastOpen)) {
-                Date oldLastOpen = mLastOpen;
-                mLastOpen = lastOpen;
+    public void setOnTime(Date lastOpen) {
+        if(mOnTime != lastOpen) {
+            if (mOnTime == null || !mOnTime.equals(lastOpen)) {
+                Date oldLastOpen = mOnTime;
+                mOnTime = lastOpen;
                 notifyPropertyChanged(PROPERTY_LAST_ON, oldLastOpen, lastOpen);
             }
         }
