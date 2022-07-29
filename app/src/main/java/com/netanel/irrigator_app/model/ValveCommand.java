@@ -9,16 +9,17 @@ package com.netanel.irrigator_app.model;
  * @since 1.0
  * Created on 22/03/2021
  */
-// TODO: 01/04/2021 make commands immutable 
+// TODO: 01/04/2021 make commands immutable
+// TODO: 27/07/2022 maybe implement builder class for commands
 public class ValveCommand extends Command {
 
-    private static final String COMMAND_OPEN = "open";
-    private static final String COMMAND_CLOSE = "close";
+    private static final String COMMAND_ON = "on";
+    private static final String COMMAND_OFF = "off";
     private static final String COMMAND_EDIT_DESCRIPTION = "edit_description";
 
     private final int mIndex;
     private int mDuration;
-    private boolean mIsOpen;
+    private boolean mState;
     private String mDescription;
 
     public ValveCommand(int valveIndex, int duration) {
@@ -32,10 +33,10 @@ public class ValveCommand extends Command {
         setDescription(description);
     }
 
-    public ValveCommand(int valveIndex, boolean isOpen) {
+    public ValveCommand(int valveIndex, boolean state) {
         super();
         mIndex = valveIndex;
-        setOpen(isOpen);
+        setState(state);
     }
 
     public int getIndex() {
@@ -44,24 +45,24 @@ public class ValveCommand extends Command {
 
     public void setDuration(int duration) {
         this.mDuration = duration;
-        this.mCommandLog.remove(COMMAND_CLOSE);
-        this.addUniqueCommandLog(COMMAND_OPEN);
+        this.mCommandLog.remove(COMMAND_OFF);
+        this.addUniqueCommandLog(COMMAND_ON);
     }
 
     public int getDuration() {
         return mDuration;
     }
 
-    public void setOpen(boolean isOpen) {
-        if(!isOpen) {
-            this.mCommandLog.remove(COMMAND_OPEN);
-            this.addUniqueCommandLog(COMMAND_CLOSE);
+    public void setState(boolean state) {
+        if(!state) {
+            this.mCommandLog.remove(COMMAND_ON);
+            this.addUniqueCommandLog(COMMAND_OFF);
         }
-        this.mIsOpen = isOpen;
+        this.mState = state;
     }
 
-    public boolean isOpen() {
-        return mIsOpen;
+    public boolean getState() {
+        return mState;
     }
 
     public void setDescription(String description) {

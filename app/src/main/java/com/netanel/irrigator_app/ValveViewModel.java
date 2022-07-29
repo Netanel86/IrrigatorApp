@@ -145,7 +145,7 @@ public class ValveViewModel extends ObservableViewModel{
     public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
             case Valve.PROPERTY_DURATION:
-            case Valve.PROPERTY_LAST_ON:
+            case Valve.PROPERTY_ON_TIME:
                 resetViewStates();
                 mEditedProgress = 0;
 
