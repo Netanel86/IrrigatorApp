@@ -23,7 +23,7 @@ public class ManualFragment extends Fragment{
                              @Nullable Bundle savedInstanceState) {
 
         ManualViewModel viewModel = new ViewModelProvider(this,
-                AppServices.getInstance().getViewModelFactory()).get(ManualViewModel.class);
+                (ViewModelProvider.Factory) AppServices.getInstance().getViewModelFactory()).get(ManualViewModel.class);
 
         FragmentManualBinding binding =
                 DataBindingUtil
