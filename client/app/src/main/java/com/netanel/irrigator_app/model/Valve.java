@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
  * Created on 02/09/2020
  */
 public class Valve extends Observable {
-    public static final boolean ON = true;
     public static final int PROPERTY_DESCRIPTION = 0;
     public static final int PROPERTY_ON_TIME = 1;
     public static final int PROPERTY_DURATION = 2;

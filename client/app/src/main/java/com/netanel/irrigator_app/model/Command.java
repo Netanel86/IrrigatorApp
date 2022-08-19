@@ -7,7 +7,9 @@ import com.netanel.irrigator_app.services.connection.IMappable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Dictionary;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p></p>
@@ -18,17 +20,19 @@ import java.util.List;
  * Created on 15/09/2020
  */
 
-public abstract class Command implements IMappable {
+public class Command implements IMappable {
 
     @DocumentId
     private String uID;
 
-    private final Date mTime;
-    protected final List<String> mCommandLog;
+    private final Date mTimestamp;
+    protected final Actions mAction;
+    private final Map<String,Object> mAttributes;
 
-    public Command() {
-        mTime = Calendar.getInstance().getTime();
-        mCommandLog = new ArrayList<>();
+    public Command(Actions action, Map<String,Object> attributes) {
+        mTimestamp = Calendar.getInstance().getTime();
+        mAction = action;
+        mAttributes = attributes;
     }
 
     public String getId() {
@@ -40,17 +44,15 @@ public abstract class Command implements IMappable {
     }
 
     public Date getTime() {
-        return mTime;
+        return mTimestamp;
     }
 
-    public List<String> getCommandLog() {
-        return mCommandLog;
+    public Actions getAction() {
+        return mAction;
     }
 
-    protected void addUniqueCommandLog(String registry) {
-        if(!mCommandLog.contains(registry)) {
-            mCommandLog.add(registry);
-        }
+    public Map<String, Object> getAttributes() {
+        return  mAttributes;
     }
 }
 

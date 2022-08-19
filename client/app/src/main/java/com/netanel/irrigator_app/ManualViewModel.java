@@ -6,9 +6,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.netanel.irrigator_app.model.Actions;
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Sensor;
-import com.netanel.irrigator_app.model.ValveCommand;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.Repository;
 import com.netanel.irrigator_app.services.StringExt;
@@ -20,11 +20,16 @@ import com.netanel.irrigator_app.services.connection.NetworkUtilities;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Map.entry;
 
 /**
  * <p></p>
@@ -251,16 +256,18 @@ public class ManualViewModel extends ObservableViewModel
     @Override
     public void onSendCommand() {
         Command cmnd = null;
+        Map<String, Object> attr = new HashMap<>();
+        attr.put("index", mSelectedValve.getIndex());
 
         if (mSelectedValve.isEdited()) {
             if (mSelectedValve.getEditedProgress() != 0) {
-                // TODO: 12/12/2021 implement Command with builder pattern
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), mSelectedValve.getEditedProgress());
+                attr.put("duration", mSelectedValve.getEditedProgress());
+                cmnd = new Command(Actions.OPEN, attr);
             } else {
-                cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.ON);
+                cmnd = new Command(Actions.CLOSE, attr);
             }
         } else if (mSelectedValve.isOpen()) {
-            cmnd = new ValveCommand(mSelectedValve.getIndex(), !Valve.ON);
+            cmnd = new Command(Actions.CLOSE, attr);
         }
 
         if (cmnd != null) {
