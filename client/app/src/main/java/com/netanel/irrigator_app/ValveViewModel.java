@@ -149,6 +149,7 @@ public class ValveViewModel extends ObservableViewModel{
                 resetViewStates();
                 mEditedProgress = 0;
                 notifyPropertyChanged(BR.progress);
+                notifyPropertyChanged(BR.open);
                 break;
 
             case Valve.PROP_ID_MAX_DURATION:
