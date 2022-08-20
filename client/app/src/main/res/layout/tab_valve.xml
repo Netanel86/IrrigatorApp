@@ -22,7 +22,7 @@
         android:src="@drawable/ic_power"
         app:tint="@color/color_valve_state_activated"
         android:layout_gravity="end"
-        android:visibility="@{valveViewModel.open ? View.VISIBLE : View.GONE}"
+        app:visibility="@{valveViewModel.open}"
         tool:visibility="visible"/>
 
     <LinearLayout
