@@ -5,6 +5,7 @@ import com.google.firebase.firestore.DocumentId;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,11 +17,16 @@ import java.util.concurrent.TimeUnit;
  * Created on 02/09/2020
  */
 public class Valve extends Observable {
-    public static final int PROPERTY_DESCRIPTION = 0;
-    public static final int PROPERTY_ON_TIME = 1;
-    public static final int PROPERTY_DURATION = 2;
-    public static final int PROPERTY_INDEX = 3;
-    public static final int PROPERTY_MAX_DURATION = 4;
+    public static final int PROP_ID_DESCRIPTION = 0;
+    public static final int PROP_ID_ON_TIME = 1;
+    public static final int PROP_ID_DURATION = 2;
+    public static final int PROP_ID_INDEX = 3;
+    public static final int PROP_ID_MAX_DURATION = 4;
+    public static final String PROP_DESCRIPTION = "description";
+    public static final String PROP_ON_TIME = "time";
+    public static final String PROP_DURATION = "duration";
+    public static final String PROP_INDEX = "index";
+    public static final String PROP_MAX_DURATION = "max_duration";
 
     @DocumentId
     public String mId;
@@ -46,12 +52,35 @@ public class Valve extends Observable {
         this.setMaxDuration(updatedValve.getMaxDuration());
     }
 
+    public void update(Map<String, Object> propertyDict) {
+        for (String propKey :
+                propertyDict.keySet()) {
+            switch (propKey){
+                case Valve.PROP_ON_TIME:
+                    this.setOnTime((Date)propertyDict.get(propKey));
+                    break;
+                case Valve.PROP_DURATION:
+                    this.setDuration((int)propertyDict.get(propKey));
+                    break;
+                case Valve.PROP_DESCRIPTION:
+                    this.setDescription((String)propertyDict.get(propKey));
+                    break;
+                case Valve.PROP_INDEX:
+                    this.setIndex((int)propertyDict.get(propKey));
+                    break;
+                case Valve.PROP_MAX_DURATION:
+                    this.setMaxDuration((int)propertyDict.get(propKey));
+                    break;
+            }
+        }
+    }
+
     public long getTimeLeft() {
         long leftDuration = 0;
         Date now = Calendar.getInstance().getTime();
-        if (this.mOnTime != null && mOnTime.before(now)) {
+        if (this.mOnTime != null && this.mDurationInSec > 0) {
             long diffInSec = TimeUnit.MILLISECONDS.toSeconds(
-                    Calendar.getInstance().getTime().getTime() - this.mOnTime.getTime());
+                    now.getTime() - this.mOnTime.getTime());
             if (this.mDurationInSec - diffInSec > 0) {
                 leftDuration = this.mDurationInSec - diffInSec;
             }
@@ -79,7 +108,7 @@ public class Valve extends Observable {
         if (this.mDurationInSec != seconds) {
             int oldDuration = this.mDurationInSec;
             this.mDurationInSec = seconds;
-            notifyPropertyChanged(PROPERTY_DURATION, oldDuration, seconds);
+            notifyPropertyChanged(PROP_ID_DURATION, oldDuration, seconds);
         }
     }
 
@@ -92,7 +121,7 @@ public class Valve extends Observable {
             if (mOnTime == null || !mOnTime.equals(lastOpen)) {
                 Date oldLastOpen = mOnTime;
                 mOnTime = lastOpen;
-                notifyPropertyChanged(PROPERTY_ON_TIME, oldLastOpen, lastOpen);
+                notifyPropertyChanged(PROP_ID_ON_TIME, oldLastOpen, lastOpen);
             }
         }
     }
@@ -105,7 +134,7 @@ public class Valve extends Observable {
         if (mDescription == null || !mDescription.equals(description)) {
             String oldName = this.mDescription;
             this.mDescription = description;
-            notifyPropertyChanged(PROPERTY_DESCRIPTION, oldName, description);
+            notifyPropertyChanged(PROP_ID_DESCRIPTION, oldName, description);
         }
     }
 
@@ -117,7 +146,7 @@ public class Valve extends Observable {
         if(this.mIndex != index) {
             int oldIndex = this.mIndex;
             this.mIndex = index;
-            notifyPropertyChanged(PROPERTY_INDEX, oldIndex,index);
+            notifyPropertyChanged(PROP_ID_INDEX, oldIndex,index);
         }
     }
 
@@ -130,7 +159,7 @@ public class Valve extends Observable {
             mDurationInSec = mDurationInSec > maxDuration ? 0 : mDurationInSec;
             int oldMaxDuration = this.mMaxDuration;
             this.mMaxDuration = maxDuration;
-            notifyPropertyChanged(PROPERTY_MAX_DURATION, oldMaxDuration,maxDuration);
+            notifyPropertyChanged(PROP_ID_MAX_DURATION, oldMaxDuration,maxDuration);
         }
     }
 }

@@ -20,7 +20,6 @@ import com.netanel.irrigator_app.services.connection.NetworkUtilities;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,7 +28,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Map.entry;
 
 /**
  * <p></p>
