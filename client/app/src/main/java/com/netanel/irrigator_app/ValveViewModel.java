@@ -37,7 +37,7 @@ public class ValveViewModel extends ObservableViewModel{
         mValve = valve;
         mViewStates = EnumSet.noneOf(State.class);
 
-        mListenerRegistration = mValve.addPropertyChangedListener(this::onPropertyChanged);
+        mListenerRegistration = mValve.addPropertyChangedListener(this::onValvePropertyChanged);
         resetViewStates();
         initTimeScales();
     }
@@ -142,25 +142,26 @@ public class ValveViewModel extends ObservableViewModel{
         super.onCleared();
     }
 
-    public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
+    public void onValvePropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
-            case Valve.PROPERTY_DURATION:
-            case Valve.PROPERTY_ON_TIME:
+            case Valve.PROP_ID_DURATION:
                 resetViewStates();
                 mEditedProgress = 0;
-
-                notifyPropertyChanged(BR.open);
                 notifyPropertyChanged(BR.progress);
                 break;
+            case Valve.PROP_ID_ON_TIME:
+                mEditedProgress = 0;
+                notifyPropertyChanged(BR.open);
+                break;
 
-            case Valve.PROPERTY_MAX_DURATION:
+            case Valve.PROP_ID_MAX_DURATION:
                 initTimeScales();
 
                 notifyPropertyChanged(BR.maxDuration);
                 break;
 
-            case Valve.PROPERTY_DESCRIPTION:
-            case Valve.PROPERTY_INDEX:
+            case Valve.PROP_ID_DESCRIPTION:
+            case Valve.PROP_ID_INDEX:
                 notifyPropertyChanged(BR.description);
                 break;
         }

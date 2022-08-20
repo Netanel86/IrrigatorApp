@@ -6,7 +6,6 @@ import com.devadvance.circularseekbar.CircularSeekBar;
 import androidx.databinding.BindingAdapter;
 import androidx.databinding.InverseBindingAdapter;
 import androidx.databinding.InverseBindingListener;
-import androidx.databinding.adapters.ListenerUtil;
 
 /**
  * <p></p>

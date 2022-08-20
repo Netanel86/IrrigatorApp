@@ -549,15 +549,13 @@ public class CircularSeekBar extends View {
 	 * @param progress The progress to set the CircularSeekBar to.
 	 */
 	public void setProgress(int progress) {
-		if (mProgress != progress) {
-			mProgress = progress;
-			if (mOnCircularSeekBarChangeListener != null) {
-				mOnCircularSeekBarChangeListener.onProgressChanged(this, progress, false);
-			}
-
-			recalculateAll();
-			invalidate();
+		mProgress = progress;
+		if (mOnCircularSeekBarChangeListener != null) {
+			mOnCircularSeekBarChangeListener.onProgressChanged(this, progress, false);
 		}
+
+		recalculateAll();
+		invalidate();
 	}
 
 	protected void setProgressBasedOnAngle(float angle) {

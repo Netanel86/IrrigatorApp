@@ -43,7 +43,7 @@ public class Command implements IMappable {
         this.uID = uID;
     }
 
-    public Date getTime() {
+    public Date getTimestamp() {
         return mTimestamp;
     }
 
