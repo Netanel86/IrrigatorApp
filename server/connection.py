@@ -85,7 +85,7 @@ class Connection(object):
         Returns: 
             :class:`google.cloud.firestore_v1.Query.stream`: a query set of the requested document
         """
-        return self.db.collection(col_id).stream()
+        return self.db.collection(col_id).order_by("index").stream()
 
     def update_document(self, col_id: str, doc_id: str, doc_fields: Dict[str, Any]):
         """Updates a document in the collection.\n
@@ -145,7 +145,7 @@ class Command(object):
         """Parses :class:`Command` to a dictionary.\n
         Returns:
             A dictionary with this :class:`Command` propeties, name and value pairs"""
-        return {self.PROP_ACTION: self.action, 
+        return {self.PROP_ACTION: self.action.name, 
                 self.PROP_TIME: self.timestamp,
                 self.PROP_ATTR: self.attributes}
 
@@ -167,19 +167,22 @@ class Command(object):
         """
         return Command(cmnd_id,
                     source[Command.PROP_TIME], 
-                    source[Command.PROP_ACTION], 
+                    Command.Actions[source[Command.PROP_ACTION]], 
                     source[Command.PROP_ATTR])
 
     def __str__(self) -> str:
-        to_string = str.format("[{0}: Command]:", self.timestamp.strftime('%Y-%m-%d %X'))
+        to_string = "[{0}: Command]:".format(self.timestamp.strftime('%Y-%m-%d %X'))
 
         match self.action:
-            case 'on': to_string = "{0} Turn ON Valve #{1} for: {2}s".format(
-                to_string, self.index, self.duration)
-            case 'off': to_string = "{0} Turn OFF Valve #{1}".format(
-                to_string, self.index)
-            case 'description': to_string = "{0} Edit Valve #{1} description to: {2}".format(
-                to_string, self.index, self.message)
+            case Command.Actions.OPEN: 
+                to_string = "{0} Turn ON Valve #{1} for: {2}s".format(
+                to_string, self.attributes["index"], self.attributes["duration"])
+            case Command.Actions.CLOSE: 
+                to_string = "{0} Turn OFF Valve #{1}".format(
+                to_string, self.attributes["index"])
+            case Command.Actions.UPDATE: 
+                to_string = "{0} Edit Valve #{1} description to: {2}".format(
+                to_string, self.attributes["index"], self.message)
 
         return to_string
 
