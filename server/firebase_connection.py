@@ -56,7 +56,7 @@ class FireBaseConnection(object):
         Returns: 
             :class:`QueryBuilder`: a collection query builder
         """
-        return QueryBuilder(self, col_id)
+        return QueryBuilder(self.__db, col_id)
 
     async def update_document(self, col_id: str, doc_id: str, doc_fields: Dict[str, Any]):
         """Updates a document in the collection.\n

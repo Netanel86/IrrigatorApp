@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any, Callable, Dict, List
+from tkinter.messagebox import NO
+from typing import Any, Callable, Dict, List, Literal
 from datetime import datetime
 from enum import Enum
 import os
@@ -14,13 +15,32 @@ class Repository(object):
 
     def __init__(self) -> None:
         self.__connection = FireBaseConnection(Repository.__KEY_PATH)
+        self.__modules: List[EPModule] = None
     
     def get_modules(self) -> List[EPModule]:
-        col_query = self.__connection.get_collection(Repository.PATH_MODULES).order_by(EPModule.PROP_INDEX)
-        module_docs = col_query.execute()
-        modules : List[EPModule] = []
-        for doc in module_docs:
-            modules.append(EPModule.from_dict(doc.id, doc.to_dict()))
+        if(self.__modules is None):
+            self.__modules = []
+            col_query = self.__connection.get_collection(Repository.PATH_MODULES).order_by(EPModule.PROP_INDEX)
+            module_docs = col_query.execute()
+            for doc in module_docs:
+                self.__modules.append(EPModule.from_dict(doc.id, doc.to_dict()))
+        return self.__modules
+
+    def update_module(self, module: EPModule, props: List[str] = None) -> None:
+        update_dict = {}
+        if props is not None:
+            update_dict = module.to_prop_dict(props)
+        else:
+            update_dict = module.to_dict()
+        
+        self.__connection.update_document(
+                Repository.PATH_MODULES, module.id, update_dict)
+
+    def add_module(self, module: EPModule):
+        self.__connection.add_document(Repository.PATH_MODULES, module.to_dict())
+
+    def delete_command(self, command: Command) -> None:
+        self.__connection.delete_document(Repository.PATH_COMMANDS, command.id)
 
     def init_command_listener(self, callback: Callable[[List[Command], datetime], None]) -> None:
         def inner_callback(col_snapshot, changes, timestamp):
@@ -31,6 +51,9 @@ class Repository(object):
                 callback(cmnd_list, timestamp)
 
         self.__connection.register_listener(Repository.PATH_COMMANDS, inner_callback)
+    
+    def disconnect(self):
+        self.__connection.disconnect();
 
 class Actions(Enum):
     REFRESH = 0

@@ -22,13 +22,10 @@ def command_callback(cmnd_list, timestamp) :
                     module.Duration = 0
 
 
-            connection.update_document(
-                'valves', 
-                module.id, 
-                module.to_prop_dict([EPModule.PROP_DURATION, EPModule.PROP_ON_TIME]))
+            repository.update_module(module, [EPModule.PROP_DURATION, EPModule.PROP_ON_TIME])
             
             #remove command after execution
-            connection.delete_document('commands',command.id) 
+            repository.delete_command(command) 
         
 repository = Repository()
 repository.init_command_listener(command_callback)
@@ -43,4 +40,4 @@ repository.init_command_listener(command_callback)
 
 modules = repository.get_modules()
 input('wait for input\n')
-connection.disconnect()
+repository.disconnect()
