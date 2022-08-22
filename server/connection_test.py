@@ -1,15 +1,11 @@
 import datetime
 from typing import List
-from connection import Connection, Command
 from ModelLib import EPModule
+from repository import Repository, Command
 
-def command_callback(col_snapshot, changes, read_time) :
-    cmnd_list : List[Command] = []
-    if len(col_snapshot) > 0:
-        for doc in col_snapshot:
-            cmnd_list.append(Command.from_dict(doc.id, doc.to_dict()))
+def command_callback(cmnd_list, timestamp) :
         
-        print('[{0}] Command recieved'.format(read_time.astimezone().strftime('%Y-%m-%d %X')))
+        print('[{0}] Commands recieved'.format(timestamp.astimezone().strftime('%Y-%m-%d %X')))
 
         for command in cmnd_list:
             #execute command
@@ -17,11 +13,11 @@ def command_callback(col_snapshot, changes, read_time) :
 
             match command.action:
                 case Command.Actions.OPEN:
-                    module = modules[command.attributes["index"]]
+                    module = modules[command.attributes[Command.ATTR_INDEX]]
                     module.on_time = datetime.datetime.now().astimezone()
-                    module.Duration = command.attributes["duration"]
+                    module.Duration = command.attributes[Command.ATTR_DURATION]
                 case Command.Actions.CLOSE:
-                    module = modules[command.attributes["index"]]
+                    module = modules[command.attributes[Command.ATTR_INDEX]]
                     module.on_time = datetime.datetime.now().astimezone()
                     module.Duration = 0
 
@@ -34,8 +30,8 @@ def command_callback(col_snapshot, changes, read_time) :
             #remove command after execution
             connection.delete_document('commands',command.id) 
         
-connection = Connection()
-connection.register_listener('commands', command_callback)
+repository = Repository()
+repository.init_command_listener(command_callback)
 
 # valve = Valve(4,1200)
 # valve.description = "python"
@@ -44,11 +40,7 @@ connection.register_listener('commands', command_callback)
 # valve_snapshot = connection.read_document('valves','JCg10DTQ2iT1GCA8xoMU')
 # valve = EPModule.from_dict(valve_snapshot.id, valve_snapshot.to_dict())
 
-module_docs = connection.read_collection('valves')
-modules : List[EPModule] = []
-for doc in module_docs:
-    modules.append(EPModule.from_dict(doc.id, doc.to_dict()))
 
-
+modules = repository.get_modules()
 input('wait for input\n')
-connection.unregister_listener('commands')
+connection.disconnect()

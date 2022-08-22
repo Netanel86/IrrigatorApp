@@ -1,10 +1,8 @@
 from tkinter import * #export DISPLAY=:0.0  if runing from VS code SSH
 import threading #thread module imported
 import os
-from tokenize import String
 import ModelLib
 import time
-import connection
 
 
 
