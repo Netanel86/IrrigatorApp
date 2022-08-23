@@ -22,6 +22,7 @@ import androidx.databinding.BindingAdapter;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.FragmentManager;
 import androidx.gridlayout.widget.GridLayout;
+import androidx.lifecycle.LifecycleOwner;
 
 
 /**
@@ -40,8 +41,9 @@ public class ManualBindingAdapters {
 
     @BindingAdapter("tabs")
     public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valves) {
-
         if(valves != null) {
+            LifecycleOwner lifecycleOwner = FragmentManager
+                    .findFragment(tabLayout).getViewLifecycleOwner();
             for (ValveViewModel viewModel :
             valves) {
 
@@ -53,7 +55,7 @@ public class ManualBindingAdapters {
                                 false);
 
                 binding.setValveViewModel(viewModel);
-                binding.setLifecycleOwner(FragmentManager.findFragment(tabLayout));
+                binding.setLifecycleOwner(lifecycleOwner);
 
                 TabLayout.Tab tab = tabLayout.newTab().setCustomView(binding.getRoot());
                 tab.setId(View.generateViewId());
@@ -66,6 +68,8 @@ public class ManualBindingAdapters {
     @BindingAdapter("cells")
     public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
         if(sensors != null) {
+            LifecycleOwner lifeCycleOwner = FragmentManager
+                    .findFragment(grid).getViewLifecycleOwner();
             for (SensorViewModel viewModel :
                     sensors) {
 
@@ -75,7 +79,7 @@ public class ManualBindingAdapters {
                                 grid,
                                 false);
                 binding.setSensorVM(viewModel);
-                binding.setLifecycleOwner(FragmentManager.findFragment(grid));
+                binding.setLifecycleOwner(lifeCycleOwner);
                 View sensorView = binding.getRoot();
 
                 grid.addView(sensorView);
