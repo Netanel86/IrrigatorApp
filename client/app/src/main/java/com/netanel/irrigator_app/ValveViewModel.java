@@ -105,6 +105,11 @@ public class ValveViewModel extends ObservableViewModel{
         notifyPropertyChanged(BR.viewStates);
     }
 
+    public void addViewStates(EnumSet<State> currentStates) {
+        mViewStates.addAll(currentStates);
+        notifyPropertyChanged(BR.viewStates);
+    }
+
     public void addViewState(State state) {
         mViewStates.add(state);
         notifyPropertyChanged(BR.viewStates);
@@ -129,8 +134,7 @@ public class ValveViewModel extends ObservableViewModel{
 
     public void setEdited(boolean isEdited) {
         if (isEdited) {
-            addViewState(State.ENABLED);
-            addViewState(State.EDITED);
+            addViewStates(EnumSet.of(State.ENABLED, State.EDITED));
         } else {
             resetViewStates();
         }
