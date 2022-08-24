@@ -21,7 +21,7 @@ class FireBaseConnection(object):
         self.__callback_thread = threading.Event()
         self.__listeners: Dict[str, Watch] = {}
     
-    async def add_document(self, col_id: str, doc_fields: Dict[str, Any]) -> str: 
+    def add_document(self, col_id: str, doc_fields: Dict[str, Any]) -> str: 
         """Adds a document to the collection.\n
         Args:
             col_id -- the collection id containing the document\n
@@ -31,10 +31,10 @@ class FireBaseConnection(object):
         """
         new_ref = self.__db.collection(col_id).document()
         doc_fields["id"] = new_ref.id
-        await new_ref.set(doc_fields)
+        new_ref.set(doc_fields)
         return new_ref.id
     
-    async def get_document(self, col_id: str, doc_id: str) -> DocumentSnapshot:
+    def get_document(self, col_id: str, doc_id: str) -> DocumentSnapshot:
         """Gets a document from a collection.\n
         Args:
             col_id -- the collection id containing the document\n
@@ -43,7 +43,7 @@ class FireBaseConnection(object):
             :class:`firestore_v1.DocumentSnapshot`: a snapshot of the requested document
         """
         doc_ref = self.__db.collection(col_id).document(doc_id)
-        doc = await doc_ref.get()
+        doc = doc_ref.get()
         if not doc.exists:
             pass #raise exception
 
@@ -58,7 +58,7 @@ class FireBaseConnection(object):
         """
         return QueryBuilder(self.__db, col_id)
 
-    async def update_document(self, col_id: str, doc_id: str, doc_fields: Dict[str, Any]):
+    def update_document(self, col_id: str, doc_id: str, doc_fields: Dict[str, Any]):
         """Updates a document in the collection.\n
         Args:
             col_id -- the collection id containing the document\n
@@ -66,15 +66,15 @@ class FireBaseConnection(object):
             doc_fields -- dictionary with document properties, name and value pairs
         """
         doc_ref = self.__db.collection(col_id).document(doc_id)
-        await doc_ref.update(doc_fields)
+        doc_ref.update(doc_fields)
 
-    async def delete_document(self, col_id: str, doc_id: str):
+    def delete_document(self, col_id: str, doc_id: str):
         """Delete a document from the collection.\n
         Args:
             col_id -- the collection id containing the document\n
             doc_id -- the document id
         """
-        await self.__db.collection(col_id).document(doc_id).delete()
+        self.__db.collection(col_id).document(doc_id).delete()
     
     def register_listener(self, col_id: str, callback: Callable[[List[DocumentSnapshot], List[DocumentChange], datetime], None]) -> None:
         """Registers a listener to collection changes.\n

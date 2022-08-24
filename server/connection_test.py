@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from ModelLib import EPModule
-from repository import Repository, Command
+from repository import Repository, Command, Actions
 
 def command_callback(cmnd_list, timestamp) :
         
@@ -12,11 +12,11 @@ def command_callback(cmnd_list, timestamp) :
             print(command) 
 
             match command.action:
-                case Command.Actions.OPEN:
+                case Actions.OPEN:
                     module = modules[command.attributes[Command.ATTR_INDEX]]
                     module.on_time = datetime.datetime.now().astimezone()
                     module.Duration = command.attributes[Command.ATTR_DURATION]
-                case Command.Actions.CLOSE:
+                case Actions.CLOSE:
                     module = modules[command.attributes[Command.ATTR_INDEX]]
                     module.on_time = datetime.datetime.now().astimezone()
                     module.Duration = 0
