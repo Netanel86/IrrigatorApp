@@ -3,7 +3,7 @@ from typing import List
 from ModelLib import EPModule
 from repository import Repository, Command, Actions
 
-
+TEST_SYSTEM_ID = 'lQxqLcM60RB33g9qOPeg'
 def command_callback(cmnd_list, timestamp):
     print(
         "[{0}] Commands recieved".format(timestamp.astimezone().strftime("%Y-%m-%d %X"))
@@ -47,11 +47,11 @@ def update_module_open():
             modules[0], [EPModule.PROP_DURATION, EPModule.PROP_ON_TIME]
         )
     
-repository = Repository('lQxqLcM60RB33g9qOPeg')
+repository = Repository(TEST_SYSTEM_ID)
 # repository.init_command_listener(command_callback)
 
 modules = repository.get_modules()
-update_module_open()
+# update_module_open()
 
 input('wait for input\n')
 repository.disconnect()

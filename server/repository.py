@@ -1,44 +1,72 @@
 from __future__ import annotations
+from mimetypes import init
 from typing import Any, Callable, Dict, List
 from datetime import datetime
 from enum import Enum
 from ModelLib import EPModule
-from firestore import FirestoreConnection, OrderBy
+from firestore import FirestoreConnection, OrderBy, Where
 
 
 class Repository(object):
+    __COL_COMMANDS = "commands"
+    __COL_MODULES = "valves"
+    __COL_SYSTEMS = "systems"
+
     def __init__(self, system_id: str) -> None:
         self.__client = FirestoreConnection()
-        self.__modules: List[EPModule] = None
-        self.__system_id = (
-            system_id  # TODO get system id from local storage or create new
-        )
+        self.__modules: Dict[str, EPModule] = None
 
-        if self.__system_id is not None:
-            self.__client.init_user_system(self.__system_id)
-        else:
-            # TODO save new system id in local storage
-            self.__system_id = self.__client.init_user_system(None, True)
+        if system_id is None:  # TODO remove after implementing local db
+            # replace with self.__init_paths(self.__get_system_id())
+            system_id = self.__get_system_id()
+        self.__init_paths(system_id)
+
+    def __init_paths(self, system_id: str):
+        if system_id is None:
+            raise ValueError(
+                "system_id: value can't be None, call get_system_id() before initializing paths"
+            )
+
+        self.PATH_SYSTEM = "{0}/{1}".format(Repository.__COL_SYSTEMS, system_id)
+        self.PATH_COMMANDS = "{0}/{1}".format(
+            self.PATH_SYSTEM, Repository.__COL_COMMANDS
+        )
+        self.PATH_MODULES = "{0}/{1}".format(self.PATH_SYSTEM, Repository.__COL_MODULES)
+
+    def __get_system_id(self) -> str:
+        """Retrievs the system id.
+
+        retrieves the system id from the local database, if one doesn't yet exist,
+        will get a new system reference id from the client.
+
+        Returns:
+            A new or existing system id.
+        """
+        system_id = None  # TODO load system id from local db
+        if system_id is None:
+            system_id = self.__client.document_ref(Repository.__COL_SYSTEMS)
+
+        return system_id
 
     def add_module(self, module: EPModule):
-        module.id = self.__client.add_document(
-            self.__client.PATH_MODULES, module.to_dict()
-        )
+        module.id = self.__client.add_document(self.PATH_MODULES, module.to_dict())
+        self.__modules[module.IP] = module
 
     def add_modules(self, modules: List[EPModule]):
         dicts = []
         for module in modules:
             dicts.append(module.to_dict())
 
-        doc_ids = self.__client.add_documents(self.__client.PATH_MODULES, dicts)
+        doc_ids = self.__client.add_documents(self.PATH_MODULES, dicts)
 
         for idx, module in enumerate(modules):
             module.id = doc_ids[idx]
+            self.__modules[module.IP] = module
 
-    def get_modules(self) -> List[EPModule]:
+    def get_modules(self) -> Dict[str, EPModule]:
         if self.__modules is None:
             module_docs = self.__client.get_collection(
-                self.__client.PATH_MODULES, OrderBy(EPModule.PROP_INDEX)
+                self.PATH_MODULES, OrderBy(EPModule.PROP_INDEX)
             )
             self.__modules = self.__parse_modules(module_docs)
 
@@ -46,7 +74,7 @@ class Repository(object):
 
     def get_commands(self) -> List[Command]:
         return self.__client.get_collection(
-            self.__client.PATH_COMMANDS, OrderBy(Command.PROP_TIME, OrderBy.DESCENDING)
+            self.PATH_COMMANDS, OrderBy(Command.PROP_TIME, OrderBy.DESCENDING)
         )
 
     def update_module(self, module: EPModule, props: List[str] = None):
@@ -56,9 +84,7 @@ class Repository(object):
         else:
             update_dict = module.to_dict()
 
-        self.__client.update_document(
-            self.__client.PATH_MODULES, module.id, update_dict
-        )
+        self.__client.update_document(self.PATH_MODULES, module.id, update_dict)
 
     def init_command_listener(
         self, callback: Callable[[List[Command], datetime], None]
@@ -66,13 +92,14 @@ class Repository(object):
         def inner_callback(doc_dicts: Dict[str, Dict[str, Any]], timestamp):
             callback(self.__parse_commands(doc_dicts), timestamp)
 
-        self.__client.register_listener(self.__client.PATH_COMMANDS, inner_callback)
+        self.__client.register_listener(self.PATH_COMMANDS, inner_callback)
 
     def delete_command(self, command: Command):
-        self.__client.delete_document(self.__client.PATH_COMMANDS, command.id)
+        self.__client.delete_document(self.PATH_COMMANDS, command.id)
 
     def delete_module(self, module: EPModule):
-        self.__client.delete_document(self.__client.PATH_MODULES, module.id)
+        self.__client.delete_document(self.PATH_MODULES, module.id)
+        self.__modules.pop(module.IP)
 
     def disconnect(self):
         self.__client.disconnect()
@@ -86,10 +113,11 @@ class Repository(object):
 
     def __parse_modules(
         self, module_dicts: Dict[str, Dict[str, Any]]
-    ) -> List[EPModule]:
-        modules: List[EPModule] = []
+    ) -> Dict[str, EPModule]:
+        modules: Dict[str, EPModule] = {}
         for module_id, module_dict in module_dicts.items():
-            modules.append(EPModule.from_dict(module_id, module_dict))
+            module = EPModule.from_dict(module_id, module_dict)
+            modules[module.IP] = module
 
         return modules
 

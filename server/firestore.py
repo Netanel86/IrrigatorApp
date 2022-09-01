@@ -21,57 +21,19 @@ class FirestoreConnection(object):
     __KEY_PATH = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "irrigator-app-key.json"
     )
-    __COL_COMMANDS = "commands"
-    __COL_MODULES = "valves"
-    __COL_SYSTEMS = "systems"
 
     def __init__(self):
         self.__init_firestore()
         self.__callback_command = threading.Event()
         self.__listeners: Dict[str, Watch] = {}
 
-    def __is_exist(self, col_id: str, doc_id: str) -> bool:
-        self.__db.collection(col_id).document()
+    def exist(self, col_id: str, doc_id: str) -> bool:
+        return self.__db.collection(col_id).document(doc_id).get().exists
 
     def __init_firestore(self):
         cred = credentials.Certificate(FirestoreConnection.__KEY_PATH)
         firebase_admin.initialize_app(cred)
         self.__db: Client = firestore.client()
-
-    def __init_paths(self, system_id: str):
-        self.PATH_SYSTEM = "{0}/{1}".format(
-            FirestoreConnection.__COL_SYSTEMS, system_id
-        )
-        self.PATH_COMMANDS = "{0}/{1}".format(
-            self.PATH_SYSTEM, FirestoreConnection.__COL_COMMANDS
-        )
-        self.PATH_MODULES = "{0}/{1}".format(
-            self.PATH_SYSTEM, FirestoreConnection.__COL_MODULES
-        )
-
-    def init_user_system(self, system_id: str, is_new: bool = False) -> str:
-        """initializes the database user system path.
-
-        Args:
-            system_id: The system document id.
-            is_new: TRUE if a new system needs to be created, default: FALSE.
-
-        Returns:
-            A new system id will be issued for a new system, otherwise returns the existing system id.
-        """
-        if is_new:
-            system_id = self.__document_ref(self.__COL_SYSTEMS).id
-            self.__init_paths(system_id)
-        else:
-            if system_id is not None:
-                # TODO check if exists:
-                # self.__document_ref(self.__COL_SYSTEMS, system_id)
-                self.__init_paths(system_id)
-            else:
-                raise ValueError(
-                    "system_id: value must be set for an existing system, otherwise set property is_new = TRUE to create a new one"
-                )
-        return system_id
 
     def add_document(self, col_path: str, doc_fields: Dict[str, Any]) -> str:
         """Adds a new document to the collection.
@@ -215,8 +177,15 @@ class FirestoreConnection(object):
         self.__callback_command.clear()
         self.__db.close()
 
-    def __document_ref(self, col_path: str, doc_id: str = None) -> DocumentReference:
-        return self.__db.collection(col_path).document(doc_id)
+    def document_ref(self, col_path: str) -> str:
+        """Generates a new document id under the collection.
+
+        Args:
+            col_path: The collection under which to generate the new document id.
+        Returns:
+            The new document id generated under the collection
+        """
+        return self.__db.collection(col_path).document().id
 
     def __parse_collection(
         self, snapshot: List[DocumentSnapshot]
