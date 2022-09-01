@@ -50,6 +50,15 @@ class FirestoreConnection(object):
         )
 
     def init_user_system(self, system_id: str, is_new: bool = False) -> str:
+        """initializes the database user system path.
+
+        Args:
+            system_id: The system document id.
+            is_new: TRUE if a new system needs to be created, default: FALSE.
+
+        Returns:
+            A new system id will be issued for a new system, otherwise returns the existing system id.
+        """
         if is_new:
             system_id = self.__document_ref(self.__COL_SYSTEMS).id
             self.__init_paths(system_id)
@@ -65,18 +74,29 @@ class FirestoreConnection(object):
         return system_id
 
     def add_document(self, col_path: str, doc_fields: Dict[str, Any]) -> str:
-        """Adds a document to the collection.\n
+        """Adds a new document to the collection.
+
         Args:
-            col_id -- the collection id containing the document\n
-            doc_dict -- a dictionary with document properties, name and value pairs\n
+            col_path: The collection path containing the document.
+            doc_fields: A dictionary with document properties, name and value pairs.
+
         Returns:
-            the new document id.
+            The new document id.
         """
         new_ref = self.__db.collection(col_path).document()
         new_ref.set(doc_fields)
         return new_ref.id
 
     def add_documents(self, col_path: str, docs: List[Dict[str, Any]]) -> List[str]:
+        """Adds multiple documents to the collection.
+
+        Args:
+            col_path: The collection path containing the document.
+            doc_fields: A dictionary with document properties, name and value pairs.
+
+        Returns:
+            A list of new document id's, ordered in the original list order.
+        """
         batch = self.__db.batch()
         doc_ids: List[str] = []
 
@@ -89,12 +109,14 @@ class FirestoreConnection(object):
         return doc_ids
 
     def get_document(self, col_path: str, doc_id: str) -> Tuple[str, Dict[str, Any]]:
-        """Gets a document from a collection.\n
+        """Gets an existing document from the collection.
+
         Args:
-            col_id -- the collection id containing the document\n
-            doc_id -- the document id\n
+            col_path: The collection path containing the document.
+            doc_id: The document id.
+
         Returns:
-            Dict: a snapshot of the requested document
+            A tuple containing document id and document dictionary.
         """
         snapshot = self.__db.collection(col_path).document(doc_id).get()
         return (snapshot.id, snapshot.to_dict())
@@ -102,32 +124,46 @@ class FirestoreConnection(object):
     def update_document(
         self, col_path: str, doc_id: str, updated_props: Dict[str, Any]
     ):
-        """Updates a document in the collection.\n
+        """Updates an existing document in the collection.
+
         Args:
-            col_id -- the collection id containing the document\n
-            doc_id -- the document id\n
-            doc_fields -- dictionary with document properties, name and value pairs
+            col_path: The collection path containing the document.
+            doc_id: The document id to update.
+            updated_props: A dictionary with document properties, name and value pairs.
         """
         self.__db.collection(col_path).document(doc_id).update(updated_props)
 
     def get_collection(
         self, col_path: str, orderby: OrderBy = None, where: Where = None
     ) -> Dict[str, Dict[str, Any]]:
+        """Retrieve an entire collection.
+
+        Args:
+            col_path: The collection id.
+            orderby(optional): A :class:`firestore.OrderBy` class describing a direction and
+                a field for ordering documents.
+            where(optional): A :class:`firestore.Where` class describing a condition for
+                filtering documents.
+
+        Returns:
+            A documents dictionary where document id is key.
+        """
         query: Query | CollectionReference = self.__db.collection(col_path)
 
         if orderby is not None:
-            query = query.order_by(orderby.property, direction=orderby.direction)
+            query = query.order_by(orderby.field, direction=orderby.direction)
 
         if where is not None:
-            query = query.where(where.property, where.operator, where.value)
+            query = query.where(where.field, where.operator, where.value)
 
         return self.__parse_collection(query.stream())
 
     def delete_document(self, col_path: str, doc_id: str):
-        """Delete a document from the collection.\n
+        """Deletes a document from the collection.
+
         Args:
-            col_id -- the collection id containing the document\n
-            doc_id -- the document id
+            col_path: The collection path containing the document.
+            doc_id: The document id to delete.
         """
         self.__db.collection(col_path).document(doc_id).delete()
 
@@ -136,13 +172,14 @@ class FirestoreConnection(object):
         col_path: str,
         callback: Callable[[Dict[str, Dict[str, Any]], datetime], None],
     ):
-        """Registers a listener to collection changes.\n
-        Args:
-            col_id -- the collection id\n
-            callback -- a function to execute when a callback is recieved\n
-        Raises:
-            ValueError: If the ``collection_id`` was already registered
+        """Registers a callback for collection or document changes.
 
+        Args:
+            col_path: The collection path.
+            callback: A function to execute when a callback is recieved.
+
+        Raises:
+            ValueError: If a listener to this collection/document was already registered.
         """
 
         def inner_callback(col_snapshots, changes, timestamp):
@@ -161,15 +198,17 @@ class FirestoreConnection(object):
             )
 
     def unregister_listener(self, listener_id: str):
-        """Removes a listener from the database.\n
+        """Removes a listener from a collection or document.
+
         Args:
-            listener_id -- the listener id
+            listener_id: The listener id to unregister.
         """
         if listener_id in self.__listeners.keys():
             self.__listeners[listener_id].unsubscribe()
             self.__listeners.pop(listener_id)
 
     def disconnect(self):
+        """Removes all listeners and disconnect the repository from the database."""
         for listener in self.__listeners.values():
             listener.unsubscribe()
         self.__listeners.clear()
@@ -208,11 +247,21 @@ class FirestoreConnection(object):
 
 
 class OrderBy(object):
+    """A class describing a direction and field for ordering documents."""
+
     ASCENDING = 0
     DESCENDING = 1
 
-    def __init__(self, property: str, direction: Literal = ASCENDING) -> None:
-        self.property = property
+    def __init__(self, field: str, direction: Literal = ASCENDING) -> None:
+        """Create a new Order-By descriptor.
+
+        Args:
+            field: The field used to order.
+
+            direction(optional): Direction of ordering, default: `OrderBy.ASCENDING`
+                possible values: `OrderBy.ASCENDING`, `OrderBy.DESCENDING`.
+        """
+        self.field = field
 
         if direction is OrderBy.ASCENDING:
             self.direction = Query.ASCENDING
@@ -221,7 +270,20 @@ class OrderBy(object):
 
 
 class Where(object):
-    def __init__(self, property: str, operator: str, value: Any) -> None:
-        self.property = property
+    """A class describing a condition for filtering documents."""
+
+    def __init__(self, field: str, operator: str, value: Any) -> None:
+        """Create a new Where descriptor.
+
+        Args:
+            field: The field to filter on.
+
+            operator: The comparison operation to apply on the selected field,
+                possible values: ``<``, ``<=``, ``==``, ``>=``, ``>``,
+                and ``in``.
+
+            value: The value to compare the field against in the filter.
+        """
+        self.field = field
         self.operator = operator
         self.value = value
