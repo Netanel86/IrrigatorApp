@@ -4,6 +4,7 @@ from ModelLib import EPModule
 from repository import Repository, Command, Actions
 
 TEST_SYSTEM_ID = 'lQxqLcM60RB33g9qOPeg'
+
 def command_callback(cmnd_list, timestamp):
     print(
         "[{0}] Commands recieved".format(timestamp.astimezone().strftime("%Y-%m-%d %X"))
@@ -14,11 +15,11 @@ def command_callback(cmnd_list, timestamp):
         # TODO execute command in each Action case
         match command.action:
             case Actions.OPEN:
-                module = modules[command.attributes[Command.ATTR_INDEX]]
+                module = modules[command.attributes[Command.ATTR_IP]]
                 module.on_time = datetime.datetime.now().astimezone()
                 module.Duration = command.attributes[Command.ATTR_DURATION]
             case Actions.CLOSE:
-                module = modules[command.attributes[Command.ATTR_INDEX]]
+                module = modules[command.attributes[Command.ATTR_IP]]
                 module.on_time = datetime.datetime.now().astimezone()
                 module.Duration = 0
 

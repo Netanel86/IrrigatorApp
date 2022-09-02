@@ -9,7 +9,6 @@ from firebase_admin import firestore
 from google.cloud.firestore import Client
 from google.cloud.firestore_v1 import (
     DocumentSnapshot,
-    DocumentReference,
     CollectionReference,
     Query,
 )

@@ -66,7 +66,7 @@ class Repository(object):
     def get_modules(self) -> Dict[str, EPModule]:
         if self.__modules is None:
             module_docs = self.__client.get_collection(
-                self.PATH_MODULES, OrderBy(EPModule.PROP_INDEX)
+                self.PATH_MODULES, OrderBy(EPModule.PROP_IP)
             )
             self.__modules = self.__parse_modules(module_docs)
 
@@ -130,7 +130,7 @@ class Actions(Enum):
 
 
 class Command(object):
-    ATTR_INDEX = "index"
+    ATTR_IP = "index"
     ATTR_DURATION = "duration"
     ATTR_DESCRIPTION = "description"
 
@@ -185,17 +185,17 @@ class Command(object):
             case Actions.OPEN:
                 to_string = "{0} Turn ON Valve #{1} for: {2}s".format(
                     to_string,
-                    self.attributes[Command.ATTR_INDEX],
+                    self.attributes[Command.ATTR_IP],
                     self.attributes[Command.ATTR_DURATION],
                 )
             case Actions.CLOSE:
                 to_string = "{0} Turn OFF Valve #{1}".format(
-                    to_string, self.attributes[Command.ATTR_INDEX]
+                    to_string, self.attributes[Command.ATTR_IP]
                 )
             case Actions.UPDATE:
                 to_string = "{0} Edit Valve #{1} description to: {2}".format(
                     to_string,
-                    self.attributes[Command.ATTR_INDEX],
+                    self.attributes[Command.ATTR_IP],
                     self.attributes[Command.ATTR_DESCRIPTION],
                 )
 

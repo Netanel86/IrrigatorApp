@@ -56,7 +56,7 @@ class AnalogSensor(
 
 class EPModule(object):
     PROP_ID = "id"
-    PROP_INDEX = "index"
+    PROP_IP = "ip"
     PROP_DESCRIPTION = "description"
     PROP_MAX_DURATION = "maxDuration"
     PROP_DURATION = "duration"
@@ -64,16 +64,15 @@ class EPModule(object):
     PROP_COM_ERROR = ""
 
     def __init__(
-        self, index: int, IP="", port=502, timeout=0.5, max_duration: int = 600
+        self, IP="", port=502, timeout=0.5, max_duration: int = 600
     ):
         self.id = ""
-        self.index = index
         self.description = ""
         self.on_time = datetime.datetime.now().astimezone()
         self.max_duration = max_duration
         self.Duration = 0
-
         self.IP = IP
+
         self.port = port
         self.timeout = timeout
         self.client = ModbusClient()
@@ -177,7 +176,7 @@ class EPModule(object):
         Returns:
             A dictionary with this :class:`Valve` propeties, name and value pairs"""
         return {
-            self.PROP_INDEX: self.index,
+            self.PROP_IP: self.IP,
             self.PROP_DESCRIPTION: self.description,
             self.PROP_MAX_DURATION: self.max_duration,
             self.PROP_DURATION: self.Duration,
@@ -192,7 +191,7 @@ class EPModule(object):
             A dictionary with the specified propeties, name and value pairs\n
         Remarks:
             use the :class:`Valve` constant property name fields:
-                :field:`Valve.PROP_INDEX`\n
+                :field:`Valve.PROP_IP`\n
                 :field:`Valve.PROP_DESCRIPTION`\n
                 :field:`Valve.PROP_MAX_DURATION`\n
                 :field:`Valve.PROP_DURATION`\n
@@ -202,8 +201,8 @@ class EPModule(object):
 
         for prop in props:
             match prop:
-                case EPModule.PROP_INDEX:
-                    prop_dict[prop] = self.index
+                case EPModule.PROP_IP:
+                    prop_dict[prop] = self.IP
                 case EPModule.PROP_DESCRIPTION:
                     prop_dict[prop] = self.description
                 case EPModule.PROP_MAX_DURATION:
@@ -215,7 +214,7 @@ class EPModule(object):
         return prop_dict
 
     @staticmethod
-    def from_dict(valve_id: str, source: Dict[str, Any]):
+    def from_dict(module_id: str, source: Dict[str, Any]):
         """Parses and creates a new :class:`Valve` from a dictionary.\n
         Args:
             valve_id -- the valve's database id\n
@@ -224,18 +223,18 @@ class EPModule(object):
             :class:`Valve` -- a Valve initialized with dictionary data\n
         Remarks:
             use the :class:`Valve` constant property name fields:
-                :field:`Valve.PROP_INDEX`\n
+                :field:`Valve.PROP_IP`\n
                 :field:`Valve.PROP_DESCRIPTION`\n
                 :field:`Valve.PROP_MAX_DURATION`\n
                 :field:`Valve.PROP_DURATION`\n
                 :field:`Valve.PROP_ON_TIME`
         """
-        valve = EPModule(
-            source[EPModule.PROP_INDEX], max_duration=source[EPModule.PROP_MAX_DURATION]
+        module = EPModule(
+            source[EPModule.PROP_IP], max_duration=source[EPModule.PROP_MAX_DURATION]
         )
-        valve.id = valve_id
-        valve.Duration = source[EPModule.PROP_DURATION]
-        valve.on_time = source[EPModule.PROP_ON_TIME]
-        valve.description = source[EPModule.PROP_DESCRIPTION]
+        module.id = module_id
+        module.Duration = source[EPModule.PROP_DURATION]
+        module.on_time = source[EPModule.PROP_ON_TIME]
+        module.description = source[EPModule.PROP_DESCRIPTION]
 
-        return valve
+        return module
