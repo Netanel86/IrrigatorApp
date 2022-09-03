@@ -1,9 +1,10 @@
 # PLANTOS Modules Modbus TCP Communication Lib
-
+from __future__ import annotations
+from operator import mod
 from pyModbusTCP.client import ModbusClient
 
 import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 # Linear Conversion
@@ -61,16 +62,15 @@ class EPModule(object):
     PROP_MAX_DURATION = "maxDuration"
     PROP_DURATION = "duration"
     PROP_ON_TIME = "onTime"
-    PROP_COM_ERROR = ""
+    PROP_PORT = "port"
+    PROP_TIMEOUT = "timeout"
 
-    def __init__(
-        self, IP="", port=502, timeout=0.5, max_duration: int = 600
-    ):
+    def __init__(self, IP="", port=502, timeout=0.5, max_duration: int = 600):
         self.id = ""
         self.description = ""
         self.on_time = datetime.datetime.now().astimezone()
         self.max_duration = max_duration
-        self.Duration = 0
+        self.duration = 0
         self.IP = IP
 
         self.port = port
@@ -115,7 +115,7 @@ class EPModule(object):
                 self.SoilSensor2.LinearConversion(self.regs[1])
                 self.SoilSensor3.LinearConversion(self.regs[2])
                 self.RelayOut = self.regs[3]
-                self.Duration = self.regs[4]
+                self.duration = self.regs[4]
                 self.WATER_REQUEST = self.regs[5]
                 self.OUTPUT_MODE = self.regs[6]
                 self.REMAINING_TIME = self.regs[7]
@@ -151,7 +151,7 @@ class EPModule(object):
             return False
 
     def SetDuration(self, Duration):
-        if self.bConnected and Duration > 0 and self.Duration <= self.MaxDuration:
+        if self.bConnected and Duration > 0 and self.duration <= self.MaxDuration:
             self.client.write_single_register(4, Duration)
             return True
         else:
@@ -163,7 +163,7 @@ class EPModule(object):
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
-            self.index,
+            self.IP,
             self.description,
             self.max_duration,
             self.on_time.strftime("%x"),
@@ -171,70 +171,102 @@ class EPModule(object):
             self.duration,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Parses :class:`Valve` to a dictionary.\n
+    def __to_dict(self) -> Dict[str, Any]:
+        """Parses the module to a dictionary.\n
         Returns:
-            A dictionary with this :class:`Valve` propeties, name and value pairs"""
+            A dictionary with the module propeties, name and value pairs"""
         return {
-            self.PROP_IP: self.IP,
-            self.PROP_DESCRIPTION: self.description,
-            self.PROP_MAX_DURATION: self.max_duration,
-            self.PROP_DURATION: self.Duration,
-            self.PROP_ON_TIME: self.on_time,
+            EPModule.PROP_ID: self.id,
+            EPModule.PROP_IP: self.IP,
+            EPModule.PROP_DESCRIPTION: self.description,
+            EPModule.PROP_MAX_DURATION: self.max_duration,
+            EPModule.PROP_DURATION: self.duration,
+            EPModule.PROP_ON_TIME: self.on_time,
+            EPModule.PROP_PORT: self.port,
+            EPModule.PROP_TIMEOUT: self.timeout,
         }
 
-    def to_prop_dict(self, props: List[str]) -> Dict[str, Any]:
-        """Parses only the specified :class:`Valve` properties to a dictionary.\n
+    def to_dict(self, props: List[str] = None) -> Dict[str, Any]:
+        """Parses the module to a dictionary.
+
         Args:
-            props -- a list of properties names to parse\n
+            props(optional) -- a list of properties names to parse, if value is set only the specified properties would be parsed,
+                possible values: `EPModule.PROP_ID`, `EPModule.PROP_IP`, `EPModule.PROP_DESCRIPTION`,
+                `EPModule.PROP_MAX_DURATION`, `EPModule.PROP_DURATION`, `EPModule.PROP_ON_TIME`,
+                `EPModule.PROP_PORT` and `EPModule.PROP_TIMEOUT`.
+
         Returns:
-            A dictionary with the specified propeties, name and value pairs\n
-        Remarks:
-            use the :class:`Valve` constant property name fields:
-                :field:`Valve.PROP_IP`\n
-                :field:`Valve.PROP_DESCRIPTION`\n
-                :field:`Valve.PROP_MAX_DURATION`\n
-                :field:`Valve.PROP_DURATION`\n
-                :field:`Valve.PROP_ON_TIME`
+            A dictionary with the specified propeties, name and value pairs
         """
         prop_dict = {}
 
-        for prop in props:
-            match prop:
-                case EPModule.PROP_IP:
-                    prop_dict[prop] = self.IP
-                case EPModule.PROP_DESCRIPTION:
-                    prop_dict[prop] = self.description
-                case EPModule.PROP_MAX_DURATION:
-                    prop_dict[prop] = self.max_duration
-                case EPModule.PROP_DURATION:
-                    prop_dict[prop] = self.Duration
-                case EPModule.PROP_ON_TIME:
-                    prop_dict[prop] = self.on_time
+        if props is not None:
+            for prop in props:
+                match prop:
+                    case EPModule.PROP_ID:
+                        prop_dict[prop] = self.id
+                    case EPModule.PROP_IP:
+                        prop_dict[prop] = self.IP
+                    case EPModule.PROP_DESCRIPTION:
+                        prop_dict[prop] = self.description
+                    case EPModule.PROP_MAX_DURATION:
+                        prop_dict[prop] = self.max_duration
+                    case EPModule.PROP_DURATION:
+                        prop_dict[prop] = self.duration
+                    case EPModule.PROP_ON_TIME:
+                        prop_dict[prop] = self.on_time
+                    case EPModule.PROP_PORT:
+                        prop_dict[prop] = self.port
+                    case EPModule.PROP_TIMEOUT:
+                        prop_dict[prop] = self.timeout
+            else:
+                prop_dict = self.__to_dict()
+
         return prop_dict
 
-    @staticmethod
-    def from_dict(module_id: str, source: Dict[str, Any]):
-        """Parses and creates a new :class:`Valve` from a dictionary.\n
-        Args:
-            valve_id -- the valve's database id\n
-            source -- a dictionary with object's properties, name and value pairs\n
-        Returns:
-            :class:`Valve` -- a Valve initialized with dictionary data\n
-        Remarks:
-            use the :class:`Valve` constant property name fields:
-                :field:`Valve.PROP_IP`\n
-                :field:`Valve.PROP_DESCRIPTION`\n
-                :field:`Valve.PROP_MAX_DURATION`\n
-                :field:`Valve.PROP_DURATION`\n
-                :field:`Valve.PROP_ON_TIME`
-        """
-        module = EPModule(
-            source[EPModule.PROP_IP], max_duration=source[EPModule.PROP_MAX_DURATION]
+    def to_tuple(self) -> Tuple[Any]:
+        return (
+            self.id,
+            self.IP,
+            self.description,
+            self.max_duration,
+            self.duration,
+            self.on_time,
+            self.port,
+            self.timeout,
         )
-        module.id = module_id
-        module.Duration = source[EPModule.PROP_DURATION]
-        module.on_time = source[EPModule.PROP_ON_TIME]
-        module.description = source[EPModule.PROP_DESCRIPTION]
+
+    @staticmethod
+    def from_dict(source: Dict[str, Any]) -> EPModule:
+        """Parses and creates a new module from a dictionary.
+
+        Args:
+            source: a dictionary with module's properties, name and value pairs
+                possible name values: `EPModule.PROP_ID`, `EPModule.PROP_IP`, `EPModule.PROP_DESCRIPTION`,
+                `EPModule.PROP_MAX_DURATION`, `EPModule.PROP_DURATION`, `EPModule.PROP_ON_TIME`,
+                `EPModule.PROP_PORT` and `EPModule.PROP_TIMEOUT`.
+
+        Returns:
+            `EPModule`: a module initialized with dictionary data\n
+        """
+        module = EPModule()
+        for name, value in source.items():
+            match name:
+                case EPModule.PROP_ID:
+                    module.id = value
+                case EPModule.PROP_IP:
+                    module.IP = value
+                case EPModule.PROP_MAX_DURATION:
+                    module.max_duration = value
+                case EPModule.PROP_DURATION:
+                    module.duration = value
+                case EPModule.PROP_ON_TIME:
+                    module.on_time = value
+                case EPModule.PROP_DESCRIPTION:
+                    module.description = value
+                case EPModule.PROP_PORT:
+                    module.port = value
+                case EPModule.PROP_TIMEOUT:
+                    module.timeout = value
 
         return module

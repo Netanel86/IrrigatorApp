@@ -107,7 +107,7 @@ class FirestoreConnection(object):
                 filtering documents.
 
         Returns:
-            A documents dictionary where document id is key.
+            A documents dictionary with document id as key.
         """
         query: Query | CollectionReference = self.__db.collection(col_path)
 

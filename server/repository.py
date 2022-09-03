@@ -8,6 +8,13 @@ from firestore import FirestoreConnection, OrderBy, Where
 
 
 class Repository(object):
+    MODULE_CLIENT_FIELDS = [
+        EPModule.PROP_IP,
+        EPModule.PROP_DESCRIPTION,
+        EPModule.PROP_MAX_DURATION,
+        EPModule.PROP_DURATION,
+        EPModule.PROP_ON_TIME,
+    ]
     __COL_COMMANDS = "commands"
     __COL_MODULES = "valves"
     __COL_SYSTEMS = "systems"
@@ -49,13 +56,15 @@ class Repository(object):
         return system_id
 
     def add_module(self, module: EPModule):
-        module.id = self.__client.add_document(self.PATH_MODULES, module.to_dict())
+        module.id = self.__client.add_document(
+            self.PATH_MODULES, module.to_dict(Repository.MODULE_CLIENT_FIELDS)
+        )
         self.__modules[module.IP] = module
 
     def add_modules(self, modules: List[EPModule]):
         dicts = []
         for module in modules:
-            dicts.append(module.to_dict())
+            dicts.append(module.to_dict(Repository.MODULE_CLIENT_FIELDS))
 
         doc_ids = self.__client.add_documents(self.PATH_MODULES, dicts)
 
@@ -80,9 +89,9 @@ class Repository(object):
     def update_module(self, module: EPModule, props: List[str] = None):
         update_dict = {}
         if props is not None:
-            update_dict = module.to_prop_dict(props)
+            update_dict = module.to_dict(props)
         else:
-            update_dict = module.to_dict()
+            update_dict = module.to_dict(Repository.MODULE_CLIENT_FIELDS)
 
         self.__client.update_document(self.PATH_MODULES, module.id, update_dict)
 
@@ -116,7 +125,8 @@ class Repository(object):
     ) -> Dict[str, EPModule]:
         modules: Dict[str, EPModule] = {}
         for module_id, module_dict in module_dicts.items():
-            module = EPModule.from_dict(module_id, module_dict)
+            module_dict[EPModule.PROP_ID] = module_id
+            module = EPModule.from_dict(module_dict)
             modules[module.IP] = module
 
         return modules
@@ -130,7 +140,7 @@ class Actions(Enum):
 
 
 class Command(object):
-    ATTR_IP = "index"
+    ATTR_IP = "ip"
     ATTR_DURATION = "duration"
     ATTR_DESCRIPTION = "description"
 
