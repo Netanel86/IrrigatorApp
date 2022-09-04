@@ -1,9 +1,8 @@
 # PLANTOS Modules Modbus TCP Communication Lib
 from __future__ import annotations
-from operator import mod
 from pyModbusTCP.client import ModbusClient
 
-import datetime
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 
@@ -66,12 +65,12 @@ class EPModule(object):
     PROP_TIMEOUT = "timeout"
 
     def __init__(self, IP="", port=502, timeout=0.5, max_duration: int = 600):
-        self.id = ""
-        self.description = ""
-        self.on_time = datetime.datetime.now().astimezone()
-        self.max_duration = max_duration
-        self.duration = 0
-        self.IP = IP
+        self.id: str = ""
+        self.description: str = ""
+        self.on_time: datetime = datetime.now().astimezone()
+        self.max_duration: int = max_duration
+        self.duration: int = 0
+        self.IP: str = IP
 
         self.port = port
         self.timeout = timeout
@@ -176,7 +175,6 @@ class EPModule(object):
         Returns:
             A dictionary with the module propeties, name and value pairs"""
         return {
-            EPModule.PROP_ID: self.id,
             EPModule.PROP_IP: self.IP,
             EPModule.PROP_DESCRIPTION: self.description,
             EPModule.PROP_MAX_DURATION: self.max_duration,
@@ -184,6 +182,7 @@ class EPModule(object):
             EPModule.PROP_ON_TIME: self.on_time,
             EPModule.PROP_PORT: self.port,
             EPModule.PROP_TIMEOUT: self.timeout,
+            EPModule.PROP_ID: self.id,
         }
 
     def to_dict(self, props: List[str] = None) -> Dict[str, Any]:
@@ -235,6 +234,19 @@ class EPModule(object):
             self.port,
             self.timeout,
         )
+
+    @staticmethod
+    def from_tuple(source: Tuple[Any]) -> EPModule:
+        module = EPModule()
+        module.id = source[0]
+        module.IP = source[1]
+        module.description = source[2]
+        module.on_time = source[3]
+        module.max_duration = source[4]
+        module.duration = source[5]
+        module.port = source[6]
+        module.timeout = source[7]
+        return module
 
     @staticmethod
     def from_dict(source: Dict[str, Any]) -> EPModule:
