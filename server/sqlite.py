@@ -1,11 +1,11 @@
 from __future__ import annotations
-from datetime import datetime
 from enum import Enum
 import os
+from re import I
 import sqlite3
-from sqlite3 import Connection, Error
+from sqlite3 import Error
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Tuple
 from ModelLib import EPModule
 
 TYPE_TEXT = "TEXT"
@@ -44,7 +44,7 @@ class SQLiteConnection(object):
             .where(("type", "name"), ("table", table))
             .execute()
         )
-        if len(ret_val) != 0:
+        if len(ret_val) == 1:
             exists = True
 
         return exists
@@ -63,25 +63,32 @@ class SQLiteConnection(object):
 
             if idx == 0:
                 if name == "id":
-                    cols_query += " id {} PRIMARY KEY, ".format(type)
+                    cols_query += "id {} PRIMARY KEY".format(type)
                 else:
-                    cols_query += " id INTEGER PRIMARY KEY, "
+                    cols_query += "id INTEGER PRIMARY KEY"
+                if len(data) - 1 > 1:
+                    cols_query += ", "
             else:
                 cols_query += "{} {}".format(name, type)
                 if idx < len(data) - 1:
                     cols_query += ", "
 
-            query = "CREATE TABLE IF NOT EXISTS {} ({})".format(table, cols_query)
+        query = "CREATE TABLE IF NOT EXISTS {} ({})".format(table, cols_query)
 
         return self._execute(Queries.CREATE, query)
 
     def insert(
-        self, table: str, col_names: Tuple[str], values: Tuple[Any]
+        self, table: str, col_names: Tuple[str], values: Tuple[Any] | Tuple[Tuple[Any]]
     ) -> str | int:
         cols_query = self._formatter(col_names, ",")
-        vals_query = self._formatter("?", ",", len(col_names))
+        vals_subq = self._formatter("?", ",", len(col_names))
 
-        query = "INSERT INTO {}({}) VALUES({}) RETURNING id".format(
+        if isinstance(values[0], tuple):
+            vals_query = "({}),".format(vals_subq) * (len(values) - 1)
+
+        vals_query = "({})".format(vals_subq)
+
+        query = "INSERT INTO {}({}) VALUES {} RETURNING id".format(
             table, cols_query, vals_query
         )
 
@@ -276,22 +283,10 @@ class Queries(Enum):
     DELETE = 4
 
 
-con = SQLiteConnection()
-# ret_val = con.create(
-#     "modules",
-#     (
-#         ("id", TYPE_TEXT),
-#         ("ip", TYPE_TEXT),
-#         ("description", TYPE_TEXT),
-#         ("max_duration", TYPE_INT),
-#         ("duration", TYPE_INT),
-#         ("on_time", TYPE_TIME),
-#         ("port", TYPE_INT),
-#         ("timeout", TYPE_FLOAT),
-#     ),
-# )
-module = EPModule(IP="192.168.0.201")
-module.id = "test_id_6"
+# con = SQLiteConnection()
+#
+# module = EPModule(IP="192.168.0.201")
+# module.id = "test_id_6"
 # ret_val = con.insert(
 #     "modules",
 #     (
@@ -337,7 +332,7 @@ module.id = "test_id_6"
 #     .orderby(("on_time",), QueryBuilder.ORDER_ASC)
 #     .execute()
 # )
-ret_val = con.is_exists("systems")
-print(ret_val)
+# ret_val = con.is_exists("systems")
+# print(ret_val)
 
-con.close()
+# con.close()
