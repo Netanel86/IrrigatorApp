@@ -5,7 +5,7 @@ from re import I
 import sqlite3
 from sqlite3 import Error
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any, Dict, List, Tuple
 from ModelLib import EPModule
 
 TYPE_TEXT = "TEXT"
@@ -19,6 +19,7 @@ class SQLiteConnection(object):
         self.__PATH = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "sqlite\db\pysqlite.db"
         )
+        self.query_cache: Dict[str, str] = {}
         self.__create_db_dir()
         self.__init_db()
 
@@ -78,19 +79,21 @@ class SQLiteConnection(object):
         return self._execute(Queries.CREATE, query)
 
     def insert(
-        self, table: str, col_names: Tuple[str], values: Tuple[Any] | Tuple[Tuple[Any]]
+        self, table: str, col_names: Tuple[str], values: Tuple[Any] | List[Tuple[Any]]
     ) -> str | int:
         cols_query = self._formatter(col_names, ",")
-        vals_subq = self._formatter("?", ",", len(col_names))
+        vals_query = self._formatter("?", ",", len(col_names))
+        cache_key = Queries.INSERT.value + " {}".format(table)
 
-        if isinstance(values[0], tuple):
-            vals_query = "({}),".format(vals_subq) * (len(values) - 1)
+        query = self.query_cache.get(cache_key)
+        if query is None:
+            query = "INSERT INTO {}({}) VALUES ({})".format(
+                table, cols_query, vals_query
+            )
+            self.query_cache[cache_key] = query
 
-        vals_query = "({})".format(vals_subq)
-
-        query = "INSERT INTO {}({}) VALUES {} RETURNING id".format(
-            table, cols_query, vals_query
-        )
+        if not isinstance(values, list):
+            query += " RETURNING id"
 
         return self._execute(Queries.INSERT, query, values)
 
@@ -118,18 +121,25 @@ class SQLiteConnection(object):
 
         return QueryBuilder(self, Queries.SELECT, query)
 
-    def _execute(self, q_type: Queries, query: str, values: Tuple[Any] = None):
+    def _execute(
+        self, q_type: Queries, query: str, values: Tuple[Any] | List[Tuple[Any]] = None
+    ):
         result = None
+        is_many = False
         try:
             cursor = self.__db.cursor()
             if values is not None:
-                cursor.execute(query, values)
+                if isinstance(values, list):
+                    cursor.executemany(query, values)
+                    is_many = True
+                else:
+                    cursor.execute(query, values)
             else:
                 cursor.execute(query)
 
             match q_type:
                 case Queries.INSERT:
-                    result = cursor.fetchone()[0]
+                    result = cursor.rowcount if is_many else cursor.fetchone()[0]
 
                 case Queries.SELECT:
                     result = cursor.fetchall()
@@ -164,42 +174,6 @@ class SQLiteConnection(object):
         query += last
 
         return query
-
-    def init_queries(self):
-        self.QUERY_CREATE_TABLE_MODULES = """
-            CREATE TABLE IF NOT EXISTS modules (
-            id text PRIMARY KEY,
-            ip text NOT NULL,
-            description text,
-            max_duration integer NOT NULL,
-            duration integer,
-            on_time text,
-            port integer,
-            timeout float
-            ); """
-
-        self.QUERY_INSERT_MODULE_ROW = """
-        INSERT INTO modules(id,ip,description,max_duration,duration,on_time,port,timeout)
-        VALUES(?,?,?,?,?,?,?,?) """
-
-        self.QUERY_UPDATE_MODULE_ROW = """
-        UPDATE modules
-        SET duration = ?,
-            on_time = ?,
-            description = ?
-        WHERE id = ?"""
-
-        self.QUERY_DELETE_MODULE_ROW = """
-        DELETE FROM modules WHERE id = ? """
-
-        self.QUERY_CREATE_TABLE_SYSTEM = """
-            CREATE TABLE IF NOT EXISTS system (
-            id text PRIMARY KEY
-            ); """
-
-        self.QUERY_INSERT_SYSTEM_ROW = """
-        INSERT INTO system(id)
-        VALUES(?) """
 
     def close(self):
         if self.__db is not None:
@@ -276,31 +250,13 @@ class QueryBuilder(object):
 
 
 class Queries(Enum):
-    CREATE = 0
-    INSERT = 1
-    UPDATE = 2
-    SELECT = 3
-    DELETE = 4
+    CREATE = "create"
+    INSERT = "insert"
+    UPDATE = "update"
+    SELECT = "select"
+    DELETE = "delete"
 
 
-# con = SQLiteConnection()
-#
-# module = EPModule(IP="192.168.0.201")
-# module.id = "test_id_6"
-# ret_val = con.insert(
-#     "modules",
-#     (
-#         "id",
-#         "ip",
-#         "description",
-#         "max_duration",
-#         "duration",
-#         "on_time",
-#         "port",
-#         "timeout",
-#     ),
-#     module.to_tuple(),
-# )
 # ret_val = (
 #     con.update(
 #         "modules",
