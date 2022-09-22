@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Literal, Tuple
+from typing import Any, Callable, Dict, List, Literal, Tuple, Type
 from datetime import datetime
 import os
 import threading
@@ -169,7 +169,7 @@ class FirestoreConnection(object):
             self.__listeners.pop(listener_id)
 
     def disconnect(self):
-        """Removes all listeners and disconnect the repository from the database."""
+        """Removes all listeners and closes the database connection."""
         for listener in self.__listeners.values():
             listener.unsubscribe()
         self.__listeners.clear()
@@ -185,6 +185,42 @@ class FirestoreConnection(object):
             The new document id generated under the collection
         """
         return self.__db.collection(col_path).document().id
+
+    def map_to_object(
+        self,
+        dicts: Dict[str, Dict[str, Any]],
+        object_type: Type[Any],
+        key_prop: str = None,
+    ) -> Dict[str, Any] | List:
+        """Map dicts to a dict of `object_type` values.
+
+        Args:
+            dicts: a dictionary of objects to map, id and dict pair.
+            object_type: the target type for mapped objects.
+            key_prop(optional): the property to be used as key in the returned dict.
+                default: None.
+
+        Returns:
+            A collection of `object_type`: If `key_prop` is set returns a dict, otherwise returns a list.
+
+        Raises:
+            AttributeError: if
+
+                * the type `object_type` does not implement static method `from_dict(source)`
+                * the type `object_type` does not implement static constant `PROP_ID`
+                * there is no `key_prop` property defined in type `object_type`
+        """
+        objects: Dict[str, Any] | List[Any] = {} if key_prop is not None else []
+
+        for id, obj_dict in dicts.items():
+            obj_dict[object_type.PROP_ID] = id
+            mapped_obj: object = object_type.from_dict(obj_dict)
+            if key_prop is not None:
+                objects[mapped_obj.__getattribute__(key_prop)] = mapped_obj
+            else:
+                objects.append(mapped_obj)
+
+        return objects
 
     def __parse_collection(
         self, snapshot: List[DocumentSnapshot]
