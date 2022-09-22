@@ -1,12 +1,10 @@
 from __future__ import annotations
 from enum import Enum
 import os
-from re import I
 import sqlite3
 from sqlite3 import Error
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
-from ModelLib import EPModule
+from typing import Any, Dict, List, Tuple, Type
 
 TYPE_TEXT = "TEXT"
 TYPE_INT = "INTEGER"
@@ -81,12 +79,12 @@ class SQLiteConnection(object):
     def insert(
         self, table: str, col_names: Tuple[str], values: Tuple[Any] | List[Tuple[Any]]
     ) -> str | int:
-        cols_query = self._formatter(col_names, ",")
-        vals_query = self._formatter("?", ",", len(col_names))
         cache_key = Queries.INSERT.value + " {}".format(table)
+        query = self.query_cache.get(cache_key, None)
 
-        query = self.query_cache.get(cache_key)
         if query is None:
+            cols_query = self._formatter(col_names, ",")
+            vals_query = self._formatter("?", ",", len(col_names))
             query = "INSERT INTO {}({}) VALUES ({})".format(
                 table, cols_query, vals_query
             )
@@ -116,10 +114,50 @@ class SQLiteConnection(object):
         return self._execute(Queries.DELETE, query, id)
 
     def select(self, table: str, col_names: Tuple[str] = None) -> QueryBuilder:
-        cols_query = self._formatter(col_names, ", ") if col_names != None else "*"
-        query = "SELECT {} FROM {}".format(cols_query, table)
+        query = None
+        if col_names is None:
+            cache_key = Queries.SELECT.value + " {}".format(table)
+            query = self.query_cache.get(cache_key, None)
+
+        if query is None:
+            cols_query = (
+                self._formatter(col_names, ", ") if col_names is not None else "*"
+            )
+            query = "SELECT {} FROM {}".format(cols_query, table)
+            if col_names is None:
+                self.query_cache[cache_key] = query
 
         return QueryBuilder(self, Queries.SELECT, query)
+
+    def map_to_object(
+        self, tuples: List[Tuple], object_type: Type[Any], key_idx: int = None
+    ) -> Dict[str, Any] | List:
+        """Map tuples to a dict of `object_type` values
+
+        Args:
+            tuples: a list of tuples to map.
+            object_type: the target type for mapped objects.
+            key_idx(optional): the property index to be used as key in the returned dict.
+                default: None.
+
+        Returns:
+            A collection of `object_type`: If `key_idx` is set returns a dict, otherwise returns a list.
+
+        Raises:
+            AttributeError: if the type `object_type` does not implement static method `from_tuple(source)`
+
+            IndexError: if `key_idx` is out of `tuples` range
+        """
+        objects: Dict[str, Any] | List = {} if key_idx is not None else []
+
+        for tup in tuples:
+            mapped_obj = object_type.from_tuple(tup)
+            if key_idx is not None:
+                objects[tup[key_idx]] = mapped_obj
+            else:
+                objects.append(mapped_obj)
+
+        return objects
 
     def _execute(
         self, q_type: Queries, query: str, values: Tuple[Any] | List[Tuple[Any]] = None
@@ -228,7 +266,7 @@ class QueryBuilder(object):
         self.__where = True
         return self
 
-    def orderby(self, col_names: Tuple[str], directions: Tuple[str]):
+    def orderby(self, col_names: Tuple[str], directions: Tuple[str] = (ORDER_ASC,)):
         self.__assert(
             self.orderby.__name__,
             self.__orderby == True,
