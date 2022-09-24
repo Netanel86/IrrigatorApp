@@ -15,7 +15,7 @@ if os.environ.get('DISPLAY','') == '':
 running = True
 bFirstCycle = True
 GlobalCounter = 0
-Devices = [ModelLib.EPModule(IP ="192.168.0.215"),ModelLib.EPModule(IP ="192.168.0.214"),ModelLib.EPModule(IP ="192.168.0.213"),ModelLib.EPModule(IP ="192.168.0.212")]
+Devices = [ModelLib.EPModule(ip ="192.168.0.215"),ModelLib.EPModule(ip ="192.168.0.214"),ModelLib.EPModule(ip ="192.168.0.213"),ModelLib.EPModule(ip ="192.168.0.212")]
 
 
 
@@ -96,7 +96,7 @@ def prgMain():
                 if Devices[i].bConnected:
                     Devices[i].ReadClentRegs()
                     if i<=2:
-                        print("Device: " + str(Devices[i].IP) + str(Devices[i].bConnected))
+                        print("Device: " + str(Devices[i].ip) + str(Devices[i].bConnected))
                     #print("Device " + str(Devices[i].IP))
                     if Devices[i].RelayOut:
                         buttonText = "ON -> " + str(Devices[i].REMAINING_TIME)
@@ -112,7 +112,7 @@ def prgMain():
                 
 
         for i in range(len(gDevicesSensors)):
-                sDeviceText = "Device " + str(Devices[i].IP) + "\n S1: " + str(Devices[i].SoilSensor1.SensorValue) + "%"
+                sDeviceText = "Device " + str(Devices[i].ip) + "\n S1: " + str(Devices[i].SoilSensor1.SensorValue) + "%"
                 sDeviceText = sDeviceText + "\n S2: " + str(Devices[i].SoilSensor2.SensorValue) + "%"
                 sDeviceText = sDeviceText + "\n S3: " + str(Devices[i].SoilSensor3.SensorValue) + "%"
                               

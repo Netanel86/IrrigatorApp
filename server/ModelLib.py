@@ -5,7 +5,6 @@ from pyModbusTCP.client import ModbusClient
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
-
 # Linear Conversion
 class AnalogSensor(
     object
@@ -64,13 +63,22 @@ class EPModule(object):
     PROP_PORT = "port"
     PROP_TIMEOUT = "timeout"
 
-    def __init__(self, IP="", port=502, timeout=0.5, max_duration: int = 600):
+    IDX_ID = 0
+    IDX_IP = 1
+    IDX_DESCRIPTION = 2
+    IDX_MAX_DURATION = 3
+    IDX_DURATION = 4
+    IDX_ON_TIME = 5
+    IDX_PORT = 6
+    IDX_TIMEOUT = 7
+
+    def __init__(self, ip="", port=502, timeout=0.5, max_duration: int = 600):
         self.id: str = ""
         self.description: str = ""
         self.on_time: datetime = datetime.now().astimezone()
         self.max_duration: int = max_duration
         self.duration: int = 0
-        self.IP: str = IP
+        self.ip: str = ip
 
         self.port = port
         self.timeout = timeout
@@ -93,7 +101,7 @@ class EPModule(object):
         self.RESET_TOTAL_WATER_FLOW = 0
 
     def connect(self):
-        self.client.host(self.IP)
+        self.client.host(self.ip)
         self.client.port(self.port)
         self.client.timeout(self.timeout)
         if not self.client.is_open():
@@ -162,7 +170,7 @@ class EPModule(object):
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
-            self.IP,
+            self.ip,
             self.description,
             self.max_duration,
             self.on_time.strftime("%x"),
@@ -173,9 +181,9 @@ class EPModule(object):
     def __to_dict(self) -> Dict[str, Any]:
         """Parses the module to a dictionary.\n
         Returns:
-            A dictionary with the module propeties, name and value pairs"""
+            A dictionary with the module properties, name and value pairs"""
         return {
-            EPModule.PROP_IP: self.IP,
+            EPModule.PROP_IP: self.ip,
             EPModule.PROP_DESCRIPTION: self.description,
             EPModule.PROP_MAX_DURATION: self.max_duration,
             EPModule.PROP_DURATION: self.duration,
@@ -201,11 +209,12 @@ class EPModule(object):
 
         if props is not None:
             for prop in props:
+                # prop_dict[prop] = self.__getattribute__(prop)
                 match prop:
                     case EPModule.PROP_ID:
                         prop_dict[prop] = self.id
                     case EPModule.PROP_IP:
-                        prop_dict[prop] = self.IP
+                        prop_dict[prop] = self.ip
                     case EPModule.PROP_DESCRIPTION:
                         prop_dict[prop] = self.description
                     case EPModule.PROP_MAX_DURATION:
@@ -226,7 +235,7 @@ class EPModule(object):
     def to_tuple(self) -> Tuple[Any]:
         return (
             self.id,
-            self.IP,
+            self.ip,
             self.description,
             self.max_duration,
             self.duration,
@@ -238,14 +247,14 @@ class EPModule(object):
     @staticmethod
     def from_tuple(source: Tuple[Any]) -> EPModule:
         module = EPModule()
-        module.id = source[0]
-        module.IP = source[1]
-        module.description = source[2]
-        module.on_time = source[3]
-        module.max_duration = source[4]
-        module.duration = source[5]
-        module.port = source[6]
-        module.timeout = source[7]
+        module.id = source[EPModule.IDX_ID]
+        module.ip = source[EPModule.IDX_IP]
+        module.description = source[EPModule.IDX_DESCRIPTION]
+        module.on_time = source[EPModule.IDX_ON_TIME]
+        module.max_duration = source[EPModule.IDX_MAX_DURATION]
+        module.duration = source[EPModule.IDX_DURATION]
+        module.port = source[EPModule.IDX_PORT]
+        module.timeout = source[EPModule.IDX_TIMEOUT]
         return module
 
     @staticmethod
@@ -263,11 +272,12 @@ class EPModule(object):
         """
         module = EPModule()
         for name, value in source.items():
+            # module.__setattr__(name, value)
             match name:
                 case EPModule.PROP_ID:
                     module.id = value
                 case EPModule.PROP_IP:
-                    module.IP = value
+                    module.ip = value
                 case EPModule.PROP_MAX_DURATION:
                     module.max_duration = value
                 case EPModule.PROP_DURATION:
