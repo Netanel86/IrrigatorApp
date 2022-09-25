@@ -57,31 +57,28 @@ class EPModule(object):
     PROP_ID = "id"
     PROP_IP = "ip"
     PROP_DESCRIPTION = "description"
-    PROP_MAX_DURATION = "maxDuration"
+    PROP_MAX_DURATION = "max_duration"
     PROP_DURATION = "duration"
-    PROP_ON_TIME = "onTime"
+    PROP_ON_TIME = "on_time"
     PROP_PORT = "port"
     PROP_TIMEOUT = "timeout"
 
-    IDX_ID = 0
-    IDX_IP = 1
-    IDX_DESCRIPTION = 2
-    IDX_MAX_DURATION = 3
-    IDX_DURATION = 4
-    IDX_ON_TIME = 5
-    IDX_PORT = 6
-    IDX_TIMEOUT = 7
-
-    def __init__(self, ip="", port=502, timeout=0.5, max_duration: int = 600):
+    def __init__(
+        self,
+        ip: str = "",
+        port: int = 502,
+        timeout: float = 0.5,
+        max_duration: int = 600,
+    ):
         self.id: str = ""
         self.description: str = ""
         self.on_time: datetime = datetime.now().astimezone()
         self.max_duration: int = max_duration
         self.duration: int = 0
         self.ip: str = ip
-
         self.port = port
         self.timeout = timeout
+
         self.client = ModbusClient()
         self.bComError = True
         self.bConnected = False
@@ -183,6 +180,7 @@ class EPModule(object):
         Returns:
             A dictionary with the module properties, name and value pairs"""
         return {
+            EPModule.PROP_ID: self.id,
             EPModule.PROP_IP: self.ip,
             EPModule.PROP_DESCRIPTION: self.description,
             EPModule.PROP_MAX_DURATION: self.max_duration,
@@ -190,7 +188,6 @@ class EPModule(object):
             EPModule.PROP_ON_TIME: self.on_time,
             EPModule.PROP_PORT: self.port,
             EPModule.PROP_TIMEOUT: self.timeout,
-            EPModule.PROP_ID: self.id,
         }
 
     def to_dict(self, props: List[str] = None) -> Dict[str, Any]:
@@ -209,30 +206,13 @@ class EPModule(object):
 
         if props is not None:
             for prop in props:
-                # prop_dict[prop] = self.__getattribute__(prop)
-                match prop:
-                    case EPModule.PROP_ID:
-                        prop_dict[prop] = self.id
-                    case EPModule.PROP_IP:
-                        prop_dict[prop] = self.ip
-                    case EPModule.PROP_DESCRIPTION:
-                        prop_dict[prop] = self.description
-                    case EPModule.PROP_MAX_DURATION:
-                        prop_dict[prop] = self.max_duration
-                    case EPModule.PROP_DURATION:
-                        prop_dict[prop] = self.duration
-                    case EPModule.PROP_ON_TIME:
-                        prop_dict[prop] = self.on_time
-                    case EPModule.PROP_PORT:
-                        prop_dict[prop] = self.port
-                    case EPModule.PROP_TIMEOUT:
-                        prop_dict[prop] = self.timeout
+                prop_dict[prop] = self.__getattr(prop)
             else:
                 prop_dict = self.__to_dict()
 
         return prop_dict
 
-    def to_tuple(self) -> Tuple[Any]:
+    def __to_tuple(self) -> Tuple:
         return (
             self.id,
             self.ip,
@@ -244,17 +224,24 @@ class EPModule(object):
             self.timeout,
         )
 
+    def to_tuple(self, props: List[str] = None) -> Tuple:
+        if props is not None:
+            to_tup = ()
+            for prop_name in props:
+                to_tup += (self.__getattr(prop_name),)
+        else:
+            to_tup = self.__to_tuple()
+
+        return to_tup
+
     @staticmethod
-    def from_tuple(source: Tuple[Any]) -> EPModule:
+    def from_tuple(source: Tuple[Tuple]) -> EPModule:
+        IDX_PROP = 0
+        IDX_VAL = 1
         module = EPModule()
-        module.id = source[EPModule.IDX_ID]
-        module.ip = source[EPModule.IDX_IP]
-        module.description = source[EPModule.IDX_DESCRIPTION]
-        module.on_time = source[EPModule.IDX_ON_TIME]
-        module.max_duration = source[EPModule.IDX_MAX_DURATION]
-        module.duration = source[EPModule.IDX_DURATION]
-        module.port = source[EPModule.IDX_PORT]
-        module.timeout = source[EPModule.IDX_TIMEOUT]
+        for item in source:
+            module.__setattr(item[IDX_PROP], item[IDX_VAL])
+
         return module
 
     @staticmethod
@@ -268,27 +255,66 @@ class EPModule(object):
                 `EPModule.PROP_PORT` and `EPModule.PROP_TIMEOUT`.
 
         Returns:
-            `EPModule`: a module initialized with dictionary data\n
+            `EPModule`: a module initialized with dictionary data
         """
         module = EPModule()
         for name, value in source.items():
-            # module.__setattr__(name, value)
-            match name:
-                case EPModule.PROP_ID:
-                    module.id = value
-                case EPModule.PROP_IP:
-                    module.ip = value
-                case EPModule.PROP_MAX_DURATION:
-                    module.max_duration = value
-                case EPModule.PROP_DURATION:
-                    module.duration = value
-                case EPModule.PROP_ON_TIME:
-                    module.on_time = value
-                case EPModule.PROP_DESCRIPTION:
-                    module.description = value
-                case EPModule.PROP_PORT:
-                    module.port = value
-                case EPModule.PROP_TIMEOUT:
-                    module.timeout = value
+            module.__setattr(name, value)
 
         return module
+
+    def __getattr(self, name: str) -> Any:
+        attr = None
+        match name:
+            case EPModule.PROP_ID:
+                attr = self.id
+            case EPModule.PROP_IP:
+                attr = self.ip
+            case EPModule.PROP_DESCRIPTION:
+                attr = self.description
+            case EPModule.PROP_MAX_DURATION:
+                attr = self.max_duration
+            case EPModule.PROP_DURATION:
+                attr = self.duration
+            case EPModule.PROP_ON_TIME:
+                attr = self.on_time
+            case EPModule.PROP_PORT:
+                attr = self.port
+            case EPModule.PROP_TIMEOUT:
+                attr = self.timeout
+            case _:
+                raise AttributeError(
+                    "'{_class}.{_method}()': Attribute '{_property}' not found in class '{_class}'".format(
+                        _method=self.__getattr.__name__,
+                        _property=name,
+                        _class=self.__class__.__name__,
+                    )
+                )
+        return attr
+
+    def __setattr(self, name: str, value: Any) -> None:
+        match name:
+            case EPModule.PROP_ID:
+                self.id = value
+            case EPModule.PROP_IP:
+                self.ip = value
+            case EPModule.PROP_DESCRIPTION:
+                self.description = value
+            case EPModule.PROP_MAX_DURATION:
+                self.max_duration = value
+            case EPModule.PROP_DURATION:
+                self.duration = value
+            case EPModule.PROP_ON_TIME:
+                self.on_time = value
+            case EPModule.PROP_PORT:
+                self.port = value
+            case EPModule.PROP_TIMEOUT:
+                self.timeout = value
+            case _:
+                raise AttributeError(
+                    "'{_class}.{_method}()': Attribute '{_property}' not found in class '{_class}', or is unchangable".format(
+                        _method=self.__setattr.__name__,
+                        _property=name,
+                        _class=self.__class__.__name__,
+                    )
+                )

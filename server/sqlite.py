@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum
 import os
 import sqlite3
-from sqlite3 import Error
+from sqlite3 import Cursor, Error, IntegrityError
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Type
 
@@ -130,9 +130,9 @@ class SQLiteConnection(object):
         return QueryBuilder(self, Queries.SELECT, query)
 
     def map_to_object(
-        self, tuples: List[Tuple], object_type: Type[Any], key_idx: int = None
+        self, tuples: List[Tuple[Tuple]], object_type: Type[Any], key_idx: int = None
     ) -> Dict[str, Any] | List:
-        """Map tuples to a dict of `object_type` values
+        """Map a list of tuples to a dict of `object_type` values
 
         Args:
             tuples: a list of tuples to map.
@@ -148,19 +148,23 @@ class SQLiteConnection(object):
 
             IndexError: if `key_idx` is out of `tuples` range
         """
+        IDX_VAL = 1
         objects: Dict[str, Any] | List = {} if key_idx is not None else []
 
         for tup in tuples:
             mapped_obj = object_type.from_tuple(tup)
             if key_idx is not None:
-                objects[tup[key_idx]] = mapped_obj
+                objects[tup[key_idx][IDX_VAL]] = mapped_obj
             else:
                 objects.append(mapped_obj)
 
         return objects
 
     def _execute(
-        self, q_type: Queries, query: str, values: Tuple[Any] | List[Tuple[Any]] = None
+        self,
+        q_type: Queries,
+        query: str,
+        values: Tuple[Any] | List[Tuple] = None,
     ):
         result = None
         is_many = False
@@ -180,7 +184,7 @@ class SQLiteConnection(object):
                     result = cursor.rowcount if is_many else cursor.fetchone()[0]
 
                 case Queries.SELECT:
-                    result = cursor.fetchall()
+                    result = self.__format_result(cursor.fetchall(), cursor.description)
 
                 case Queries.CREATE | Queries.UPDATE | Queries.DELETE:
                     result = True
@@ -195,6 +199,38 @@ class SQLiteConnection(object):
             result = False
         finally:
             return result
+
+    def __format_result(self, values: List[Tuple], col_data: Tuple[Tuple]):
+        result: List[Tuple[Tuple]] | Tuple[Tuple] = []
+        for tup_obj in values:
+            final_tup = self.__merge_col_val(col_data, tup_obj)
+            if len(result) == 1:
+                result = final_tup
+            else:
+                result.append(final_tup)
+        return result
+
+    def __merge_col_val(self, col_names: Tuple, values: Tuple) -> Tuple[Tuple]:
+        """Merge column names and values to a single tuple of tuple pairs, where each
+        column name is matched to a value to create a tuple pair.
+
+        e.g:
+            new_tuple = (
+                (col_names[0], values[0]),
+                (col_names[1], values[1]),
+                ...
+            )
+        Args:
+            col_names: the column names in order of there respective value
+            values: the values in order of there respective column name
+
+        Returns:
+            A tuple containing column name and value tuple pairs
+        """
+        final_tup = ()
+        for col, val in col_names, values:
+            final_tup += ((col[0], val),)
+        return final_tup
 
     def _formatter(self, data: Any, separator: str, count: int = None, **kwargs) -> str:
         each: str | Tuple[Any] = kwargs.get("each", "")
@@ -238,8 +274,8 @@ class QueryBuilder(object):
 
     def __assert(self, method: str, value: bool, error_msg: str):
         if value:
-            raise AttributeError(
-                "{}.{}(): {}.".format(QueryBuilder.__name__, method, error_msg)
+            raise IntegrityError(
+                "{}.{}(): {}.".format(self.__class__.__name__, method, error_msg)
             )
 
     def where(self, col_names: Tuple[str], values: Tuple[Any] = None):
