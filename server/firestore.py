@@ -9,6 +9,7 @@ from firebase_admin import firestore
 from google.cloud.firestore import Client
 from google.cloud.firestore_v1 import (
     DocumentSnapshot,
+    DocumentReference,
     CollectionReference,
     Query,
 )
@@ -128,6 +129,15 @@ class FirestoreConnection(object):
         """
         self.__db.collection(col_path).document(doc_id).delete()
 
+    def delete_collection(self, col_path: str) -> int:
+        docs = self.__db.collection(col_path).stream()
+        deleted = 0
+        for doc in docs:
+            ref: DocumentReference = doc.reference
+            ref.delete()
+            deleted += 1
+        return deleted
+
     def register_listener(
         self,
         col_path: str,
@@ -197,8 +207,8 @@ class FirestoreConnection(object):
         Args:
             dicts: a dictionary of objects to map, id and dict pair.
             object_type: the target type for mapped objects.
-            key_prop(optional): the property to be used as key in the returned dict.
-                default: None.
+            key_prop(optional): the property to be used as key in the returned dict
+                (default: None).
 
         Returns:
             A collection of `object_type`: If `key_prop` is set returns a dict, otherwise returns a list.
