@@ -207,8 +207,8 @@ class EPModule(object):
         if props is not None:
             for prop in props:
                 prop_dict[prop] = self.__getattr(prop)
-            else:
-                prop_dict = self.__to_dict()
+        else:
+            prop_dict = self.__to_dict()
 
         return prop_dict
 
