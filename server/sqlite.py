@@ -4,12 +4,17 @@ import os
 import sqlite3
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Tuple
 
 TYPE_TEXT = "TEXT"
 TYPE_INT = "INTEGER"
 TYPE_TIME = "TIMESTAMP"
 TYPE_FLOAT = "FLOAT"
+COL_ROWID = "ROWID"
+VALUE_NULL = "IS NULL"
+
+_TUP_COLUMNS = "col_names"
+_TUP_VALUES = "values"
 
 
 class SQLiteConnection(object):
@@ -35,35 +40,30 @@ class SQLiteConnection(object):
 
         Path(path_tupel[0]).mkdir(parents=True, exist_ok=True)
 
-    def __format_result(self, col_data: Tuple[Tuple], values: List[Tuple]):
-        """Formats a `Queries.Select` query result to include both column name and value
-        in a single tuple pair.
+    def __parse_result(self, col_data: Tuple[Tuple], values: List[Tuple]):
+        """Convert a `Queries.Select` query result to a list of dictionaries.
 
         Args:
             col_data: a list of column names.
             values: a list of values in order of there respective column name.
 
         Returns:
-            A list or a single tuple built of column-name and value tuple pairs.
+            A list of dictionaries with (key=column-name, val=value) pairs.
         """
-        result: List[Tuple[Tuple]] | Tuple[Tuple] = []
+        result: List[Dict[str, Any]] = []
         for tup_obj in values:
-            final_tup = self.__merge_col_val(col_data, tup_obj)
-            if len(tup_obj) == 1:
-                result = final_tup
-            else:
-                result.append(final_tup)
+            dic = self.__merge_to_dict(col_data, tup_obj)
+            result.append(dic)
         return result
 
-    def __merge_col_val(self, col_names: Tuple[Tuple], values: Tuple) -> Tuple[Tuple]:
-        """Merge column names and values to a single tuple of tuple pairs, where each
-        column name is matched to a value to create a tuple pair.
+    def __merge_to_dict(self, col_names: Tuple[Tuple], values: Tuple) -> Dict[str, Any]:
+        """Merge two tuples of column-names and values to a dictionary of key, value pairs
 
         e.g:
-            new_tuple = (
-                (col_names[0], values[0]),
+            merged = (
+                col_names[0]: values[0],
 
-                (col_names[1], values[1]),
+                col_names[1]: values[1],
                 ...
             )
         Args:
@@ -71,19 +71,20 @@ class SQLiteConnection(object):
             values: the values in order of there respective column name.
 
         Returns:
-            A tuple containing column name and value tuple pairs
+            A dictionary with (column-name, value) pairs
         """
-        final_tup = ()
+        dict = {}
         for (col, val) in zip(col_names, values):
-            final_tup += ((col[0], val),)
-        return final_tup
+            dict[col[0]] = val
+
+        return dict
 
     def _execute(
         self,
         q_type: Queries,
         query: str,
-        values: Tuple[Any] | List[Tuple] = None,
-    ):
+        values: Tuple | List[Tuple] = None,
+    ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
         result = None
         is_many = False
         try:
@@ -100,9 +101,10 @@ class SQLiteConnection(object):
             match q_type:
                 case Queries.INSERT:
                     result = cursor.rowcount if is_many else cursor.fetchone()[0]
+                    result = result if result is not None else cursor.lastrowid
 
                 case Queries.SELECT:
-                    result = self.__format_result(cursor.description, cursor.fetchall())
+                    result = self.__parse_result(cursor.description, cursor.fetchall())
 
                 case Queries.CREATE | Queries.UPDATE | Queries.DELETE:
                     result = True
@@ -171,7 +173,7 @@ class SQLiteConnection(object):
 
         Args:
             table: the name for the table to be created.
-            data: a tuple of (column-name, type) pairs describing each column in the table.
+            data: a tuple of (column-name, type) pairs describing each column data type in the table.
                 note: if 'id' (name, type) pair is set, it should be the first pair in `data`.
                 default 'id' type: `int` (if not specified)
 
@@ -187,7 +189,7 @@ class SQLiteConnection(object):
             type = col[1]
             if name == "id" and idx != 0:
                 raise ValueError(
-                    "{}.{}(): 'id' should be the first (index = 0) name, type pair in col_data, current 'id' index is {}".format(
+                    "in {}.{}(): 'id' should be the first (index = 0) name, type pair in col_data, current 'id' index is {}".format(
                         SQLiteConnection.__name__, self.create.__name__, idx
                     )
                 )
@@ -208,26 +210,41 @@ class SQLiteConnection(object):
 
         return self._execute(Queries.CREATE, query)
 
+    def __to_tuple_set(self, data: Dict[str, Any] | List[Dict[str, Any]]):
+        tuples_dict: Dict[str, Tuple | List] = {}
+        if isinstance(data, dict):
+            tuples_dict[_TUP_COLUMNS] = tuple(data.keys())
+            tuples_dict[_TUP_VALUES] = tuple(data.values())
+        else:
+            tuples_dict[_TUP_COLUMNS] = tuple(data[0].keys())
+            tuples_dict[_TUP_VALUES] = []
+            for val_dict in data:
+                tuples_dict[_TUP_VALUES].append(tuple(val_dict.values()))
+        return tuples_dict
+
     def insert(
-        self, table: str, col_names: Tuple[str], values: Tuple[Any] | List[Tuple[Any]]
+        self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]
     ) -> str | int:
         """Insert a new row to table.
 
         Args:
             table: the name for the table to be created.
-            col_names: a tuple of column-names to insert row values in.
-            values: a tuple of values in order of there respective column-name or a list of them,
-                to be inserted into the table. note: use a list to insert multiple rows at one call.
+            data: a dictionary of (column-name, value) pairs to insert.
 
         Returns:
             If successful and `values` is:
-            * a single row, returns its id.
+            * a single row, returns its id or rowid if id is empty.
             * multiple rows, returns the count of inserted rows.
 
             otherwise returns `False`
         """
+        attrs = self.__to_tuple_set(data)
+        col_names: Tuple = attrs[_TUP_COLUMNS]
+        values: Tuple | List[Tuple] = attrs[_TUP_VALUES]
+
         cols_query = self._formatter(col_names, ",")
         vals_query = self._formatter("?", ",", len(col_names))
+
         query = "INSERT INTO {}({}) VALUES ({})".format(table, cols_query, vals_query)
 
         if not isinstance(values, list):
@@ -236,19 +253,20 @@ class SQLiteConnection(object):
         return self._execute(Queries.INSERT, query, values)
 
     def update(
-        self, table: str, col_names: Tuple[str], values: Tuple[Any]
+        self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]
     ) -> QueryBuilder:
-        """Update's the columns fields in the specifed row id.
+        """Update's the columns fields in the specified row id.
 
         Args:
             table: name of the updated table.
-            col_names: a tuple of column-names to insert row values in.
-            values: a tuple of values in order of there respective column-name or a list of them,
-                to be updated. note: use a list to update multiple rows at one call.
+            data: a dictionary of (column-name, value) pairs to update.
 
         Returns:
             a `QueryBuilder` instance of the update query.
         """
+        attr = self.__to_tuple_set(data)
+        col_names = attr[_TUP_COLUMNS]
+        values = attr[_TUP_VALUES]
         cols_query = self._formatter(
             col_names,
             ",",
@@ -290,32 +308,36 @@ class SQLiteConnection(object):
         return QueryBuilder(self, Queries.SELECT, query)
 
     def map_to_object(
-        self, tuples: List[Tuple[Tuple]], object_type: Type[Any], key_idx: int = None
+        self,
+        dicts: List[Dict[str, Any]],
+        from_dict: Callable[[Dict[str, Any]], Any],
+        key_col: str = None,
     ) -> Dict[str, Any] | List:
-        """Map a list of tuple pairs to a dict of `object_type` values
+        """Map a list of returned database dictionaries to a dictionary of any object type
 
         Args:
-            tuples: a list of tuples to map.
-            object_type: the target type for mapped objects.
-            key_idx(optional): the property index to be used as key in the returned dict.
+            dicts: a list of database returned dictionaries to map.
+            from_dict: a method to convert a database dictionary row to the requested object.
+                Args:
+                    `Dict[str, Any]`: a dictionary with (column-name, value) pairs.
+                Returns:
+                    `Any`: the parsed object
+            key_col(optional): the column name to be used as key in the returned dict.
                 default: None.
 
         Returns:
-            A collection of `object_type`: If `key_idx` is set returns a dict, otherwise returns a list.
+            A collection of objects: If `key_col` is set returns a dictionary, otherwise returns a list.
 
         Raises:
-            AttributeError: if the type `object_type` does not implement static method `from_tuple(source)`
-
-            IndexError: if `key_idx` is out of `tuples` range
+            KeyError: if `key_col` does not exist in `dicts` keys
         """
-        IDX_VAL = 1
-        objects: Dict[str, Any] | List = {} if key_idx is not None else []
+        objects: Dict[str, Any] | List = {} if key_col is not None else []
 
-        for tup in tuples:
-            mapped_obj = object_type.from_tuple(tup)
+        for dic in dicts:
+            mapped_obj = from_dict(dic)
 
-            if key_idx is not None:
-                objects[tup[key_idx][IDX_VAL]] = mapped_obj
+            if key_col is not None:
+                objects[dic[key_col]] = mapped_obj
             else:
                 objects.append(mapped_obj)
 
@@ -364,7 +386,19 @@ class QueryBuilder(object):
                 )
             )
 
-    def where(self, col_names: Tuple[str], values: Tuple[Any] = None):
+    def __format_null_values(self, values: Tuple[Any]):
+        """Formats each of string\s values: each value in `values` set to `VALUE_NULL`
+        will be inserted in the query string as 'IS_NULL' and not as '?'.
+        """
+        each: Tuple[str] = ()
+        for value in values:
+            if value == VALUE_NULL:
+                each += (" " + VALUE_NULL,)
+            else:
+                each += (" = ?",)
+        return each
+
+    def where(self, col_names: Tuple[str], values: Tuple[Any]):
         """Set a condition for filtering documents.
 
         Args:
@@ -390,7 +424,15 @@ class QueryBuilder(object):
             "'WHERE' clause should appear before the 'ORDER BY' clause.",
         )
 
-        cols_query = self.connection._formatter(col_names, " AND ", each=" = ?")
+        each: Tuple[str] = ()
+        if VALUE_NULL in values:
+            each = self.__format_null_values(values)
+            values = tuple(val for val in values if val != VALUE_NULL)
+            values = None if len(values) == 0 else values
+        else:
+            each = " = ?"
+
+        cols_query = self.connection._formatter(col_names, " AND ", each=each)
 
         self.query += " WHERE {}".format(cols_query)
 
@@ -435,12 +477,12 @@ class QueryBuilder(object):
         self.__orderby = True
         return self
 
-    def execute(self) -> List[Tuple[Tuple]] | Tuple[Tuple] | bool:
+    def execute(self):
         """Executes the query.
 
         Returns:
             The result of the executed query, If query is:
-            * `Queries.SELECT`: returns a list of row tuples or a single row tuple.
+            * `Queries.SELECT`: returns a list of dictionaries of returned rows.
             * `Queries.UPDATE`: returns `True` if successful, `False` otherwise.
 
         Raises:
