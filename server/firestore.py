@@ -199,14 +199,20 @@ class FirestoreConnection(object):
     def map_to_object(
         self,
         dicts: Dict[str, Dict[str, Any]],
-        object_type: Type[Any],
+        id_field: str,
+        from_dict: Callable[[Dict[str, Any]], Any],
         key_prop: str = None,
     ) -> Dict[str, Any] | List:
         """Map dicts to a dict of `object_type` values.
 
         Args:
             dicts: a dictionary of objects to map, id and dict pair.
-            object_type: the target type for mapped objects.
+            id_field: name of the identification field
+            from_dict: a method to convert a database dictionary to the requested object.
+                Args:
+                    `Dict[str, Any]`: a dictionary with (field-name, value) pairs.
+                Returns:
+                    `Any`: the parsed object
             key_prop(optional): the property to be used as key in the returned dict
                 (default: None).
 
@@ -214,19 +220,24 @@ class FirestoreConnection(object):
             A collection of `object_type`: If `key_prop` is set returns a dict, otherwise returns a list.
 
         Raises:
-            AttributeError: if
-
-                * the type `object_type` does not implement static method `from_dict(source)`
-                * the type `object_type` does not implement static constant `PROP_ID`
-                * there is no `key_prop` property defined in type `object_type`
+            KeyError: if no `key_prop` property exist in object's dictionary keys.
+            AttributeError: if `id_field` not set or is empty.
         """
         objects: Dict[str, Any] | List[Any] = {} if key_prop is not None else []
 
         for id, obj_dict in dicts.items():
-            obj_dict[object_type.PROP_ID] = id
-            mapped_obj: object = object_type.from_dict(obj_dict)
+            if not id_field:
+                raise AttributeError(
+                    "'id_field' must be set to a value.(id_field: {})".format(id_field)
+                )
+            if len(id_field) == 0:
+                raise AttributeError(
+                    "'id_field' must not be empty. (id_field: {})".format(id_field)
+                )
+            obj_dict[id_field] = id
+            mapped_obj = from_dict(obj_dict)
             if key_prop is not None:
-                objects[mapped_obj.__getattribute__(key_prop)] = mapped_obj
+                objects[obj_dict[key_prop]] = mapped_obj
             else:
                 objects.append(mapped_obj)
 
