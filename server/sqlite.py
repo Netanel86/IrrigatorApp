@@ -1,15 +1,18 @@
 from __future__ import annotations
+from collections import namedtuple
 from enum import Enum
+import logging
 import os
 import sqlite3
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
-TYPE_TEXT = "TEXT"
-TYPE_INT = "INTEGER"
-TYPE_TIME = "TIMESTAMP"
-TYPE_FLOAT = "FLOAT"
+__ValueTypes = namedtuple("__ValueTypes", "TEXT INT TIME FLOAT")
+
+TYPES = __ValueTypes("TEXT", "INTEGER", "TIMESTAMP", "FLOAT")
+"""A list of sqlite supported database types"""
+
 COL_ROWID = "ROWID"
 VALUE_NULL = "IS NULL"
 
@@ -32,7 +35,7 @@ class SQLiteConnection(object):
                 detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
             )
         except Error as ex:
-            print(ex)
+            logging.error(ex)
 
     def __create_db_dir(self):
         """Creates database directory if it does not exist"""
@@ -78,6 +81,18 @@ class SQLiteConnection(object):
             dict[col[0]] = val
 
         return dict
+
+    def __to_tuple_set(self, data: Dict[str, Any] | List[Dict[str, Any]]):
+        tuples_dict: Dict[str, Tuple | List] = {}
+        if isinstance(data, dict):
+            tuples_dict[_TUP_COLUMNS] = tuple(data.keys())
+            tuples_dict[_TUP_VALUES] = tuple(data.values())
+        else:
+            tuples_dict[_TUP_COLUMNS] = tuple(data[0].keys())
+            tuples_dict[_TUP_VALUES] = []
+            for val_dict in data:
+                tuples_dict[_TUP_VALUES].append(tuple(val_dict.values()))
+        return tuples_dict
 
     def _execute(
         self,
@@ -209,18 +224,6 @@ class SQLiteConnection(object):
         query = "CREATE TABLE IF NOT EXISTS {} ({})".format(table, cols_query)
 
         return self._execute(Queries.CREATE, query)
-
-    def __to_tuple_set(self, data: Dict[str, Any] | List[Dict[str, Any]]):
-        tuples_dict: Dict[str, Tuple | List] = {}
-        if isinstance(data, dict):
-            tuples_dict[_TUP_COLUMNS] = tuple(data.keys())
-            tuples_dict[_TUP_VALUES] = tuple(data.values())
-        else:
-            tuples_dict[_TUP_COLUMNS] = tuple(data[0].keys())
-            tuples_dict[_TUP_VALUES] = []
-            for val_dict in data:
-                tuples_dict[_TUP_VALUES].append(tuple(val_dict.values()))
-        return tuples_dict
 
     def insert(
         self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]
