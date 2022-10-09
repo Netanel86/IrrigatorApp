@@ -1,67 +1,199 @@
 # PLANTOS Modules Modbus TCP Communication Lib
 from __future__ import annotations
+from abc import ABC
+from collections import namedtuple
+from enum import Enum
 from pyModbusTCP.client import ModbusClient
-
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, NamedTuple, Tuple
+
+
+class DictParseable(ABC):
+    @staticmethod
+    def Props() -> NamedTuple:
+        """An abstract representation of object's property names.
+
+        To be implemented and initialized with object property names.
+        """
+        ...
+
+    def __to_dict(self) -> Dict[str, Any]:
+        """Parses the 'DictParseable' object to a dictionary.
+
+        Returns:
+            A dictionary with the object properties, (name: value) pairs"""
+        return {
+            prop: getattr(self, prop)
+            for prop in self.Props()
+            if not isinstance(getattr(self, prop), list)
+        }
+
+    def to_dict(
+        self, props: Tuple[str] = None, to_map: Dict[str, str] = None
+    ) -> Dict[str, Any]:
+        """Parses the 'DictParseable' object to a dictionary.
+
+        Args:
+            props(optional) -- a list of properties names to parse, if set only the specified properties would be parsed,
+                possible values: included in `DictParseable.Props()`.
+
+        Returns:
+            A dictionary with the object's specified properties, (name: value) pairs
+        """
+        prop_dict = {}
+        is_map = to_map is not None
+        is_props = props is not None
+
+        collection = props if is_props else to_map.keys() if is_map else None
+
+        if collection is not None:
+            for prop in collection:
+                if not hasattr(self, prop):
+                    self.__raiseAttributeError(getattr.__name__, prop)
+                if is_map and prop not in to_map.keys():
+                    raise KeyError("Key: Dict 'to_map' has no key '{}' ".format(prop))
+                prop_key = to_map[prop] if is_map else prop
+                prop_dict[prop_key] = getattr(self, prop)
+        else:
+            prop_dict = self.__to_dict()
+
+        return prop_dict
+
+    @classmethod
+    def from_dict(
+        cls, source: Dict[str, Any], from_map: Dict[str, str] = None
+    ) -> DictParseable:
+        """Parses and creates a new object from a dictionary.
+
+        Args:
+            source: a dictionary with object's properties, (name: value) pairs.
+                possible values: included in `DictParseable.Props()`.
+
+        Returns:
+            `DictParseable`: the child object derived from `DictParseable`, initialized with dictionary data.
+        """
+        module = cls()
+        is_map = from_map is not None
+        for prop, value in source.items():
+            if not hasattr(module, prop):
+                cls.__raiseAttributeError(setattr.__name__, prop)
+            setattr(module, from_map[prop] if is_map else prop, value)
+
+        return module
+
+    @classmethod
+    def __raiseAttributeError(cls, method_name, prop_name):
+        raise AttributeError(
+            "'{_class}.{_method}()': '{_class}' object has no attribute '{_property}'".format(
+                _method=method_name,
+                _property=prop_name,
+                _class=cls.__name__,
+            )
+        )
+
 
 # Linear Conversion
-class AnalogSensor(
-    object
-):  # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
+class AnalogSensor(DictParseable):
+    # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
+    __Properties = namedtuple(
+        "__Props",
+        "ID PARENT_ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
+    )
+
+    __Props = __Properties(
+        "id",
+        "parent_id",
+        "type",
+        "min_val",
+        "max_val",
+        "curr_val",
+    )
+
+    @staticmethod
+    def Props() -> __Properties:
+        """A view on :class:`AnalogSensor` property names"""
+        return AnalogSensor.__Props
+
     def __init__(
         self,
+        _type: Sensors = None,
         aIn=0,
         aIn_Min=1140,
         aIn_Max=3100,
-        Val_Min=0,
-        Val_Max=100,
+        min_val=0,
+        max_val=100,
         ScalingErrorOffset=3,
     ):
+        self.id: str = ""
+        self.parent_id: str = ""
+        self.type: Sensors = _type
+        self.curr_val: float = 0
+        self.min_val: int = min_val
+        self.max_val: float = max_val
+
         self.aIn = aIn
         self.aIn_Min = aIn_Min
         self.aIn_Max = aIn_Max
-        self.Val_Min = Val_Min
-        self.Val_Max = Val_Max
         self.ScalingErrorOffset = ScalingErrorOffset
-        self.SensorValue = 0
 
     def LinearConversion(self, aIn):
         if self.aIn_Max - self.aIn_Min != 0:
-            value = ((self.Val_Max - self.Val_Min) / (self.aIn_Max - self.aIn_Min)) * (
+            value = ((self.max_val - self.min_val) / (self.aIn_Max - self.aIn_Min)) * (
                 aIn - self.aIn_Max
-            ) + self.Val_Max
-            self.SensorValue = round((100 - value), 1)
-            if (self.SensorValue > 100) and self.SensorValue < (
-                self.Val_Max + self.ScalingErrorOffset
+            ) + self.max_val
+            self.curr_val = round((100 - value), 1)
+            if (self.curr_val > 100) and self.curr_val < (
+                self.max_val + self.ScalingErrorOffset
             ):
-                self.SensorValue = self.Val_Max
-            elif (self.SensorValue < 0) and self.SensorValue > (
-                self.Val_Min - self.ScalingErrorOffset
+                self.curr_val = self.max_val
+            elif (self.curr_val < 0) and self.curr_val > (
+                self.min_val - self.ScalingErrorOffset
             ):
-                self.SensorValue = self.Val_Min
-            elif self.SensorValue < (
-                self.Val_Min - self.ScalingErrorOffset
-            ) or self.SensorValue > (self.Val_Max + self.ScalingErrorOffset):
-                self.SensorValue = -1
+                self.curr_val = self.min_val
+            elif self.curr_val < (
+                self.min_val - self.ScalingErrorOffset
+            ) or self.curr_val > (self.max_val + self.ScalingErrorOffset):
+                self.curr_val = -1
         else:
-            self.SensorValue = -1
+            self.curr_val = -1
 
-        return self.SensorValue
+        return self.curr_val
 
     def GetSensorValue(self):
-        return self.SensorValue
+        return self.curr_val
 
 
-class EPModule(object):
-    PROP_ID = "id"
-    PROP_IP = "ip"
-    PROP_DESCRIPTION = "description"
-    PROP_MAX_DURATION = "max_duration"
-    PROP_DURATION = "duration"
-    PROP_ON_TIME = "on_time"
-    PROP_PORT = "port"
-    PROP_TIMEOUT = "timeout"
+class Sensors(Enum):
+    EC = "EC"
+    FLOW = "L/s"
+    HUMIDITY = "%"
+    PH = "pH"
+    TEMPERATURE = "C"
+
+
+class EPModule(DictParseable):
+    __Properties = namedtuple(
+        "__Props",
+        "ID MASTER_ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT SENSORS",
+    )
+
+    __Props = __Properties(
+        "id",
+        "master_id",
+        "ip",
+        "description",
+        "max_duration",
+        "duration",
+        "on_time",
+        "port",
+        "timeout",
+        "sensors",
+    )
+
+    @staticmethod
+    def Props() -> __Properties:
+        """A view on :class:`EPModule` property names"""
+        return EPModule.__Props
 
     def __init__(
         self,
@@ -71,21 +203,23 @@ class EPModule(object):
         max_duration: int = 600,
     ):
         self.id: str = ""
+        self.master_id: str = ""
         self.description: str = ""
         self.on_time: datetime = datetime.now().astimezone()
         self.max_duration: int = max_duration
         self.duration: int = 0
         self.ip: str = ip
-        self.port = port
-        self.timeout = timeout
+        self.port: int = port
+        self.timeout: float = timeout
+        self.sensors: List[AnalogSensor] = []
 
         self.client = ModbusClient()
         self.bComError = True
         self.bConnected = False
         self.regs = []
-        self.SoilSensor1 = AnalogSensor()
-        self.SoilSensor2 = AnalogSensor()
-        self.SoilSensor3 = AnalogSensor()
+        # self.SoilSensor1 = AnalogSensor()
+        # self.SoilSensor2 = AnalogSensor()
+        # self.SoilSensor3 = AnalogSensor()
         self.RelayOut = 0
         self.WATER_REQUEST = 0
         self.OUTPUT_MODE = 0
@@ -115,9 +249,11 @@ class EPModule(object):
             if self.regs:
                 # self.bcomError = False
                 # self.bConnected = True
-                self.SoilSensor1.LinearConversion(self.regs[0])
-                self.SoilSensor2.LinearConversion(self.regs[1])
-                self.SoilSensor3.LinearConversion(self.regs[2])
+                for idx, sensor in enumerate(self.sensors):
+                    sensor.LinearConversion(self.regs[idx])
+                # self.SoilSensor1.LinearConversion(self.regs[0])
+                # self.SoilSensor2.LinearConversion(self.regs[1])
+                # self.SoilSensor3.LinearConversion(self.regs[2])
                 self.RelayOut = self.regs[3]
                 self.duration = self.regs[4]
                 self.WATER_REQUEST = self.regs[5]
@@ -139,13 +275,11 @@ class EPModule(object):
         else:
             return 0
 
-    def GetSensors(self):
-        Sensors = list
-        return [
-            self.SoilSensor1.GetSensorValue(),
-            self.SoilSensor2.GetSensorValue(),
-            self.SoilSensor3.GetSensorValue(),
-        ]
+    def get_sensors_values(self) -> List[int]:
+        values = []
+        for sensor in self.sensors:
+            values.append(sensor.curr_val)
+        return values
 
     def SetRelay(self, state):
         if self.bConnected:
@@ -174,147 +308,3 @@ class EPModule(object):
             self.on_time.strftime("%X"),
             self.duration,
         )
-
-    def __to_dict(self) -> Dict[str, Any]:
-        """Parses the module to a dictionary.\n
-        Returns:
-            A dictionary with the module properties, name and value pairs"""
-        return {
-            EPModule.PROP_ID: self.id,
-            EPModule.PROP_IP: self.ip,
-            EPModule.PROP_DESCRIPTION: self.description,
-            EPModule.PROP_MAX_DURATION: self.max_duration,
-            EPModule.PROP_DURATION: self.duration,
-            EPModule.PROP_ON_TIME: self.on_time,
-            EPModule.PROP_PORT: self.port,
-            EPModule.PROP_TIMEOUT: self.timeout,
-        }
-
-    def to_dict(self, props: List[str] = None) -> Dict[str, Any]:
-        """Parses the module to a dictionary.
-
-        Args:
-            props(optional) -- a list of properties names to parse, if value is set only the specified properties would be parsed,
-                possible values: `EPModule.PROP_ID`, `EPModule.PROP_IP`, `EPModule.PROP_DESCRIPTION`,
-                `EPModule.PROP_MAX_DURATION`, `EPModule.PROP_DURATION`, `EPModule.PROP_ON_TIME`,
-                `EPModule.PROP_PORT` and `EPModule.PROP_TIMEOUT`.
-
-        Returns:
-            A dictionary with the specified propeties, name and value pairs
-        """
-        prop_dict = {}
-
-        if props is not None:
-            for prop in props:
-                prop_dict[prop] = self.__getattr(prop)
-        else:
-            prop_dict = self.__to_dict()
-
-        return prop_dict
-
-    def __to_tuple(self) -> Tuple:
-        return (
-            self.id,
-            self.ip,
-            self.description,
-            self.max_duration,
-            self.duration,
-            self.on_time,
-            self.port,
-            self.timeout,
-        )
-
-    def to_tuple(self, props: List[str] = None) -> Tuple:
-        if props is not None:
-            to_tup = ()
-            for prop_name in props:
-                to_tup += (self.__getattr(prop_name),)
-        else:
-            to_tup = self.__to_tuple()
-
-        return to_tup
-
-    @staticmethod
-    def from_tuple(source: Tuple[Tuple]) -> EPModule:
-        IDX_PROP = 0
-        IDX_VAL = 1
-        module = EPModule()
-        for item in source:
-            module.__setattr(item[IDX_PROP], item[IDX_VAL])
-
-        return module
-
-    @staticmethod
-    def from_dict(source: Dict[str, Any]) -> EPModule:
-        """Parses and creates a new module from a dictionary.
-
-        Args:
-            source: a dictionary with module's properties, name and value pairs
-                possible name values: `EPModule.PROP_ID`, `EPModule.PROP_IP`, `EPModule.PROP_DESCRIPTION`,
-                `EPModule.PROP_MAX_DURATION`, `EPModule.PROP_DURATION`, `EPModule.PROP_ON_TIME`,
-                `EPModule.PROP_PORT` and `EPModule.PROP_TIMEOUT`.
-
-        Returns:
-            `EPModule`: a module initialized with dictionary data
-        """
-        module = EPModule()
-        for name, value in source.items():
-            module.__setattr(name, value)
-
-        return module
-
-    def __getattr(self, name: str) -> Any:
-        attr = None
-        match name:
-            case EPModule.PROP_ID:
-                attr = self.id
-            case EPModule.PROP_IP:
-                attr = self.ip
-            case EPModule.PROP_DESCRIPTION:
-                attr = self.description
-            case EPModule.PROP_MAX_DURATION:
-                attr = self.max_duration
-            case EPModule.PROP_DURATION:
-                attr = self.duration
-            case EPModule.PROP_ON_TIME:
-                attr = self.on_time
-            case EPModule.PROP_PORT:
-                attr = self.port
-            case EPModule.PROP_TIMEOUT:
-                attr = self.timeout
-            case _:
-                raise AttributeError(
-                    "'{_class}.{_method}()': Attribute '{_property}' not found in class '{_class}'".format(
-                        _method=self.__getattr.__name__,
-                        _property=name,
-                        _class=self.__class__.__name__,
-                    )
-                )
-        return attr
-
-    def __setattr(self, name: str, value: Any) -> None:
-        match name:
-            case EPModule.PROP_ID:
-                self.id = value
-            case EPModule.PROP_IP:
-                self.ip = value
-            case EPModule.PROP_DESCRIPTION:
-                self.description = value
-            case EPModule.PROP_MAX_DURATION:
-                self.max_duration = value
-            case EPModule.PROP_DURATION:
-                self.duration = value
-            case EPModule.PROP_ON_TIME:
-                self.on_time = value
-            case EPModule.PROP_PORT:
-                self.port = value
-            case EPModule.PROP_TIMEOUT:
-                self.timeout = value
-            case _:
-                raise AttributeError(
-                    "'{_class}.{_method}()': Attribute '{_property}' not found in class '{_class}', or is unchangable".format(
-                        _method=self.__setattr.__name__,
-                        _property=name,
-                        _class=self.__class__.__name__,
-                    )
-                )
