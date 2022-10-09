@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 from collections import namedtuple
-from typing import Any, NamedTuple, Tuple
+from typing import NamedTuple, Tuple
 from sqlite import TYPES
 
 # region Remote constants
@@ -15,6 +15,11 @@ __ModuleRemFields = namedtuple(
 __REM_MOD_FIELDS = __ModuleRemFields(
     "id", "ip", "description", "maxDuration", "duration", "onTime"
 )
+
+__SensorRemFields = namedtuple(
+    "__SensorRemFields", "ID TYPE MIN_VAL MAX_VAL CURR_VAL"
+)
+__REM_SENS_FIELDS = __SensorRemFields("id", "type", "minVal", "maxVal", "currVal")
 
 __SystemRemFields = namedtuple("__SystemRemFields", "ID")
 __REM_SYS_FIELDS = __SystemRemFields("id")
@@ -34,6 +39,17 @@ __REM_MODULE = __ModuleRem(
 )
 
 
+class __SensorRem(NamedTuple):
+    FieldName: __SensorRemFields
+    FIELDS: Tuple[str]
+    COLL_NAME: str
+
+
+__REM_SENS = __SensorRem(
+    __REM_SENS_FIELDS, tuple(__REM_SENS_FIELDS), __REM_COLLS.SENSORS
+)
+
+
 class __CommandRem(NamedTuple):
     FieldName: __CommRemFields
     COLL_NAME: str
@@ -48,13 +64,6 @@ class __SystemRem(NamedTuple):
 
 
 __REM_SYS = __SystemRem(__REM_SYS_FIELDS, __REM_COLLS.SYSTEMS)
-
-
-class __SensorRem(NamedTuple):
-    COLL_NAME: str
-
-
-__REM_SENS = __SensorRem(__REM_COLLS.SENSORS)
 
 
 class __Remote(NamedTuple):
@@ -90,9 +99,39 @@ __LOC_MOD_TYPES = (
     (__LOC_MOD_COLUMNS.TIMEOUT, TYPES.FLOAT),
 )
 
+__SensorLocColumns = namedtuple(
+    "__SensorLocColumns", "ID MODULE_ID TYPE MIN_VAL MAX_VAL CURR_VAL"
+)
+__LOC_SENS_COLUMNS = __SensorLocColumns(
+    "id", "module_id", "type", "min_val", "max_val", "curr_val"
+)
+__LOC_SENS_TYPES = (
+    (__LOC_SENS_COLUMNS.ID, TYPES.TEXT),
+    (__LOC_SENS_COLUMNS.MODULE_ID, TYPES.TEXT),
+    (__LOC_SENS_COLUMNS.TYPE, TYPES.TEXT),
+    (__LOC_SENS_COLUMNS.MIN_VAL, TYPES.FLOAT),
+    (__LOC_SENS_COLUMNS.MAX_VAL, TYPES.FLOAT),
+    (__LOC_SENS_COLUMNS.CURR_VAL, TYPES.FLOAT),
+)
+
 __SystemLocColumns = namedtuple("__SystemLocColumns", "ID")
 __LOC_SYS_COLUMNS = __SystemLocColumns("id")
 __LOC_SYS_TYPES = ((__LOC_SYS_COLUMNS.ID, TYPES.TEXT),)
+
+
+class __SensorLoc(NamedTuple):
+    ColName: __SensorLocColumns
+    COLUMNS: Tuple
+    TABLE_NAME: str
+    TYPE_MAP: Tuple[Tuple]
+
+
+__LOC_SENS = __SensorLoc(
+    __LOC_SENS_COLUMNS,
+    tuple(__LOC_SENS_COLUMNS),
+    __LOC_TABLES.SENSORS,
+    __LOC_SENS_TYPES,
+)
 
 
 class __ModuleLoc(NamedTuple):
@@ -124,8 +163,9 @@ __LOC_SYS = __SystemLoc(
 
 class __Local(NamedTuple):
     Modules: __ModuleLoc
+    Sensors: __SensorLoc
     System: __SystemLoc
 
 
-Local = __Local(__LOC_MOD, __LOC_SYS)
+Local = __Local(__LOC_MOD, __LOC_SENS, __LOC_SYS)
 # endregion

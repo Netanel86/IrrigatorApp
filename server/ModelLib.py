@@ -128,7 +128,7 @@ class AnalogSensor(DictParseable):
         self.parent_id: str = ""
         self.type: Sensors = _type
         self.curr_val: float = 0
-        self.min_val: int = min_val
+        self.min_val: float = min_val
         self.max_val: float = max_val
 
         self.aIn = aIn
