@@ -10,22 +10,20 @@ __RemCollections = namedtuple("__RemColls", "SYSTEMS MODULES COMMANDS SENSORS")
 __REM_COLLS = __RemCollections("systems", "modules", "commands", "sensors")
 
 __ModuleRemFields = namedtuple(
-    "__ModuleRemFields", "ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME"
+    "__ModuleRemFields", "MASTER_ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME"
 )
 __REM_MOD_FIELDS = __ModuleRemFields(
-    "id", "ip", "description", "maxDuration", "duration", "onTime"
+    "masterId", "ip", "description", "maxDuration", "duration", "onTime"
 )
 
-__SensorRemFields = namedtuple(
-    "__SensorRemFields", "ID TYPE MIN_VAL MAX_VAL CURR_VAL"
-)
-__REM_SENS_FIELDS = __SensorRemFields("id", "type", "minVal", "maxVal", "currVal")
+__SensorRemFields = namedtuple("__SensorRemFields", "TYPE MIN_VAL MAX_VAL CURR_VAL")
+__REM_SENS_FIELDS = __SensorRemFields("type", "minVal", "maxVal", "currVal")
 
 __SystemRemFields = namedtuple("__SystemRemFields", "ID")
 __REM_SYS_FIELDS = __SystemRemFields("id")
 
-__CommRemFields = namedtuple("__CommRemFields", "ID ACTION TIME ATTR")
-__REM_COMM_FIELDS = __CommRemFields("id", "action", "timestamp", "attributes")
+__CommRemFields = namedtuple("__CommRemFields", "ACTION TIME ATTR")
+__REM_COMM_FIELDS = __CommRemFields("action", "timestamp", "attributes")
 
 
 class __ModuleRem(NamedTuple):
@@ -83,13 +81,23 @@ __LocTables = namedtuple("__LocTableNames", "SYSTEM MODULES SENSORS")
 __LOC_TABLES = __LocTables("system", "modules", "sensors")
 
 __ModuleLocColumns = namedtuple(
-    "__ModuleLocColumns", "ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT"
+    "__ModuleLocColumns",
+    "ID MASTER_ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT",
 )
 __LOC_MOD_COLUMNS = __ModuleLocColumns(
-    "id", "ip", "description", "max_duration", "duration", "on_time", "port", "timeout"
+    "id",
+    "master_id",
+    "ip",
+    "description",
+    "max_duration",
+    "duration",
+    "on_time",
+    "port",
+    "timeout",
 )
 __LOC_MOD_TYPES = (
     (__LOC_MOD_COLUMNS.ID, TYPES.TEXT),
+    (__LOC_MOD_COLUMNS.MASTER_ID, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.IP, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.DESCRIPTION, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.MAX_DURATION, TYPES.INT),

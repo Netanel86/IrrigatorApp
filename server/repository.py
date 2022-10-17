@@ -1,20 +1,19 @@
 from __future__ import annotations
 from collections import namedtuple
-from typing import Any, Callable, Dict, List
+import logging
+from typing import Any, Callable, Dict, List, Tuple
 from datetime import datetime
 from enum import Enum
-from ModelLib import DictParseable, EPModule
+from ModelLib import AnalogSensor, DictParseable, EPModule, Sensors
 from firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
+from PyExtensions import reverseDict, isEmpty
 from sqlite import (
     COL_ROWID,
+    PARSE,
     QueryBuilder,
     SQLiteConnection,
 )
-
-
-def __reverse_dict(dict: Dict):
-    return {val: key for val, key in dict}
 
 
 MODULE_TO_LOCAL_MAP = {
@@ -29,11 +28,10 @@ MODULE_TO_LOCAL_MAP = {
 }
 """A Mapping of `ModelLib.EPModule` properties to local database 'Module' table columns (key=prop_name, val=col_name)."""
 
-MODULE_FROM_LOCAL_MAP = __reverse_dict(MODULE_TO_LOCAL_MAP.items())
+MODULE_FROM_LOCAL_MAP = reverseDict(MODULE_TO_LOCAL_MAP)
 """A Mapping of local database 'Module' table columns to `ModelLib.EPModule` properties (key=col_name, val=prop_name)."""
 
 MODULE_TO_REMOTE_MAP = {
-    EPModule.Props().ID: Remote.Modules.FieldName.ID,
     EPModule.Props().IP: Remote.Modules.FieldName.IP,
     EPModule.Props().DESCRIPTION: Remote.Modules.FieldName.DESCRIPTION,
     EPModule.Props().MAX_DURATION: Remote.Modules.FieldName.MAX_DURATION,
@@ -42,8 +40,29 @@ MODULE_TO_REMOTE_MAP = {
 }
 """A Mapping of `ModelLib.EPModule` properties to remote database 'Modules' collection fields (key=prop_name, val=field_name)."""
 
-MODULE_FROM_REMOTE_MAP = __reverse_dict(MODULE_TO_REMOTE_MAP.items())
+MODULE_FROM_REMOTE_MAP = reverseDict(MODULE_TO_REMOTE_MAP)
 """A Mapping of remote database 'Modules' collection fields to `ModelLib.EPModule` properties (key=field_name, val=prop_name)."""
+
+SENSOR_TO_LOCAL_MAP = {
+    AnalogSensor.Props().ID: Local.Sensors.ColName.ID,
+    AnalogSensor.Props().TYPE: Local.Sensors.ColName.TYPE,
+    AnalogSensor.Props().MIN_VALUE: Local.Sensors.ColName.MIN_VAL,
+    AnalogSensor.Props().MAX_VALUE: Local.Sensors.ColName.MAX_VAL,
+    AnalogSensor.Props().CURRENT_VAL: Local.Sensors.ColName.CURR_VAL,
+}
+
+SENSOR_FROM_LOCAL_MAP = reverseDict(SENSOR_TO_LOCAL_MAP)
+
+SENSOR_COLUMNS = tuple(SENSOR_FROM_LOCAL_MAP.keys())
+
+SENSOR_TO_REMOTE_MAP = {
+    AnalogSensor.Props().TYPE: Remote.Sensors.FieldName.TYPE,
+    AnalogSensor.Props().MIN_VALUE: Remote.Sensors.FieldName.MIN_VAL,
+    AnalogSensor.Props().MAX_VALUE: Remote.Sensors.FieldName.MAX_VAL,
+    AnalogSensor.Props().CURRENT_VAL: Remote.Sensors.FieldName.CURR_VAL,
+}
+
+SENSOR_FROM_REMOTE_MAP = reverseDict(SENSOR_TO_REMOTE_MAP)
 
 
 class Repository(object):
@@ -56,6 +75,7 @@ class Repository(object):
         self.__local = SQLiteConnection()
         self.__local.create(Local.System.TABLE_NAME, Local.System.TYPE_MAP)
         self.__local.create(Local.Modules.TABLE_NAME, Local.Modules.TYPE_MAP)
+        self.__local.create(Local.Sensors.TABLE_NAME, Local.Sensors.TYPE_MAP)
 
     def __init_remote(self):
         self.__remote = FirestoreConnection()
@@ -73,13 +93,14 @@ class Repository(object):
             self.PATH_SYSTEM, Remote.Commands.COLL_NAME
         )
         self.PATH_MODULES = "{0}/{1}".format(self.PATH_SYSTEM, Remote.Modules.COLL_NAME)
-        self.PATH_SENSORS = {}
+
+        self.PATH_SUBCOL_SENSORS = {}
         if self.__local is not None:
             module_ids = self.__local.select(
                 Local.Modules.TABLE_NAME, (Local.Modules.ColName.ID,)
-            ).execute()
+            ).execute(PARSE.DICT)
             for id_dict in module_ids:
-                self.PATH_SENSORS[
+                self.PATH_SUBCOL_SENSORS[
                     id_dict[Local.Modules.ColName.ID]
                 ] = "{0}/{1}/{2}".format(
                     self.PATH_MODULES,
@@ -99,7 +120,7 @@ class Repository(object):
         sys_ans = (
             self.__local.select(Local.System.TABLE_NAME, (Local.System.ColName.ID,))
             .where((COL_ROWID,), (1,))
-            .execute()
+            .execute(PARSE.DICT)
         )
 
         if sys_ans == False or len(sys_ans) == 0:
@@ -112,23 +133,92 @@ class Repository(object):
 
         return system_id
 
+    def __assign_ids(self, objects: List[DictParseable], ids_list: List[str]):
+        for idx, obj in enumerate(objects):
+            obj.id = ids_list[idx]
+
     def add_module(self, module: EPModule):
         module.id = self.__remote.add_document(
             self.PATH_MODULES, module.to_dict(to_map=MODULE_TO_REMOTE_MAP)
         )
 
-        ret_id = self.__local.insert(
+        self.__local.insert(
             Local.Modules.TABLE_NAME,
             module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
         )
 
+        self.add_sensors(module.id, module.sensors)
+
         self.__modules[module.ip] = module
 
-        return (
-            module.id
-            if len(module.id) > 0 and isinstance(ret_id, str) and module.id == ret_id
-            else None
-        )
+        return module.id if not isEmpty(module.id) else None
+
+    def add_sensors(self, module_id: str, sensors: List[AnalogSensor]):
+        if not isEmpty(sensors):
+            new_sensors = [sensor for sensor in sensors if isEmpty(sensor.id)]
+
+            sens_rem_dicts = [
+                sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP) for sensor in new_sensors
+            ]
+
+            sensors_path = self.PATH_SUBCOL_SENSORS.get(module_id, None)
+            if sensors_path is None:
+                sensors_path = self.PATH_SUBCOL_SENSORS[module_id] = "{}/{}/{}".format(
+                    self.PATH_MODULES, module_id, Remote.Sensors.COLL_NAME
+                )
+
+            sens_ids = self.__remote.add_documents(sensors_path, sens_rem_dicts)
+            self.__assign_ids(new_sensors, sens_ids)
+
+            sens_loc_dicts = []
+            for sensor in new_sensors:
+                sens_dict = sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
+                sens_dict[Local.Sensors.ColName.MODULE_ID] = module_id
+                sens_loc_dicts.append(sens_dict)
+
+            return self.__local.insert(Local.Sensors.TABLE_NAME, sens_loc_dicts)
+
+    def add_many_sensors(
+        self,
+        module_ids: List[str],
+        sensor_lists: List[List[AnalogSensor]],
+    ):
+        new_sensor_lists: List[List[AnalogSensor]] = []
+
+        for sensors in sensor_lists:
+            new_sensor_lists.append(
+                [sensor for sensor in sensors if isEmpty(sensor.id)]
+                if sensors
+                else None
+            )
+
+        for idx, sensors in enumerate(new_sensor_lists):
+            sens_rem_dicts = []
+            if sensors:
+                sens_rem_dicts = [
+                    sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP) for sensor in sensors
+                ]
+
+                sensors_path = self.PATH_SUBCOL_SENSORS.get(module_ids[idx], None)
+                if sensors_path is None:
+                    sensors_path = self.PATH_SUBCOL_SENSORS[
+                        module_ids[idx]
+                    ] = "{}/{}/{}".format(
+                        self.PATH_MODULES, module_ids[idx], Remote.Sensors.COLL_NAME
+                    )
+
+                sens_ids = self.__remote.add_documents(sensors_path, sens_rem_dicts)
+                self.__assign_ids(sensors, sens_ids)
+
+        sens_loc_dicts = []
+        for idx, sensors in enumerate(new_sensor_lists):
+            if sensors:
+                for sensor in sensors:
+                    sens_dict = sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
+                    sens_dict[Local.Sensors.ColName.MODULE_ID] = module_ids[idx]
+                    sens_loc_dicts.append(sens_dict)
+
+        return self.__local.insert(Local.Sensors.TABLE_NAME, sens_loc_dicts)
 
     def add_modules(self, modules: List[EPModule]) -> int | None:
         remote_dicts = []
@@ -138,29 +228,61 @@ class Repository(object):
         doc_ids = self.__remote.add_documents(self.PATH_MODULES, remote_dicts)
 
         local_dicts = []
+        module_ids = []
+        all_sensors: List[List[Sensors]] = []
         for idx, module in enumerate(modules):
             module.id = doc_ids[idx]
+            module_ids.append(module.id)
+            all_sensors.append(module.sensors if not isEmpty(module.sensors) else None)
             local_dicts.append(module.to_dict(to_map=MODULE_TO_LOCAL_MAP))
             self.__modules[module.ip] = module
 
         insert_count = self.__local.insert(Local.Modules.TABLE_NAME, local_dicts)
+
+        self.add_many_sensors(module_ids, all_sensors)
         return doc_ids if len(doc_ids) == insert_count else None
 
     def get_modules(self) -> Dict[str, EPModule]:
         if len(self.__modules) == 0:
-            module_dicts = (
+            self.__modules = (
                 self.__local.select(Local.Modules.TABLE_NAME)
+                .join(
+                    Local.Sensors.TABLE_NAME,
+                    SENSOR_COLUMNS,
+                    QueryBuilder.JOIN.LEFT,
+                    src_col=Local.Modules.ColName.ID,
+                    target_col=Local.Sensors.ColName.MODULE_ID,
+                )
                 .orderby((Local.Modules.ColName.IP,))
-                .execute()
+                .execute(self.__parse_modules)
             )
-
-            self.__modules = self.__local.map_to_object(
-                module_dicts,
-                lambda dic: EPModule.from_dict(dic, MODULE_FROM_LOCAL_MAP),
-                EPModule.Props().IP,
-            )
-
         return self.__modules
+
+    def __parse_modules(self, col_data: Tuple[Tuple], values: List[Tuple]):
+        mod_col_count = len(Local.Modules.COLUMNS) - 1
+        sen_col_last_idx = mod_col_count + len(SENSOR_COLUMNS)
+
+        modules: Dict[str, EPModule] = {}
+        module_cols = col_data[:mod_col_count]
+        sensor_cols = col_data[mod_col_count:sen_col_last_idx]
+
+        for tup in values:
+            module_dict = self.__local.merge_to_dict(module_cols, tup[:mod_col_count])
+            sensor_dict = self.__local.merge_to_dict(
+                sensor_cols, tup[mod_col_count:sen_col_last_idx]
+            )
+
+            module_ip = module_dict[Local.Modules.ColName.IP]
+            if module_ip not in modules.keys():
+                modules[module_ip] = EPModule.from_dict(
+                    module_dict, MODULE_FROM_LOCAL_MAP
+                )
+
+            if sensor_dict[Local.Sensors.ColName.ID] is not None:
+                module = AnalogSensor.from_dict(sensor_dict, SENSOR_FROM_LOCAL_MAP)
+                modules[module_ip].sensors.append(module)
+
+        return modules
 
     def get_commands(self) -> List[Command]:
         cmnd_dicts = self.__remote.get_collection(
@@ -168,7 +290,7 @@ class Repository(object):
         )
         return self.__remote.map_to_object(
             cmnd_dicts,
-            Remote.Commands.FieldName.ID,
+            Command.Props().ID,
             lambda dic: Command.from_dict(dic, COMMAND_FROM_REMOTE_MAP),
         )
 
@@ -219,7 +341,7 @@ class Repository(object):
             lambda doc_dicts, timestamp: callback(
                 self.__remote.map_to_object(
                     doc_dicts,
-                    Remote.Commands.FieldName.ID,
+                    Command.Props().ID,
                     lambda dic: Command.from_dict(dic, COMMAND_FROM_REMOTE_MAP),
                 ),
                 timestamp,
@@ -273,7 +395,7 @@ class Command(DictParseable):
     def __init__(
         self, id: str, time: datetime, action: Actions, **attr: Dict[str, Any]
     ) -> None:
-        self.id = id
+        self._id = id
         self.timestamp = time.astimezone()
         self.action = action
         self.attributes = attr
@@ -303,7 +425,6 @@ class Command(DictParseable):
 
 
 COMMAND_FROM_REMOTE_MAP = {
-    Remote.Commands.FieldName.ID: Command.Props().ID,
     Remote.Commands.FieldName.ACTION: Command.Props().ACTION,
     Remote.Commands.FieldName.TIME: Command.Props().TIME,
     Remote.Commands.FieldName.ATTR: Command.Props().ATTR,
