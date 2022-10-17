@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections import namedtuple
 from enum import Enum
+import logging
 from pyModbusTCP.client import ModbusClient
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Tuple
@@ -93,9 +94,17 @@ class DictParseable(ABC):
         module = cls()
         is_map = from_map is not None
         for prop, value in source.items():
-            if not hasattr(module, prop):
-                cls._raiseAttributeError(setattr.__name__, prop)
-            setattr(module, from_map[prop] if is_map else prop, value)
+            is_in_map = is_map and prop in from_map.keys()
+            obj_prop = prop if not is_map | (not is_in_map) else from_map[prop]
+            if is_map and not is_in_map:
+                logging.warning(
+                    "Key Missing: no such key in 'from_map': '{}', using key instead..".format(
+                        prop
+                    )
+                )
+            if not hasattr(module, obj_prop):
+                cls._raiseAttributeError(setattr.__name__, obj_prop)
+            setattr(module, obj_prop, value)
 
         return module
 
