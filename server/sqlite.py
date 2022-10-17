@@ -4,6 +4,7 @@ from enum import Enum
 import logging
 import os
 import sqlite3
+from PyExtensions import isEmpty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
@@ -12,6 +13,9 @@ __ValueTypes = namedtuple("__ValueTypes", "TEXT INT TIME FLOAT")
 
 TYPES = __ValueTypes("TEXT", "INTEGER", "TIMESTAMP", "FLOAT")
 """A list of sqlite supported database types"""
+
+__Parsers = namedtuple("__Parsers", "DICT TUPLE")
+PARSE = __Parsers(0, 1)
 
 COL_ROWID = "ROWID"
 VALUE_NULL = "IS NULL"
@@ -43,44 +47,34 @@ class SQLiteConnection(object):
 
         Path(path_tupel[0]).mkdir(parents=True, exist_ok=True)
 
-    def __parse_result(self, col_data: Tuple[Tuple], values: List[Tuple]):
-        """Convert a `Queries.Select` query result to a list of dictionaries.
+    def __parse_result(
+        self,
+        col_data: Tuple[Tuple],
+        values: List[Tuple],
+        merger: int,
+    ):
+        """Parse a `Queries.Select` query result to a list using a merger method.
 
         Args:
             col_data: a list of column names.
-            values: a list of values in order of there respective column name.
+            values: a list of values in order of there respective column names.
+            merger: the id for the parser type to be used.
+                possible values: `PARSE.DICT` and `PARSE.TUPLE` (default `PARSE.TUPLE`)
 
         Returns:
-            A list of dictionaries with (key=column-name, val=value) pairs.
+            If `merger` is:
+                *`PARSE.DICT`: A list of dictionaries with (column-name: value) pairs.
+                *`PARSE.TUPLE`: A list of tuples with (column-name, value) pairs.
         """
-        result: List[Dict[str, Any]] = []
+        merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
+            self.merge_to_tuple
+            if merger is None or merger == PARSE.TUPLE
+            else self.merge_to_dict
+        )
+        result: List[Tuple[Tuple]] = []
         for tup_obj in values:
-            dic = self.__merge_to_dict(col_data, tup_obj)
-            result.append(dic)
+            result.append(merge(col_data, tup_obj))
         return result
-
-    def __merge_to_dict(self, col_names: Tuple[Tuple], values: Tuple) -> Dict[str, Any]:
-        """Merge two tuples of column-names and values to a dictionary of key, value pairs
-
-        e.g:
-            merged = (
-                col_names[0]: values[0],
-
-                col_names[1]: values[1],
-                ...
-            )
-        Args:
-            col_names: the column names in order of there respective value.
-            values: the values in order of there respective column name.
-
-        Returns:
-            A dictionary with (column-name, value) pairs
-        """
-        dict = {}
-        for (col, val) in zip(col_names, values):
-            dict[col[0]] = val
-
-        return dict
 
     def __to_tuple_set(self, data: Dict[str, Any] | List[Dict[str, Any]]):
         tuples_dict: Dict[str, Tuple | List] = {}
@@ -99,7 +93,9 @@ class SQLiteConnection(object):
         q_type: Queries,
         query: str,
         values: Tuple | List[Tuple] = None,
+        result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] = None,
     ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
+
         result = None
         is_many = False
         try:
@@ -119,7 +115,14 @@ class SQLiteConnection(object):
                     result = result if result is not None else cursor.lastrowid
 
                 case Queries.SELECT:
-                    result = self.__parse_result(cursor.description, cursor.fetchall())
+                    if isinstance(result_parser, Callable):
+                        result = result_parser(cursor.description, cursor.fetchall())
+                    else:
+                        result = self.__parse_result(
+                            cursor.description,
+                            cursor.fetchall(),
+                            result_parser,
+                        )
 
                 case Queries.CREATE | Queries.UPDATE | Queries.DELETE:
                     result = True
@@ -129,8 +132,8 @@ class SQLiteConnection(object):
             if q_type == Queries.INSERT or Queries.UPDATE or Queries.DELETE:
                 self.__db.commit()
 
-        except Error as ex:
-            print(ex)
+        except Exception as ex:
+            logging.warning(ex)
             result = False
         finally:
             return result
@@ -153,20 +156,23 @@ class SQLiteConnection(object):
         Returns:
             A formatted string.
         """
-        each: str | Tuple[Any] = kwargs.get("each", "")
-        last: str = kwargs.get("last", "")
+        suffix: str | Tuple[Any] = kwargs.get("suffix", "")
+        prefix: str | Tuple[Any] = kwargs.get("prefix", "")
         query = ""
         if isinstance(data, tuple):
-            is_each_str = isinstance(each, str)
+            is_suf_str = isinstance(suffix, str)
+            is_pre_str = isinstance(prefix, str)
             for idx, string in enumerate(data):
-                query += string + (each if is_each_str else each[idx])
+                query += (
+                    (prefix if is_pre_str else prefix[idx])
+                    + string
+                    + (suffix if is_suf_str else suffix[idx])
+                )
                 query += separator if idx < len(data) - 1 else ""
         else:
             for idx in range(count):
                 query += data
                 query += separator if idx < count - 1 else ""
-
-        query += last
 
         return query
 
@@ -273,10 +279,10 @@ class SQLiteConnection(object):
         cols_query = self._formatter(
             col_names,
             ",",
-            each=" = ?",
+            suffix=" = ?",
         )
         query = "UPDATE {} SET {}".format(table, cols_query)
-        return QueryBuilder(self, Queries.UPDATE, query, values)
+        return QueryBuilder(self, Queries.UPDATE, query, data=values)
 
     def delete(self, table: str, id: str | int = None) -> bool:
         """Delete a single row or an entire table
@@ -308,7 +314,33 @@ class SQLiteConnection(object):
         cols_query = self._formatter(col_names, ", ") if col_names is not None else "*"
         query = "SELECT {} FROM {}".format(cols_query, table)
 
-        return QueryBuilder(self, Queries.SELECT, query)
+        return QueryBuilder(
+            self, Queries.SELECT, query, table=table, col_names=col_names
+        )
+
+    def merge_to_dict(self, col_names: Tuple[Tuple], values: Tuple) -> Dict[str, Any]:
+        """Merge two tuples of column-names and values to a dictionary.
+
+        Args:
+            col_names: the column names in order of there respective value.
+            values: the values in order of there respective column name.
+
+        Returns:
+            A dictionary with (column-name: value) pairs
+        """
+        return {col[0]: val for (col, val) in zip(col_names, values)}
+
+    def merge_to_tuple(self, col_names: Tuple[Tuple], values: Tuple) -> List[Tuple]:
+        """Merge two tuples of column-names and values to a single tuple of tuple pairs.
+
+        Args:
+            col_names: the column names in order of their respective values.
+            values: the values in order of their respective column names.
+
+        Returns:
+            A tuple with (column-name, value) tuple pairs
+        """
+        return tuple([(col[0], val) for (col, val) in zip(col_names, values)])
 
     def map_to_object(
         self,
@@ -353,17 +385,19 @@ class SQLiteConnection(object):
 
 
 class QueryBuilder(object):
-    """A class describing a builder for adding custom clauses to queries."""
+    """A class describing a modular builder for queries."""
 
-    ORDER_ASC = " ASC"
-    ORDER_DESC = " DESC"
+    __Orders = namedtuple("__Orders", "ASCENDING DESCENDING")
+    ORDER = __Orders(" ASC", " DESC")
+
+    __Joins = namedtuple("__Joins", "INNER LEFT CROSS")
+    JOIN = __Joins("INNER", "LEFT", "CROSS")
+
+    __SubQueries = namedtuple("__SubQueries", "WHERE ORDERBY JOIN")
+    __SUBQR = __SubQueries("WHERE", "ORDER BY", "JOIN")
 
     def __init__(
-        self,
-        connection: SQLiteConnection,
-        type: Queries,
-        base_query: str,
-        data: Tuple[Any] = None,
+        self, connection: SQLiteConnection, type: Queries, base_query: str, **kwargs
     ) -> None:
         """Creates a new builder instance.
 
@@ -371,21 +405,32 @@ class QueryBuilder(object):
             connection: sqlite client.
             type: the type of query being built.
             base_query: the base string for the query.
-            data(optional): initial data for `base_query`.
-                (default: `None`)
+            **kwargs: additional argument to pass.
+                possible values:
+                    *`table`: name of the base table in the query.
+                    *`col_names`: list of the selected columns in the query.
+                    *`data`: list of initial data for `base_query`.
         """
+        data: Tuple = kwargs.get("data", None)
+        table: str = kwargs.get("table", None)
+        col_names: Tuple[str] = kwargs.get("col_names", None)
         self.query = base_query
         self.connection = connection
         self.__type = type
         self.__where = False
         self.__orderby = False
+        self.__join = False
         self.__data: Tuple[Any] = data
+        self.__tables: List[str] = [table] if table else []
+        self.__cols: List[Tuple[str]] = [col_names] if col_names else []
 
-    def __integrity_error(self, method: str, condition: bool, error_msg: str):
+    def __integrity_error(
+        self, clause: str, method: str, condition: bool, error_msg: str
+    ):
         if condition:
             raise IntegrityError(
-                "in {}.{}(): query '{}': {}".format(
-                    self.__class__.__name__, method, self.__type, error_msg
+                "in {}.{}(): query '{}': {}: '{}".format(
+                    self.__class__.__name__, method, self.__type, error_msg, clause
                 )
             )
 
@@ -417,14 +462,16 @@ class QueryBuilder(object):
             a `QueryBuilder` instance of the where query.
         """
         self.__integrity_error(
+            QueryBuilder.__SUBQR.WHERE,
             self.where.__name__,
             self.__where == True,
-            "'WHERE' clause has already been set.",
+            "Can't set clause more then once",
         )
         self.__integrity_error(
+            QueryBuilder.__SUBQR.WHERE,
             self.where.__name__,
             self.__orderby == True,
-            "'WHERE' clause should appear before the 'ORDER BY' clause.",
+            "Can't set clause after '{}'".format(QueryBuilder.__SUBQR.ORDERBY),
         )
 
         each: Tuple[str] = ()
@@ -435,7 +482,7 @@ class QueryBuilder(object):
         else:
             each = " = ?"
 
-        cols_query = self.connection._formatter(col_names, " AND ", each=each)
+        cols_query = self.connection._formatter(col_names, " AND ", suffix=each)
 
         self.query += " WHERE {}".format(cols_query)
 
@@ -447,7 +494,9 @@ class QueryBuilder(object):
         self.__where = True
         return self
 
-    def orderby(self, col_names: Tuple[str], directions: Tuple[str] = (ORDER_ASC,)):
+    def orderby(
+        self, col_names: Tuple[str], directions: Tuple[str] = (ORDER.ASCENDING,)
+    ):
         """Set fields and directions for ordering documents.
 
         Args:
@@ -459,45 +508,141 @@ class QueryBuilder(object):
         Raises:
             IntegrityError: if:
             * more then one `ORDER BY` clause is set
-            * an `ORDER BY` clause is set in an `UPDATE` query
+            * `ORDER BY` clause is set in an `UPDATE` query
 
         Returns:
             a `QueryBuilder` instance of the orderby query.
         """
         self.__integrity_error(
+            QueryBuilder.__SUBQR.ORDERBY,
             self.orderby.__name__,
             self.__orderby == True,
-            "only a single 'ORDER BY' clause is allowed.",
+            "Can't set clause more then once",
         )
         self.__integrity_error(
+            QueryBuilder.__SUBQR.ORDERBY,
             self.orderby.__name__,
             self.__type == Queries.UPDATE,
-            "no 'ORDER BY' clause is allowed",
+            "clause is not allowed",
         )
 
-        cols_query = self.connection._formatter(col_names, ", ", each=directions)
+        cols_query = self.connection._formatter(col_names, ", ", suffix=directions)
         self.query += " ORDER BY {}".format(cols_query)
         self.__orderby = True
         return self
 
-    def execute(self):
-        """Executes the query.
+    def join(self, table: str, col_names: Tuple[str] = None, type: str = "", **kwargs):
+        """Join data from an additional table to the query
+
+        Args:
+            table: name of table to select from.
+            col_names: a tuple of column-names to select.
+            type(optional): join type.
+                possible values: `JOIN.INNER`, `JOIN.LEFT` and `JOIN.CROSS`
+                default: `None`.
+            kwargs(optional): additional filtering conditions.
+                possible values:
+                    *`src_col`: column name from base table to compare
+                    *`target_col`: column name from joined table to compare,
+                        if both columns names are the same set only `src_col`
 
         Returns:
-            The result of the executed query, If query is:
-            * `Queries.SELECT`: returns a list of dictionaries of returned rows.
-            * `Queries.UPDATE`: returns `True` if successful, `False` otherwise.
+            a `QueryBuilder` instance of the join query.
 
         Raises:
-            IntegrityError: if `self.__type == Queries.UPDATE` and a `WHERE` clause has not been set.
+            IntegrityError: if:
+            * more then one `JOIN` clause is set
+            * `JOIN` clause is set after a `WHERE` clause
+            * `JOIN` clause is set after a `ORDER BY` clause
+        """
+        self.__integrity_error(
+            QueryBuilder.__SUBQR.JOIN,
+            self.join.__name__,
+            self.__join == True,
+            "Can't set clause more then once",
+        )
+        self.__integrity_error(
+            QueryBuilder.__SUBQR.JOIN,
+            self.join.__name__,
+            self.__where == True,
+            "Can't set clause after '{}'".format(QueryBuilder.__SUBQR.WHERE),
+        )
+        self.__integrity_error(
+            QueryBuilder.__SUBQR.JOIN,
+            self.join.__name__,
+            self.__orderby == True,
+            "Can't set clause after '{}'".format(QueryBuilder.__SUBQR.ORDERBY),
+        )
+
+        cols_query_base = (
+            self.connection._formatter(
+                self.__cols[0], ", ", prefix=self.__tables[0] + "."
+            )
+            if not isEmpty(self.__cols)
+            else self.__tables[0] + ".*"
+        )
+
+        cols_query_join = self.connection._formatter(
+            col_names, ", ", prefix=table + "."
+        )
+
+        self.query = "SELECT {}, {} FROM {}".format(
+            cols_query_base, cols_query_join, self.__tables[0]
+        )
+
+        src_col = kwargs.get("src_col", None)
+        target_col = kwargs.get("target_col", None)
+
+        type_str = (" " + type) if not isEmpty(type) else ""
+        join_data = ""
+
+        if src_col is not None:
+            target_col = src_col if target_col is None else target_col
+            join_data = " ON {}.{} = {}.{}".format(
+                self.__tables[0], src_col, table, target_col
+            )
+
+        self.query += type_str + " JOIN {}{}".format(table, join_data)
+        self.__tables.append(table)
+        self.__join == True
+        return self
+
+    def execute(
+        self, result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] | int = None
+    ):
+        """Executes the query.
+
+        Args:
+            result_parser: :type:`int`(optional): the id for the parser type to be used.
+                possible values: `PARSE.TUPLE` and `PARSE.DICT`
+                default: `PARSE.TUPLE`
+                    OR
+            result_parser: :type:`Callable[[Tuple[Tuple], List[Tuple]]`(optional): a custom method
+                to parse the database result.
+                    Args:
+                        col_data: :type:`Tuple[Tuple]`: the result columns data
+
+                        values: :type:`List[Tuple]`: the result values
+                    Returns:
+                        `Any`: the parsed data
+        Returns:
+            The result of the executed query, If query is:
+                *`Queries.SELECT`: returns a tuple set of returned rows (if result_parser is default).
+                *`Queries.UPDATE`: returns `True` if successful, `False` otherwise.
+
+        Raises:
+            IntegrityError: if `WHERE` clause has not been set in an `Queries.UPDATE` query.
         """
 
         self.__integrity_error(
+            QueryBuilder.__SUBQR.WHERE,
             self.execute.__name__,
             self.__type == Queries.UPDATE and self.__where == False,
-            "a 'WHERE' clause must be set with at least one value",
+            "Missing clause",
         )
-        return self.connection._execute(self.__type, self.query, self.__data)
+        return self.connection._execute(
+            self.__type, self.query, self.__data, result_parser
+        )
 
 
 class Queries(Enum):
