@@ -9,24 +9,39 @@ from typing import Any, Dict, List, NamedTuple, Tuple
 
 
 class DictParseable(ABC):
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        self._id = value
+
     @staticmethod
     def Props() -> NamedTuple:
         """An abstract representation of object's property names.
 
         To be implemented and initialized with object property names.
         """
-        ...
+        raise NotImplementedError(
+            "property getter not implemented in class '{}': '{}'".format(
+                "cls.__class__.__name__", "Props"
+            )
+        )
 
     def __to_dict(self) -> Dict[str, Any]:
         """Parses the 'DictParseable' object to a dictionary.
 
         Returns:
             A dictionary with the object properties, (name: value) pairs"""
-        return {
-            prop: getattr(self, prop)
-            for prop in self.Props()
-            if not isinstance(getattr(self, prop), list)
-        }
+        obj_dict: Dict[str, Any] = {}
+        for prop in self.Props:
+            attr_val = getattr(self, prop)
+            if not isinstance(attr_val, list):
+                obj_dict[prop] = (
+                    attr_val.name if isinstance(attr_val, Enum) else attr_val
+                )
+        return obj_dict
 
     def to_dict(
         self, props: Tuple[str] = None, to_map: Dict[str, str] = None
@@ -49,11 +64,14 @@ class DictParseable(ABC):
         if collection is not None:
             for prop in collection:
                 if not hasattr(self, prop):
-                    self.__raiseAttributeError(getattr.__name__, prop)
+                    self._raiseAttributeError(getattr.__name__, prop)
                 if is_map and prop not in to_map.keys():
                     raise KeyError("Key: Dict 'to_map' has no key '{}' ".format(prop))
                 prop_key = to_map[prop] if is_map else prop
-                prop_dict[prop_key] = getattr(self, prop)
+                attr_val = getattr(self, prop)
+                prop_dict[prop_key] = (
+                    attr_val.name if isinstance(attr_val, Enum) else attr_val
+                )
         else:
             prop_dict = self.__to_dict()
 
@@ -76,15 +94,15 @@ class DictParseable(ABC):
         is_map = from_map is not None
         for prop, value in source.items():
             if not hasattr(module, prop):
-                cls.__raiseAttributeError(setattr.__name__, prop)
+                cls._raiseAttributeError(setattr.__name__, prop)
             setattr(module, from_map[prop] if is_map else prop, value)
 
         return module
 
     @classmethod
-    def __raiseAttributeError(cls, method_name, prop_name):
+    def _raiseAttributeError(cls, method_name, prop_name):
         raise AttributeError(
-            "'{_class}.{_method}()': '{_class}' object has no attribute '{_property}'".format(
+            "'{_class}.{_method}()': no such attribute: '{_property}'".format(
                 _method=method_name,
                 _property=prop_name,
                 _class=cls.__name__,
@@ -97,12 +115,11 @@ class AnalogSensor(DictParseable):
     # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
     __Properties = namedtuple(
         "__Props",
-        "ID PARENT_ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
+        "ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
     )
 
     __Props = __Properties(
         "id",
-        "parent_id",
         "type",
         "min_val",
         "max_val",
@@ -124,8 +141,7 @@ class AnalogSensor(DictParseable):
         max_val=100,
         ScalingErrorOffset=3,
     ):
-        self.id: str = ""
-        self.parent_id: str = ""
+        self._id: str = ""
         self.type: Sensors = _type
         self.curr_val: float = 0
         self.min_val: float = min_val
@@ -202,7 +218,7 @@ class EPModule(DictParseable):
         timeout: float = 0.5,
         max_duration: int = 600,
     ):
-        self.id: str = ""
+        self._id: str = ""
         self.master_id: str = ""
         self.description: str = ""
         self.on_time: datetime = datetime.now().astimezone()
