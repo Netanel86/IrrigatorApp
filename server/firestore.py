@@ -83,6 +83,16 @@ class FirestoreConnection(object):
         snapshot = self.__db.collection(col_path).document(doc_id).get()
         return (snapshot.id, snapshot.to_dict())
 
+    def update_documents(
+        self, col_path: str, doc_ids: List[str], updated_props: List[Dict[str, Any]]
+    ):
+        batch = self.__db.batch()
+        for idx, doc_id in enumerate(doc_ids):
+            doc_ref = self.__db.collection(col_path).document(doc_id)
+            batch.update(doc_ref, updated_props[idx])
+
+        batch.commit()
+
     def update_document(
         self, col_path: str, doc_id: str, updated_props: Dict[str, Any]
     ):
