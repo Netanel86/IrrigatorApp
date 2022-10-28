@@ -43,6 +43,8 @@ MODULE_TO_REMOTE_MAP = {
 MODULE_FROM_REMOTE_MAP = reverseDict(MODULE_TO_REMOTE_MAP)
 """A Mapping of remote database 'Modules' collection fields to `ModelLib.EPModule` properties (key=field_name, val=prop_name)."""
 
+MODULE_FIELDS = tuple(MODULE_TO_REMOTE_MAP.keys())
+
 SENSOR_TO_LOCAL_MAP = {
     AnalogSensor.Props().ID: Local.Sensors.ColName.ID,
     AnalogSensor.Props().TYPE: Local.Sensors.ColName.TYPE,
@@ -63,6 +65,8 @@ SENSOR_TO_REMOTE_MAP = {
 }
 
 SENSOR_FROM_REMOTE_MAP = reverseDict(SENSOR_TO_REMOTE_MAP)
+
+SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
 
 
 class Repository(object):
@@ -294,13 +298,10 @@ class Repository(object):
             lambda dic: Command.from_dict(dic, COMMAND_FROM_REMOTE_MAP),
         )
 
-    def update_module(
-        self,
-        module: EPModule,
-        props: List[str] = None,
-        local: bool = True,
-        remote: bool = False,
-    ):
+    def update_module(self, module: EPModule, props: List[str] = None, **kwargs):
+        local: bool = kwargs.get("local", True)
+        remote: bool = kwargs.get("remote", False)
+
         if not local and not remote:
             raise ValueError(
                 "in {}.{}(): both 'local' and 'remote' values are set to False, nothing will be updated".format(
@@ -308,23 +309,21 @@ class Repository(object):
                 )
             )
         if local:
-            if props is not None:
-                local_query: QueryBuilder = self.__local.update(
-                    Local.Modules.TABLE_NAME,
-                    module.to_dict(props, MODULE_TO_LOCAL_MAP),
-                )
-            else:
-                local_query = self.__local.update(
-                    Local.Modules.TABLE_NAME,
-                    module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
-                )
-            local_done = local_query.where(
-                (Local.Modules.ColName.ID,), (module.id,)
-            ).execute()
+            loc_dict = (
+                module.to_dict(props, MODULE_TO_LOCAL_MAP)
+                if props
+                else module.to_dict(to_map=MODULE_TO_LOCAL_MAP)
+            )
+
+            local_done = (
+                self.__local.update(Local.Modules.TABLE_NAME, loc_dict)
+                .where((Local.Modules.ColName.ID,), (module.id,))
+                .execute()
+            )
 
         if remote:
             if props is not None:
-                rem_props = (prop for prop in props if prop in Remote.Modules.FIELDS)
+                rem_props = tuple(prop for prop in props if prop in MODULE_FIELDS)
                 remot_dict = module.to_dict(rem_props, MODULE_TO_REMOTE_MAP)
             else:
                 remot_dict = module.to_dict(to_map=MODULE_TO_REMOTE_MAP)
@@ -332,6 +331,78 @@ class Repository(object):
             self.__remote.update_document(self.PATH_MODULES, module.id, remot_dict)
 
         return local_done
+
+    def update_sensor(
+        self, module_id: str, sensor: AnalogSensor, props: List[str] = None, **kwargs
+    ):
+        local: bool = kwargs.get("local", True)
+        remote: bool = kwargs.get("remote", False)
+
+        if local:
+            loc_dict = (
+                sensor.to_dict(props, SENSOR_TO_LOCAL_MAP)
+                if props
+                else sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
+            )
+
+            local_result = (
+                self.__local.update(Local.Sensors.TABLE_NAME, loc_dict)
+                .where((Local.Sensors.ColName.ID,), (sensor.id,))
+                .execute()
+            )
+
+        if remote:
+            if props is not None:
+                rem_props = tuple(prop for prop in props if prop in SENSOR_FIELDS)
+                rem_dict = sensor.to_dict(rem_props, SENSOR_TO_REMOTE_MAP)
+            else:
+                rem_dict = sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP)
+
+            self.__remote.update_document(
+                self.PATH_SUBCOL_SENSORS[module_id],
+                sensor.id,
+                rem_dict,
+            )
+
+        return local_result
+
+    def update_sensors(self, module: EPModule, props: List[str] = None, **kwargs):
+        local: bool = kwargs.get("local", True)
+        remote: bool = kwargs.get("remote", False)
+        sensor_ids = [sensor.id for sensor in module.sensors]
+        sensor_dicts: List[Dict[str, Any]] = None
+        if local:
+            sensor_dicts = [
+                sensor.to_dict(props, SENSOR_TO_LOCAL_MAP)
+                if props
+                else sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
+                for sensor in module.sensors
+            ]
+
+            local_result = (
+                self.__local.update(Local.Sensors.TABLE_NAME, sensor_dicts)
+                .where((Local.Sensors.ColName.ID,), sensor_ids)
+                .execute()
+            )
+        if remote:
+            if props is not None:
+                rem_props = tuple(prop for prop in props if prop in SENSOR_FIELDS)
+                rem_dicts = [
+                    sensor.to_dict(rem_props, SENSOR_TO_REMOTE_MAP)
+                    for sensor in module.sensors
+                ]
+            else:
+                rem_dicts = [
+                    sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP)
+                    for sensor in module.sensors
+                ]
+
+            self.__remote.update_documents(
+                self.PATH_SUBCOL_SENSORS[module.id],
+                sensor_ids,
+                rem_dicts,
+            )
+        return local_result
 
     def init_command_listener(
         self, callback: Callable[[List[Command], datetime], None]
