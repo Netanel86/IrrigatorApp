@@ -1,5 +1,6 @@
 import datetime
 from typing import List
+from unittest import result
 from ModelLib import AnalogSensor, EPModule, Sensors
 from repository import Repository, Command, Actions
 
@@ -114,7 +115,33 @@ def update_module():
         print("Something went wrong while trying to update module!")
 
 
+def update_module_sensors():
+    modules = repo.get_modules()
+    module = modules["0.2.0.0"]
+    res = False
+    for sensor in module.sensors:
+        sensor.curr_val += 1
+        if sensor.type == Sensors.TEMPERATURE.name:
+            sensor.max_val = 200
+        if sensor.type == Sensors.EC.name:
+            sensor.max_val = 7
+
+    res = repo.update_sensors(
+        module,
+        [
+            AnalogSensor.Props().CURRENT_VAL,
+            AnalogSensor.Props().MAX_VALUE,
+        ],
+        remote=True,
+    )
+    if res:
+        print("Successfuly updated sensors.")
+    else:
+        print("Failed to update sensors.")
+
+
 repo = Repository()
+update_module_sensors()
 # add_module_wSensors()
 # add_batch_modules_wSensors()
 # repo.init_command_listener(command_callback)

@@ -150,8 +150,8 @@ class SQLiteConnection(object):
                 (default: `None`).
             kwargs(optional): additional arguments to format.
                 possible values:
-                    'each': a string or a tuple of strings to be added after each element in `data`.
-                    'last': a string to be added at the end of the final string.
+                    'suffix' :type:`Tuple[str] | str`: to be added after each element in `data`.
+                    'prefix' :type:`Tuple[str] | str`: to be added before each element in `data`.
 
         Returns:
             A formatted string.
@@ -282,7 +282,9 @@ class SQLiteConnection(object):
             suffix=" = ?",
         )
         query = "UPDATE {} SET {}".format(table, cols_query)
-        return QueryBuilder(self, Queries.UPDATE, query, data=values)
+        return QueryBuilder(
+            self, Queries.UPDATE, query, col_names=col_names, data=values
+        )
 
     def delete(self, table: str, id: str | int = None) -> bool:
         """Delete a single row or an entire table
@@ -486,7 +488,14 @@ class QueryBuilder(object):
 
         self.query += " WHERE {}".format(cols_query)
 
-        if self.__data == None:
+        if len(col_names) != len(values):
+            is_multi = True if isinstance(values[0], tuple) else False
+            for idx in range(len(self.__data)):
+                self.__data[idx] = self.__data[idx] + (
+                    values[idx] if is_multi else (values[idx],)
+                )
+
+        elif self.__data == None:
             self.__data = values
         else:
             self.__data += values
