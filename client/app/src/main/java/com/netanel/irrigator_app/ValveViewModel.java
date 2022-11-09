@@ -2,7 +2,7 @@ package com.netanel.irrigator_app;
 
 
 import com.netanel.irrigator_app.model.ListenerRegistration;
-import com.netanel.irrigator_app.model.Valve;
+import com.netanel.irrigator_app.model.Module;
 
 import java.util.Date;
 import java.util.EnumSet;
@@ -22,7 +22,7 @@ import androidx.databinding.Bindable;
 
 public class ValveViewModel extends ObservableViewModel{
 
-    private final Valve mValve;
+    private final Module mModule;
 
     private int mEditedProgress;
 
@@ -32,46 +32,46 @@ public class ValveViewModel extends ObservableViewModel{
 
     private final ListenerRegistration mListenerRegistration;
 
-    public ValveViewModel(Valve valve) {
+    public ValveViewModel(Module module) {
         super();
-        mValve = valve;
+        mModule = module;
         mViewStates = EnumSet.noneOf(State.class);
 
-        mListenerRegistration = mValve.addPropertyChangedListener(this::onValvePropertyChanged);
+        mListenerRegistration = mModule.addPropertyChangedListener(this::onValvePropertyChanged);
         resetViewStates();
         initTimeScales();
     }
 
     public String getId() {
-        return mValve.getId();
+        return mModule.getId();
     }
 
-    public int getIndex() {
-        return mValve.getIndex();
+    public String getIp() {
+        return mModule.getIp();
     }
 
     public Date getLastOpen() {
-        return mValve.getOnTime();
+        return mModule.getOnTime();
     }
 
     public int getTimeLeft() {
-        return (int) mValve.getTimeLeft();
+        return (int) mModule.getTimeLeft();
     }
 
     @Bindable
     public boolean isOpen() {
-        return mValve.isOn();
+        return mModule.isOn();
     }
 
     @Bindable
     public String getDescription() {
-        return mValve.getDescription() == null || mValve.getDescription().isEmpty() ?
-                "#" + mValve.getIndex() : mValve.getDescription();
+        return mModule.getDescription() == null || mModule.getDescription().isEmpty() ?
+                "#" + mModule.getIp() : mModule.getDescription();
     }
 
     @Bindable
     public int getMaxDuration() {
-        return mValve.getMaxDuration();
+        return mModule.getMaxDuration();
     }
 
     @Bindable
@@ -142,31 +142,31 @@ public class ValveViewModel extends ObservableViewModel{
 
     @Override
     protected void onCleared() {
-        mValve.removeListenerRegistration(mListenerRegistration);
+        mModule.removeListenerRegistration(mListenerRegistration);
         super.onCleared();
     }
 
     public void onValvePropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
-            case Valve.PROP_ID_DURATION:
+            case Module.PROP_ID_DURATION:
                 resetViewStates();
                 mEditedProgress = 0;
                 notifyPropertyChanged(BR.progress);
                 break;
 
-            case Valve.PROP_ID_ON_TIME:
+            case Module.PROP_ID_ON_TIME:
                 resetViewStates();
                 mEditedProgress = 0;
                 notifyPropertyChanged(BR.open);
                 break;
 
-            case Valve.PROP_ID_MAX_DURATION:
+            case Module.PROP_ID_MAX_DURATION:
                 initTimeScales();
                 notifyPropertyChanged(BR.maxDuration);
                 break;
 
-            case Valve.PROP_ID_DESCRIPTION:
-            case Valve.PROP_ID_INDEX:
+            case Module.PROP_ID_DESCRIPTION:
+            case Module.PROP_ID_INDEX:
                 notifyPropertyChanged(BR.description);
                 break;
         }

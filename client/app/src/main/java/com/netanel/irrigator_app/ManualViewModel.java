@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.netanel.irrigator_app.model.Actions;
 import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.Module;
 import com.netanel.irrigator_app.model.Sensor;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.Repository;
@@ -15,7 +16,6 @@ import com.netanel.irrigator_app.services.StringExt;
 import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.services.connection.NullResultException;
-import com.netanel.irrigator_app.model.Valve;
 import com.netanel.irrigator_app.services.connection.NetworkUtilities;
 
 import java.util.ArrayList;
@@ -202,14 +202,14 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     public void initValveViewModels() {
-        mRepository.getValves(new IDataBaseConnection.TaskListener<List<Valve>>() {
+        mRepository.getValves(new IDataBaseConnection.TaskListener<List<Module>>() {
             @Override
-            public void onComplete(List<Valve> result) {
+            public void onComplete(List<Module> result) {
                     if (!result.isEmpty()) {
                         LinkedList<ValveViewModel> valves = new LinkedList<>();
-                        for (Valve valve :
+                        for (Module module :
                                 result) {
-                            ValveViewModel valveVm = new ValveViewModel(valve);
+                            ValveViewModel valveVm = new ValveViewModel(module);
                             valves.add(valveVm);
                         }
 
@@ -255,7 +255,7 @@ public class ManualViewModel extends ObservableViewModel
     public void onSendCommand() {
         Command cmnd = null;
         Map<String, Object> attr = new HashMap<>();
-        attr.put("index", mSelectedValve.getIndex());
+        attr.put("index", mSelectedValve.getIp());
 
         if (mSelectedValve.isEdited()) {
             if (mSelectedValve.getEditedProgress() != 0) {
