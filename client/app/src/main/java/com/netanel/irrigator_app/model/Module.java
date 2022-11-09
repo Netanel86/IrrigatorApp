@@ -3,8 +3,10 @@ package com.netanel.irrigator_app.model;
 
 import com.google.firebase.firestore.DocumentId;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -36,12 +38,14 @@ public class Valve extends Observable {
     private String mDescription;
     private Date mOnTime;
     private int mDurationInSec;
+    private ArrayList<Sensor> mSensors;
 
     public Valve(){}
 
     public Valve(int index) {
         mIndex = index;
         mOnTime = new Date();
+        mSensors = new ArrayList<>();
     }
 
     public void update(Valve updatedValve) {
@@ -161,5 +165,9 @@ public class Valve extends Observable {
             this.mMaxDuration = maxDuration;
             notifyPropertyChanged(PROP_ID_MAX_DURATION, oldMaxDuration,maxDuration);
         }
+    }
+
+    public ArrayList<Sensor> getSensors() {
+        return mSensors;
     }
 }

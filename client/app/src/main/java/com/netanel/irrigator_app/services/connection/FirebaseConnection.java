@@ -38,16 +38,16 @@ public class FirebaseConnection implements IDataBaseConnection {
     }
 
     @Override
-    public <T> IQueryBuilder<T> getCollection(Path collectionPath, @NonNull Class<T> dataType) {
-        return new FirebaseQueryBuilder<>(collectionPath.path, dataType);
+    public <T> IQueryBuilder<T> getCollection(String collectionPath, @NonNull Class<T> dataType) {
+        return new FirebaseQueryBuilder<>(collectionPath, dataType);
     }
 
     @Override
-    public <T> void addDocumentChangedListener(@NonNull Path collectionPath,
+    public <T> void addDocumentChangedListener(@NonNull String collectionPath,
                                                @NonNull String docId, @NonNull Class<T> dataType,
                                                @NonNull final TaskListener<T> documentChangedListener) {
         ListenerRegistration listener =
-                mDb.collection(collectionPath.path).document(docId).addSnapshotListener((value, error) -> {
+                mDb.collection(collectionPath).document(docId).addSnapshotListener((value, error) -> {
                     if (error != null) {
                         documentChangedListener.onFailure(error);
                     } else if (value != null && value.exists()) {
@@ -60,10 +60,10 @@ public class FirebaseConnection implements IDataBaseConnection {
 
     @Override
     public <T extends IMappable> void addDocument(@NonNull final T document,
-                                                  @NonNull Path collectionPath,
+                                                  @NonNull String collectionPath,
                                                   @NonNull Class<T> dataType,
                                                   final TaskListener<T> taskCompletedListener) {
-        mDb.collection(collectionPath.path).add(document)
+        mDb.collection(collectionPath).add(document)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
                         document.setId(task.getResult().getId());

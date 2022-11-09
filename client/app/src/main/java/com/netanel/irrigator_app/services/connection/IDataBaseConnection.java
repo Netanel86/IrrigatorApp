@@ -15,15 +15,15 @@ import androidx.annotation.NonNull;
  */
 
 public interface IDataBaseConnection {
-    <T> IQueryBuilder<T> getCollection(Path collectionPath, @NonNull Class<T> dataType);
+    <T> IQueryBuilder<T> getCollection(String collectionPath, @NonNull Class<T> dataType);
 
-    <T> void addDocumentChangedListener(@NonNull Path collectionPath,
+    <T> void addDocumentChangedListener(@NonNull String collectionPath,
                                         @NonNull String docId,
                                         @NonNull Class<T> dataType,
                                         @NonNull TaskListener<T> documentChangedListener);
 
     <T extends IMappable> void addDocument(@NonNull T document,
-                                           @NonNull Path collectionPath,
+                                           @NonNull String collectionPath,
                                            @NonNull Class<T> dataType,
                                            TaskListener<T> taskCompletedListener);
     void unregisterAllListeners();
@@ -43,12 +43,5 @@ public interface IDataBaseConnection {
         DESCENDING
     }
 
-    enum Path {
-        VALVES("valves"),
-        COMMANDS("commands"),
-        SENSORS("sensors");
 
-        String path;
-        Path(String path){ this.path = path;}
-    }
 }
