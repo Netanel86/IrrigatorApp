@@ -4,13 +4,13 @@ package com.netanel.irrigator_app.services;
 import android.util.Log;
 
 import com.netanel.irrigator_app.model.Command;
+import com.netanel.irrigator_app.model.Module;
 import com.netanel.irrigator_app.model.Sensor;
-import com.netanel.irrigator_app.model.Valve;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection.Direction;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection.Path;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection.TaskListener;
 
+import java.util.HashMap;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -26,28 +26,53 @@ import androidx.annotation.NonNull;
 
 public class Repository {
     private static final String TAG = Repository.class.getSimpleName();
-    private static final String PROP_INDEX = "index";
+
+    private static final String COLL_MODULES = "modules";
+    private static final String COLL_SENSORS = "sensors";
+    private static final String COLL_SYSTEMS = "systems";
+    private static final String COLL_COMMANDS = "commands";
+
+    private String mPathModules;
+    private String mPathSystem;
+    private String mPathCommands;
+    private HashMap<String, String> mPathSensors;
 
     private final IDataBaseConnection mConnection;
+    private final String mSystemId = "a4MgpJK45g5l9lMEErhS";
 
-    private List<Valve> mValves;
-    private List<Sensor> mSensors;
+    private List<Module> mValves;
 
     public Repository(IDataBaseConnection connection) {
         mConnection = connection;
+        mPathSensors = new HashMap<>();
+        initPaths();
     }
 
-    public void getValves(@NonNull TaskListener<List<Valve>> taskCompletedListener) {
+    public void getValves(@NonNull TaskListener<List<Module>> taskCompletedListener) {
         if (mValves == null) {
-            mConnection.getCollection(Path.VALVES, Valve.class)
-                    .orderBy(PROP_INDEX, Direction.ASCENDING)
-                    .get(new IDataBaseConnection.TaskListener<List<Valve>>() {
+            mConnection.getCollection(mPathModules, Module.class)
+                    .orderBy(Module.PROP_IP, Direction.ASCENDING)
+                    .get(new IDataBaseConnection.TaskListener<List<Module>>() {
                         @Override
-                        public void onComplete(List<Valve> result) {
+                        public void onComplete(List<Module> result) {
                             mValves = result;
-                            for (Valve valve :
+                            for (Module module :
                                     mValves) {
-                                initValveDbListener(valve);
+                                initValveDbListener(module);
+                                initSensorsPath(module);
+                                mConnection.getCollection(mPathSensors.get(module.getId()), Sensor.class).get(
+                                        new IDataBaseConnection.TaskListener<List<Sensor>>(){
+                                            @Override
+                                            public void onComplete(List<Sensor> result) {
+                                                module.setSensors(result);
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception exception) {
+                                                taskCompletedListener.onFailure(exception);
+                                            }
+                                        }
+                                );
                             }
                             taskCompletedListener.onComplete(result);
                         }
@@ -64,7 +89,7 @@ public class Repository {
 
     public void addCommand(@NonNull Command command, TaskListener<Command> taskCompletedListener) {
         mConnection.addDocument(command,
-                Path.COMMANDS, Command.class, new IDataBaseConnection.TaskListener<Command>() {
+                mPathCommands, Command.class, new IDataBaseConnection.TaskListener<Command>() {
                     @Override
                     public void onComplete(Command result) {
                         if (taskCompletedListener != null) {
@@ -79,12 +104,12 @@ public class Repository {
                 });
     }
 
-    private void initValveDbListener(@NonNull final Valve valve) {
-        mConnection.addDocumentChangedListener(Path.VALVES, valve.getId(), Valve.class,
-                new IDataBaseConnection.TaskListener<Valve>() {
+    private void initValveDbListener(@NonNull final Module module) {
+        mConnection.addDocumentChangedListener(mPathModules, module.getId(), Module.class,
+                new IDataBaseConnection.TaskListener<Module>() {
                     @Override
-                    public void onComplete(Valve updatedObject) {
-                        valve.update(updatedObject);
+                    public void onComplete(Module updatedObject) {
+                        module.update(updatedObject);
                     }
 
                     @Override
@@ -93,5 +118,16 @@ public class Repository {
                                 ex.getMessage() : "failed to initialize data base listener");
                     }
                 });
+    }
+
+    private void initSensorsPath(Module module) {
+        String path = String.format("%s/%s/%s",mPathModules, module.getId(),COLL_SENSORS);
+        mPathSensors.put(module.getId(), path);
+    }
+
+    private void initPaths() {
+        mPathSystem = String.format("%s/%s", COLL_SYSTEMS, mSystemId);
+        mPathModules = String.format("%s/%s", mPathSystem, COLL_MODULES);
+        mPathCommands = String.format("%s/%s", mPathSystem, COLL_COMMANDS);
     }
 }
