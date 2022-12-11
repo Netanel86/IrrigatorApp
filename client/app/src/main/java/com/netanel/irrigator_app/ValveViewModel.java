@@ -3,10 +3,13 @@ package com.netanel.irrigator_app;
 
 import com.netanel.irrigator_app.model.ListenerRegistration;
 import com.netanel.irrigator_app.model.Module;
+import com.netanel.irrigator_app.model.Sensor;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import androidx.databinding.Bindable;
@@ -32,6 +35,8 @@ public class ValveViewModel extends ObservableViewModel{
 
     private final ListenerRegistration mListenerRegistration;
 
+    private ArrayList<SensorViewModel> mSensorsViewModels;
+
     public ValveViewModel(Module module) {
         super();
         mModule = module;
@@ -40,6 +45,8 @@ public class ValveViewModel extends ObservableViewModel{
         mListenerRegistration = mModule.addPropertyChangedListener(this::onValvePropertyChanged);
         resetViewStates();
         initTimeScales();
+
+        initSensorViewModels(module.getSensors());
     }
 
     public String getId() {
@@ -169,6 +176,9 @@ public class ValveViewModel extends ObservableViewModel{
             case Module.PROP_ID_INDEX:
                 notifyPropertyChanged(BR.description);
                 break;
+            case Module.PROP_ID_SENSORS:
+                initSensorViewModels(mModule.getSensors());
+                break;
         }
     }
 
@@ -185,6 +195,23 @@ public class ValveViewModel extends ObservableViewModel{
         }
 
         notifyPropertyChanged(BR.scaleStrings);
+    }
+
+    public List<SensorViewModel> getSensorsViewModels() {
+        return this.mSensorsViewModels;
+    }
+
+    public void initSensorViewModels(List<Sensor> sensors) {
+        if( mSensorsViewModels != null) {
+            mSensorsViewModels.clear();
+        }
+        mSensorsViewModels = new ArrayList<>();
+        if(sensors != null) {
+            for (Sensor sensor :
+                    sensors) {
+                mSensorsViewModels.add(new SensorViewModel(sensor));
+            }
+        }
     }
 
     public enum State {

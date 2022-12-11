@@ -35,7 +35,7 @@ public class Repository {
     private String mPathModules;
     private String mPathSystem;
     private String mPathCommands;
-    private HashMap<String, String> mPathSensors;
+    private final HashMap<String, String> mPathSensors;
 
     private final IDataBaseConnection mConnection;
     private final String mSystemId = "a4MgpJK45g5l9lMEErhS";
@@ -56,15 +56,22 @@ public class Repository {
                         @Override
                         public void onComplete(List<Module> result) {
                             mValves = result;
-                            for (Module module :
-                                    mValves) {
-                                initValveDbListener(module);
+                            for (int i = 0; i < mValves.size(); i++) {
+                                Module module = mValves.get(i);
+                                int idx = i;
                                 initSensorsPath(module);
+                                initValveDbListener(module);
                                 mConnection.getCollection(mPathSensors.get(module.getId()), Sensor.class).get(
                                         new IDataBaseConnection.TaskListener<List<Sensor>>(){
                                             @Override
-                                            public void onComplete(List<Sensor> result) {
-                                                module.setSensors(result);
+                                            public void onComplete(List<Sensor> sensors) {
+                                                if(!sensors.isEmpty()) {
+                                                    module.setSensors(sensors);
+                                                    initSensorDbListeners(module);
+                                                }
+
+                                                if(idx == mValves.size()-1)
+                                                    taskCompletedListener.onComplete(result);
                                             }
 
                                             @Override
@@ -74,7 +81,6 @@ public class Repository {
                                         }
                                 );
                             }
-                            taskCompletedListener.onComplete(result);
                         }
 
                         @Override
@@ -114,10 +120,31 @@ public class Repository {
 
                     @Override
                     public void onFailure(Exception ex) {
-                        Log.w(TAG, ex.getMessage() != null ?
-                                ex.getMessage() : "failed to initialize data base listener");
+                        logInitListenerEx(ex);
                     }
                 });
+    }
+
+    private void initSensorDbListeners(@NonNull final Module module) {
+        for (Sensor sensor :
+                module.getSensors()) {
+            mConnection.addDocumentChangedListener(mPathSensors.get(module.getId()), sensor.getId(), Sensor.class, new TaskListener<Sensor>() {
+                @Override
+                public void onComplete(Sensor result) {
+                    sensor.update(result);
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    logInitListenerEx(exception);
+                }
+            });
+        }
+    }
+
+    private void logInitListenerEx(Exception ex) {
+        Log.w(TAG, ex.getMessage() != null ?
+                ex.getMessage() : "failed to initialize data base listener");
     }
 
     private void initSensorsPath(Module module) {

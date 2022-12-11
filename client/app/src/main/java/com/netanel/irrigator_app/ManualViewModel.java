@@ -87,8 +87,6 @@ public class ManualViewModel extends ObservableViewModel
                 setMessageResource(R.string.msg_no_connection);
             }
         }
-
-        testSensors();
     }
 
     @Override
@@ -170,8 +168,8 @@ public class ManualViewModel extends ObservableViewModel
         return mSensors;
     }
 
-    public void setSensors(List<SensorViewModel> mSensors) {
-        this.mSensors = mSensors;
+    public void setSensors(List<SensorViewModel> sensorsVms) {
+        this.mSensors = sensorsVms;
         notifyPropertyChanged(BR.sensors);
     }
 
@@ -183,6 +181,7 @@ public class ManualViewModel extends ObservableViewModel
     public void setSelectedValve(ValveViewModel valve) {
         mSelectedValve = valve;
         notifyPropertyChanged(BR.selectedValve);
+        setSensors(valve.getSensorsViewModels());
     }
 
     @Override
@@ -292,26 +291,26 @@ public class ManualViewModel extends ObservableViewModel
         List<SensorViewModel> sensors = new ArrayList<>();
 
         for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.HUMIDITY, 100);
-            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
+            Sensor s1 = new Sensor(Sensor.SensorType.HUMIDITY, 100);
+            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
             SensorViewModel viewModel = new SensorViewModel(s1);
             sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.TEMPERATURE, 99);
-            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
+            Sensor s1 = new Sensor(Sensor.SensorType.TEMPERATURE, 99);
+            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
             SensorViewModel viewModel = new SensorViewModel(s1);
             sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.FLOW, 9);
-            s1.setValue(0.5);
+            Sensor s1 = new Sensor(Sensor.SensorType.FLOW, 9);
+            s1.setCurrVal(0.5);
             SensorViewModel viewModel = new SensorViewModel(s1);
             sensors.add(viewModel);
         }
         for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.Measure.PH, 15);
-            s1.setValue((float) (s1.getMaxValue() / 2) * (i + 1));
+            Sensor s1 = new Sensor(Sensor.SensorType.PH, 15);
+            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
             SensorViewModel viewModel = new SensorViewModel(s1);
             sensors.add(viewModel);
         }

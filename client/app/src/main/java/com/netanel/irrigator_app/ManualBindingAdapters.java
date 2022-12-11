@@ -67,25 +67,45 @@ public class ManualBindingAdapters {
 
     @BindingAdapter("cells")
     public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
-        if(sensors != null) {
-            LifecycleOwner lifeCycleOwner = FragmentManager
-                    .findFragment(grid).getViewLifecycleOwner();
-            for (SensorViewModel viewModel :
-                    sensors) {
+        if(sensors != null && !sensors.isEmpty()) {
+            int viewCount = grid.getChildCount();
 
-                SensorSeekbarBinding binding =
-                        DataBindingUtil.inflate(LayoutInflater.from(grid.getContext()),
-                                R.layout.sensor_seekbar,
-                                grid,
-                                false);
-                binding.setSensorVM(viewModel);
-                binding.setLifecycleOwner(lifeCycleOwner);
-                View sensorView = binding.getRoot();
-
-                grid.addView(sensorView);
+            for (int i = 0; i < sensors.size(); i++) {
+                SensorViewModel viewModel = sensors.get(i);
+                View sensorView;
+                if (i < viewCount) {
+                    sensorView = grid.getChildAt(i);
+                    SensorSeekbarBinding binding = DataBindingUtil.getBinding(sensorView);
+                    binding.setSensorVM(viewModel);
+                } else {
+                    sensorView = newSensorViewBinding(grid, viewModel);
+                    grid.addView(sensorView);
+                }
                 calculateSensorOptimalDimen(sensorView, grid, sensors.size());
             }
+
+            if(viewCount > sensors.size()) {
+                grid.removeViews(sensors.size(), viewCount - sensors.size());
+            }
+        }else{
+            grid.removeAllViews();
         }
+    }
+
+    private static View newSensorViewBinding(ViewGroup parent, SensorViewModel viewModel) {
+        LifecycleOwner lifeCycleOwner = FragmentManager
+                .findFragment(parent).getViewLifecycleOwner();
+
+        SensorSeekbarBinding binding =
+                DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()),
+                        R.layout.sensor_seekbar,
+                        parent,
+                        false);
+        binding.setSensorVM(viewModel);
+        binding.setLifecycleOwner(lifeCycleOwner);
+        View sensorView = binding.getRoot();
+
+        return sensorView;
     }
 
     @BindingAdapter("onTabSelected")

@@ -2,7 +2,6 @@ package com.netanel.irrigator_app;
 
 
 import com.netanel.irrigator_app.model.ListenerRegistration;
-import com.netanel.irrigator_app.model.PropertyChangedListener;
 import com.netanel.irrigator_app.model.Sensor;
 
 import java.lang.reflect.Type;
@@ -42,11 +41,11 @@ public class SensorViewModel extends ObservableViewModel{
     public String getTextValue() {
         String value;
         if (mResolution.type == Double.TYPE) {
-            value = String.format(Locale.getDefault(), mResolution.format, mSensor.getValue());
+            value = String.format(Locale.getDefault(), mResolution.format, mSensor.getCurrVal());
         } else {
-            value = String.format(Locale.getDefault(), mResolution.format, (int)mSensor.getValue());
+            value = String.format(Locale.getDefault(), mResolution.format, (int)mSensor.getCurrVal());
         }
-        return value + mSensor.getMeasures().symbol;
+        return value + mSensor.getType().symbol;
     }
 
     @Bindable
@@ -63,12 +62,12 @@ public class SensorViewModel extends ObservableViewModel{
 
     @Bindable
     public int getMaxProgress() {
-        return (int)(mSensor.getMaxValue() * mResolution.resolution);
+        return (int)(mSensor.getMaxVal() * mResolution.resolution);
     }
 
     @Bindable
     public int getProgress() {
-        return (int)(mSensor.getValue() * mResolution.resolution);
+        return (int)(mSensor.getCurrVal() * mResolution.resolution);
     }
 
     @Override
@@ -79,6 +78,7 @@ public class SensorViewModel extends ObservableViewModel{
 
     public void onPropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
+            case Sensor.PROP_MIN_VALUE:
             case Sensor.PROP_MAX_VALUE:
                 notifyPropertyChanged(BR.maxProgress);
             case Sensor.PROP_VALUE:
@@ -94,7 +94,7 @@ public class SensorViewModel extends ObservableViewModel{
     }
 
     private void assignResources() {
-        switch (mSensor.getMeasures()) {
+        switch (mSensor.getType()) {
             case EC:
                 // TODO: 19/12/2021 add drawable to EC: Electrical Conductivity
                 mResolution = Resolution.Double0x1;

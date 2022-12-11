@@ -24,6 +24,7 @@ public class Module extends Observable {
     public static final int PROP_ID_DURATION = 2;
     public static final int PROP_ID_INDEX = 3;
     public static final int PROP_ID_MAX_DURATION = 4;
+    public static final int PROP_ID_SENSORS = 5;
     public static final String PROP_DESCRIPTION = "description";
     public static final String PROP_ON_TIME = "onTime";
     public static final String PROP_DURATION = "duration";
@@ -171,6 +172,10 @@ public class Module extends Observable {
         return mSensors;
     }
     public void setSensors(List<Sensor> sensors){
-        this.mSensors = new ArrayList<>(sensors);
+        if(this.mSensors != sensors) {
+            List<Sensor> oldVal = this.mSensors;
+            this.mSensors = new ArrayList<>(sensors);
+            notifyPropertyChanged(PROP_ID_SENSORS, oldVal, sensors);
+        }
     }
 }
