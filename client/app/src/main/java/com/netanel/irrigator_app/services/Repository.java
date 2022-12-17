@@ -10,8 +10,11 @@ import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection.Direction;
 import com.netanel.irrigator_app.services.connection.IDataBaseConnection.TaskListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 
@@ -35,12 +38,12 @@ public class Repository {
     private String mPathModules;
     private String mPathSystem;
     private String mPathCommands;
-    private final HashMap<String, String> mPathSensors;
+    private final Map<String, String> mPathSensors;
 
     private final IDataBaseConnection mConnection;
     private final String mSystemId = "a4MgpJK45g5l9lMEErhS";
 
-    private List<Module> mValves;
+    private Map<String, Module> mValves;
 
     public Repository(IDataBaseConnection connection) {
         mConnection = connection;
@@ -55,23 +58,25 @@ public class Repository {
                     .get(new IDataBaseConnection.TaskListener<List<Module>>() {
                         @Override
                         public void onComplete(List<Module> result) {
-                            mValves = result;
-                            for (int i = 0; i < mValves.size(); i++) {
-                                Module module = mValves.get(i);
+                            mValves = new LinkedHashMap<>();
+                            initModulesDbListener();
+                            for (int i = 0; i < result.size(); i++) {
+                                Module module = result.get(i);
+                                mValves.put(module.getId(),module);
                                 int idx = i;
                                 initSensorsPath(module);
-                                initValveDbListener(module);
                                 mConnection.getCollection(mPathSensors.get(module.getId()), Sensor.class).get(
                                         new IDataBaseConnection.TaskListener<List<Sensor>>(){
                                             @Override
                                             public void onComplete(List<Sensor> sensors) {
-                                                if(!sensors.isEmpty()) {
+                                                if (!sensors.isEmpty()) {
                                                     module.setSensors(sensors);
-                                                    initSensorDbListeners(module);
+                                                    initSensorsDbListener(module);
                                                 }
 
-                                                if(idx == mValves.size()-1)
-                                                    taskCompletedListener.onComplete(result);
+                                                if (idx == mValves.size() - 1) {
+                                                    taskCompletedListener.onComplete(new ArrayList<>(mValves.values()));
+                                                }
                                             }
 
                                             @Override
@@ -89,7 +94,7 @@ public class Repository {
                         }
                     });
         } else {
-            taskCompletedListener.onComplete(mValves);
+            taskCompletedListener.onComplete(new ArrayList<>(mValves.values()));
         }
     }
 
@@ -110,12 +115,16 @@ public class Repository {
                 });
     }
 
-    private void initValveDbListener(@NonNull final Module module) {
-        mConnection.addDocumentChangedListener(mPathModules, module.getId(), Module.class,
-                new IDataBaseConnection.TaskListener<Module>() {
+    private void initModulesDbListener() {
+        mConnection.addCollectionListener(mPathModules, Module.class,
+                new IDataBaseConnection.TaskListener<List<Module>>() {
                     @Override
-                    public void onComplete(Module updatedObject) {
-                        module.update(updatedObject);
+                    public void onComplete(List<Module> updatedModules) {
+                        for (Module updated :
+                                updatedModules) {
+                            Module module = mValves.get(updated.getId());
+                            module.update(updated);
+                        }
                     }
 
                     @Override
@@ -125,13 +134,16 @@ public class Repository {
                 });
     }
 
-    private void initSensorDbListeners(@NonNull final Module module) {
-        for (Sensor sensor :
-                module.getSensors()) {
-            mConnection.addDocumentChangedListener(mPathSensors.get(module.getId()), sensor.getId(), Sensor.class, new TaskListener<Sensor>() {
+    private void initSensorsDbListener(@NonNull final Module module) {
+            mConnection.addCollectionListener(mPathSensors.get(module.getId()), Sensor.class,
+                    new TaskListener<List<Sensor>>() {
                 @Override
-                public void onComplete(Sensor result) {
-                    sensor.update(result);
+                public void onComplete(List<Sensor> updatedSensors) {
+                    for (Sensor updated :
+                            updatedSensors) {
+                        Sensor sensor = module.getSensor(updated.getId());
+                        sensor.update(updated);
+                    }
                 }
 
                 @Override
@@ -139,7 +151,6 @@ public class Repository {
                     logInitListenerEx(exception);
                 }
             });
-        }
     }
 
     private void logInitListenerEx(Exception ex) {

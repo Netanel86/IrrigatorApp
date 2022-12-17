@@ -2,6 +2,7 @@ package com.netanel.irrigator_app.services.connection;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -9,6 +10,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,46 +45,63 @@ public class FirebaseConnection implements IDataBaseConnection {
     }
 
     @Override
-    public <T> void addDocumentChangedListener(@NonNull String collectionPath,
-                                               @NonNull String docId, @NonNull Class<T> dataType,
-                                               @NonNull final TaskListener<T> documentChangedListener) {
-        ListenerRegistration listener =
-                mDb.collection(collectionPath).document(docId).addSnapshotListener((value, error) -> {
+    public <T> void addDocumentListener(@NonNull String collectionPath,
+                                        String docId, @NonNull Class<T> dataType,
+                                        @NonNull final TaskListener<T> documentChangedListener) {
+        ListenerRegistration listener = mDb.collection(collectionPath).document(docId)
+                .addSnapshotListener((docSnapshot, error) -> {
                     if (error != null) {
                         documentChangedListener.onFailure(error);
-                    } else if (value != null && value.exists()) {
-                        documentChangedListener.onComplete(value.toObject(dataType));
+                    } else if (docSnapshot != null && docSnapshot.exists()) {
+                        documentChangedListener.onComplete(docSnapshot.toObject(dataType));
                     }
                 });
 
         mDataListeners.put(docId, listener);
     }
-
     @Override
-    public <T extends IMappable> void addDocument(@NonNull final T document,
-                                                  @NonNull String collectionPath,
-                                                  @NonNull Class<T> dataType,
-                                                  final TaskListener<T> taskCompletedListener) {
-        mDb.collection(collectionPath).add(document)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        document.setId(task.getResult().getId());
-                        if (taskCompletedListener != null) {
-                            taskCompletedListener.onComplete(document);
-                        }
-                    } else {
-                        if (taskCompletedListener != null) {
-                            taskCompletedListener.onFailure(task.getException());
-                        }
+    public <T> void addCollectionListener(@NonNull String collectionPath,
+                                          @NonNull Class<T> dataType,
+                                          @NonNull final TaskListener<List<T>> collectionChangedListener) {
 
-                    }
-                });
+        ListenerRegistration listener = mDb.collection(collectionPath)
+                .addSnapshotListener((collSnapshot, error) -> {
+            if (error != null) {
+                collectionChangedListener.onFailure(error);
+            } else if (collSnapshot != null && !collSnapshot.isEmpty()) {
+                List<DocumentChange> changedDocs = collSnapshot.getDocumentChanges();
+                List<T> changedObjects = new ArrayList<>();
+                for (DocumentChange document : changedDocs) {
+                    T object = document.getDocument().toObject(dataType);
+                    changedObjects.add(object);
+                }
+                collectionChangedListener.onComplete(changedObjects);
+            }
+        });
+
+        mDataListeners.put(collectionPath, listener);
     }
 
     @Override
-    public void unregisterAllListeners() {
-        for (ListenerRegistration listener :
-                mDataListeners.values()) {
+    public <T extends IMappable> void addDocument(@NonNull final T document, @NonNull String collectionPath, @NonNull Class<T> dataType, final TaskListener<T> taskCompletedListener) {
+        mDb.collection(collectionPath).add(document).addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                document.setId(task.getResult().getId());
+                if (taskCompletedListener != null) {
+                    taskCompletedListener.onComplete(document);
+                }
+            } else {
+                if (taskCompletedListener != null) {
+                    taskCompletedListener.onFailure(task.getException());
+                }
+
+            }
+        });
+    }
+
+    @Override
+    public void removeAllListeners() {
+        for (ListenerRegistration listener : mDataListeners.values()) {
             listener.remove();
         }
         mDataListeners.clear();
@@ -113,8 +132,8 @@ public class FirebaseConnection implements IDataBaseConnection {
     }
 
     private void initializeDbSettings() {
-        FirebaseFirestoreSettings settings =
-                new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(false).build();
         mDb.setFirestoreSettings(settings);
     }
 
@@ -133,13 +152,12 @@ public class FirebaseConnection implements IDataBaseConnection {
         }
 
         public IQueryBuilder<T> orderBy(String field, Direction direction) {
-            mQuery = mCollectionRef.orderBy(
-                    field,
-                    direction == Direction.ASCENDING ?
-                            Query.Direction.ASCENDING : Query.Direction.ASCENDING);
+            mQuery = mCollectionRef.orderBy(field,
+                    direction == Direction.ASCENDING ? Query.Direction.ASCENDING : Query.Direction.DESCENDING);
             return this;
         }
 
+        @Override
         public void get(@NonNull final TaskListener<List<T>> taskCompletedListener) {
             if (mQuery != null) {
                 mQuery.get().addOnCompleteListener(task ->

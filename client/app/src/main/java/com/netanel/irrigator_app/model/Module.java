@@ -6,9 +6,12 @@ import com.google.firebase.firestore.DocumentId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -39,14 +42,14 @@ public class Module extends Observable {
     private String mDescription;
     private Date mOnTime;
     private int mDurationInSec;
-    private ArrayList<Sensor> mSensors;
+    private Map<String, Sensor> mSensors;
 
     public Module(){}
 
     public Module(String ip) {
         mIp = ip;
         mOnTime = new Date();
-        mSensors = new ArrayList<>();
+        mSensors = new HashMap<>();
     }
 
     public void update(Module updatedModule) {
@@ -168,14 +171,18 @@ public class Module extends Observable {
         }
     }
 
-    public ArrayList<Sensor> getSensors() {
-        return mSensors;
+    public List<Sensor> getSensors() {
+        return mSensors != null ? new ArrayList<>(this.mSensors.values()) : null;
     }
+
     public void setSensors(List<Sensor> sensors){
-        if(this.mSensors != sensors) {
-            List<Sensor> oldVal = this.mSensors;
-            this.mSensors = new ArrayList<>(sensors);
+            Map<String, Sensor> oldVal = this.mSensors;
+            this.mSensors = sensors.stream()
+                    .collect(Collectors.toMap(Sensor::getId, Function.identity()));
             notifyPropertyChanged(PROP_ID_SENSORS, oldVal, sensors);
-        }
+    }
+
+    public Sensor getSensor(String id) {
+        return this.mSensors.get(id);
     }
 }

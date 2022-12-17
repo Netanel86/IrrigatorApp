@@ -46,7 +46,9 @@ public class ValveViewModel extends ObservableViewModel{
         resetViewStates();
         initTimeScales();
 
-        initSensorViewModels(module.getSensors());
+        if (module.getSensors() != null) {
+            initSensorViewModels(module.getSensors());
+        }
     }
 
     public String getId() {
@@ -90,6 +92,10 @@ public class ValveViewModel extends ObservableViewModel{
         if (this.mEditedProgress != progress) {
             this.mEditedProgress = progress;
             notifyPropertyChanged(BR.progress);
+            if(mEditedProgress == 0) {
+                notifyPropertyChanged(BR.open);
+            }
+            resetViewStates();
         }
     }
 
@@ -155,16 +161,12 @@ public class ValveViewModel extends ObservableViewModel{
 
     public void onValvePropertyChanged(Object sender, int propertyId, Object oldValue, Object newValue) {
         switch (propertyId) {
+            case Module.PROP_ID_ON_TIME:
             case Module.PROP_ID_DURATION:
                 resetViewStates();
                 mEditedProgress = 0;
-                notifyPropertyChanged(BR.progress);
-                break;
-
-            case Module.PROP_ID_ON_TIME:
-                resetViewStates();
-                mEditedProgress = 0;
                 notifyPropertyChanged(BR.open);
+                notifyPropertyChanged(BR.progress);
                 break;
 
             case Module.PROP_ID_MAX_DURATION:
