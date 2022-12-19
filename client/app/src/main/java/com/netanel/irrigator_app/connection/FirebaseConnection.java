@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app.services.connection;
+package com.netanel.irrigator_app.connection;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
@@ -9,6 +9,7 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.netanel.irrigator_app.services.NullResultException;
 
 import java.util.ArrayList;
 import java.util.HashMap;

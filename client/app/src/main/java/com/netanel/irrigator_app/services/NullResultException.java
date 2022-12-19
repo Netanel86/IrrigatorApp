@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app.services.connection;
+package com.netanel.irrigator_app.services;
 
 
 /**

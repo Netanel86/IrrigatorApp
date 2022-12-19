@@ -32,7 +32,7 @@ public class Sensor extends Observable{
     @DocumentId
     public String mId;
 
-    private String mControllerId;
+    private String mModuleId;
     private SensorType mType;
     private double mCurrVal;
     private double mMaxVal;
@@ -70,15 +70,15 @@ public class Sensor extends Observable{
         }
     }
 
-    public String getControllerId() {
-        return mControllerId;
+    public String getModuleId() {
+        return mModuleId;
     }
 
-    public void setControllerId(String parentId) {
-        if (mControllerId == null || !mControllerId.equals(parentId)) {
-            String oldVal = mControllerId;
-            mControllerId = parentId;
-            notifyPropertyChanged(PROP_PARENT_ID, oldVal, mControllerId);
+    public void setModuleId(String parentId) {
+        if (mModuleId == null || !mModuleId.equals(parentId)) {
+            String oldVal = mModuleId;
+            mModuleId = parentId;
+            notifyPropertyChanged(PROP_PARENT_ID, oldVal, mModuleId);
         }
     }
 
@@ -107,7 +107,7 @@ public class Sensor extends Observable{
     }
 
     public void update(Sensor updated) {
-        this.setControllerId(updated.getControllerId());
+        this.setModuleId(updated.getModuleId());
         this.setMaxVal(updated.getMaxVal());
         this.setType(updated.getType());
         this.setCurrVal(updated.getCurrVal());

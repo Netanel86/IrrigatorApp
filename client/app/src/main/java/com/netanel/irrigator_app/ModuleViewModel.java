@@ -23,7 +23,7 @@ import androidx.databinding.Bindable;
  * Created on 10/10/2021
  */
 
-public class ValveViewModel extends ObservableViewModel{
+public class ModuleViewModel extends ObservableViewModel{
 
     private final Module mModule;
 
@@ -37,7 +37,7 @@ public class ValveViewModel extends ObservableViewModel{
 
     private ArrayList<SensorViewModel> mSensorsViewModels;
 
-    public ValveViewModel(Module module) {
+    public ModuleViewModel(Module module) {
         super();
         mModule = module;
         mViewStates = EnumSet.noneOf(State.class);

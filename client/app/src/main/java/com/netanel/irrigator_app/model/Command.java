@@ -2,13 +2,10 @@ package com.netanel.irrigator_app.model;
 
 
 import com.google.firebase.firestore.DocumentId;
-import com.netanel.irrigator_app.services.connection.IMappable;
+import com.netanel.irrigator_app.connection.IMappable;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Dictionary;
-import java.util.List;
 import java.util.Map;
 
 /**

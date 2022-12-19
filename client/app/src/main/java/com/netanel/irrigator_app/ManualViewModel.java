@@ -10,12 +10,12 @@ import com.netanel.irrigator_app.model.Actions;
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Module;
 import com.netanel.irrigator_app.services.AppServices;
-import com.netanel.irrigator_app.services.Repository;
+import com.netanel.irrigator_app.connection.Repository;
 import com.netanel.irrigator_app.services.StringExt;
-import com.netanel.irrigator_app.services.connection.ConnectivityCallback;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
-import com.netanel.irrigator_app.services.connection.NullResultException;
-import com.netanel.irrigator_app.services.connection.NetworkUtilities;
+import com.netanel.irrigator_app.services.ConnectivityCallback;
+import com.netanel.irrigator_app.connection.IDataBaseConnection;
+import com.netanel.irrigator_app.services.NullResultException;
+import com.netanel.irrigator_app.services.NetworkUtilities;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -62,11 +62,11 @@ public class ManualViewModel extends ObservableViewModel
 
     private boolean mIsScaleButtonChange;
 
-    private List<ValveViewModel> mValves;
+    private List<ModuleViewModel> mValves;
 
     private List<SensorViewModel> mSensors;
 
-    private ValveViewModel mSelectedValve;
+    private ModuleViewModel mSelectedValve;
 
     public ManualViewModel(Application application) {
         super(application);
@@ -92,7 +92,7 @@ public class ManualViewModel extends ObservableViewModel
         NetworkUtilities.unregisterConnectivityCallback(
                 this.getApplication().getApplicationContext(), mConnectivityChangedCallback);
 
-        for (ValveViewModel viewModel:
+        for (ModuleViewModel viewModel:
              mValves) {
             viewModel.onCleared();
         }
@@ -152,11 +152,11 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     @Override
-    public List<ValveViewModel> getValves() {
+    public List<ModuleViewModel> getValves() {
         return mValves;
     }
 
-    public void setValves(List<ValveViewModel> valves) {
+    public void setValves(List<ModuleViewModel> valves) {
         mValves = valves;
         notifyPropertyChanged(BR.valves);
     }
@@ -172,11 +172,11 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     @Override
-    public ValveViewModel getSelectedValve() {
+    public ModuleViewModel getSelectedValve() {
         return mSelectedValve;
     }
 
-    public void setSelectedValve(ValveViewModel valve) {
+    public void setSelectedValve(ModuleViewModel valve) {
         mSelectedValve = valve;
         notifyPropertyChanged(BR.selectedValve);
         setSensors(valve.getSensorsViewModels());
@@ -199,14 +199,14 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     public void initValveViewModels() {
-        mRepository.getValves(new IDataBaseConnection.TaskListener<List<Module>>() {
+        mRepository.getModules(new IDataBaseConnection.TaskListener<List<Module>>() {
             @Override
             public void onComplete(List<Module> result) {
                     if (!result.isEmpty()) {
-                        LinkedList<ValveViewModel> valves = new LinkedList<>();
+                        LinkedList<ModuleViewModel> valves = new LinkedList<>();
                         for (Module module :
                                 result) {
-                            ValveViewModel valveVm = new ValveViewModel(module);
+                            ModuleViewModel valveVm = new ModuleViewModel(module);
                             valves.add(valveVm);
                         }
 
@@ -234,7 +234,7 @@ public class ManualViewModel extends ObservableViewModel
     }
 
     @Override
-    public void onTabValveSelected(ValveViewModel valveVm) {
+    public void onTabValveSelected(ModuleViewModel valveVm) {
         setSelectedValve(valveVm);
     }
 
@@ -266,7 +266,7 @@ public class ManualViewModel extends ObservableViewModel
         }
 
         if (cmnd != null) {
-            mSelectedValve.removeViewState(ValveViewModel.State.ENABLED);
+            mSelectedValve.removeViewState(ModuleViewModel.State.ENABLED);
             mRepository.addCommand(cmnd, new IDataBaseConnection.TaskListener<Command>() {
                 @Override
                 public void onComplete(Command result) {
@@ -279,7 +279,7 @@ public class ManualViewModel extends ObservableViewModel
                 @Override
                 public void onFailure(Exception exception) {
                     setMessage(exception.getMessage());
-                    mSelectedValve.addViewState(ValveViewModel.State.ENABLED);
+                    mSelectedValve.addViewState(ModuleViewModel.State.ENABLED);
                 }
             });
         }

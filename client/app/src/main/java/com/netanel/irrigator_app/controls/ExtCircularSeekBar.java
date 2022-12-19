@@ -1,13 +1,13 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.controls;
 
 
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.netanel.irrigator_app.R;
 
 /**
  * <p></p>

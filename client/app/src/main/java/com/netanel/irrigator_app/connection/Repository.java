@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app.services;
+package com.netanel.irrigator_app.connection;
 
 
 import android.util.Log;
@@ -6,9 +6,8 @@ import android.util.Log;
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Module;
 import com.netanel.irrigator_app.model.Sensor;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection.Direction;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection.TaskListener;
+import com.netanel.irrigator_app.connection.IDataBaseConnection.Direction;
+import com.netanel.irrigator_app.connection.IDataBaseConnection.TaskListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +42,7 @@ public class Repository {
     private final IDataBaseConnection mConnection;
     private final String mSystemId = "a4MgpJK45g5l9lMEErhS";
 
-    private Map<String, Module> mValves;
+    private Map<String, Module> mModules;
 
     public Repository(IDataBaseConnection connection) {
         mConnection = connection;
@@ -51,18 +50,18 @@ public class Repository {
         initPaths();
     }
 
-    public void getValves(@NonNull TaskListener<List<Module>> taskCompletedListener) {
-        if (mValves == null) {
+    public void getModules(@NonNull TaskListener<List<Module>> taskCompletedListener) {
+        if (mModules == null) {
             mConnection.getCollection(mPathModules, Module.class)
                     .orderBy(Module.PROP_IP, Direction.ASCENDING)
                     .get(new IDataBaseConnection.TaskListener<List<Module>>() {
                         @Override
                         public void onComplete(List<Module> result) {
-                            mValves = new LinkedHashMap<>();
+                            mModules = new LinkedHashMap<>();
                             initModulesDbListener();
                             for (int i = 0; i < result.size(); i++) {
                                 Module module = result.get(i);
-                                mValves.put(module.getId(),module);
+                                mModules.put(module.getId(),module);
                                 int idx = i;
                                 initSensorsPath(module);
                                 mConnection.getCollection(mPathSensors.get(module.getId()), Sensor.class).get(
@@ -74,8 +73,8 @@ public class Repository {
                                                     initSensorsDbListener(module);
                                                 }
 
-                                                if (idx == mValves.size() - 1) {
-                                                    taskCompletedListener.onComplete(new ArrayList<>(mValves.values()));
+                                                if (idx == mModules.size() - 1) {
+                                                    taskCompletedListener.onComplete(new ArrayList<>(mModules.values()));
                                                 }
                                             }
 
@@ -94,7 +93,7 @@ public class Repository {
                         }
                     });
         } else {
-            taskCompletedListener.onComplete(new ArrayList<>(mValves.values()));
+            taskCompletedListener.onComplete(new ArrayList<>(mModules.values()));
         }
     }
 
@@ -122,14 +121,14 @@ public class Repository {
                     public void onComplete(List<Module> updatedModules) {
                         for (Module updated :
                                 updatedModules) {
-                            Module module = mValves.get(updated.getId());
+                            Module module = mModules.get(updated.getId());
                             module.update(updated);
                         }
                     }
 
                     @Override
                     public void onFailure(Exception ex) {
-                        logInitListenerEx(ex);
+                        logListenerError(ex);
                     }
                 });
     }
@@ -148,12 +147,12 @@ public class Repository {
 
                 @Override
                 public void onFailure(Exception exception) {
-                    logInitListenerEx(exception);
+                    logListenerError(exception);
                 }
             });
     }
 
-    private void logInitListenerEx(Exception ex) {
+    private void logListenerError(Exception ex) {
         Log.w(TAG, ex.getMessage() != null ?
                 ex.getMessage() : "failed to initialize data base listener");
     }
