@@ -9,7 +9,6 @@ import android.util.Log;
 import com.netanel.irrigator_app.model.Actions;
 import com.netanel.irrigator_app.model.Command;
 import com.netanel.irrigator_app.model.Module;
-import com.netanel.irrigator_app.model.Sensor;
 import com.netanel.irrigator_app.services.AppServices;
 import com.netanel.irrigator_app.services.Repository;
 import com.netanel.irrigator_app.services.StringExt;
@@ -18,7 +17,6 @@ import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
 import com.netanel.irrigator_app.services.connection.NullResultException;
 import com.netanel.irrigator_app.services.connection.NetworkUtilities;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -287,37 +285,6 @@ public class ManualViewModel extends ObservableViewModel
         }
     }
 
-    private void testSensors() {
-        List<SensorViewModel> sensors = new ArrayList<>();
-
-        for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.SensorType.HUMIDITY, 100);
-            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
-            SensorViewModel viewModel = new SensorViewModel(s1);
-            sensors.add(viewModel);
-        }
-        for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.SensorType.TEMPERATURE, 99);
-            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
-            SensorViewModel viewModel = new SensorViewModel(s1);
-            sensors.add(viewModel);
-        }
-        for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.SensorType.FLOW, 9);
-            s1.setCurrVal(0.5);
-            SensorViewModel viewModel = new SensorViewModel(s1);
-            sensors.add(viewModel);
-        }
-        for (int i = 0; i < 2; i++) {
-            Sensor s1 = new Sensor(Sensor.SensorType.PH, 15);
-            s1.setCurrVal((float) (s1.getMaxVal() / 2) * (i + 1));
-            SensorViewModel viewModel = new SensorViewModel(s1);
-            sensors.add(viewModel);
-        }
-
-        setSensors(sensors);
-    }
-
     private void runOnUiThread(Runnable action) {
         mHandler.post(action);
     }
@@ -370,7 +337,9 @@ public class ManualViewModel extends ObservableViewModel
                     1000) {
                 @Override
                 public void onTick(long l) {
-                    mSelectedValve.setProgress(mProgress = (int) l / 1000);
+                    mProgress = (int) l / 1000;
+                    if(mProgress != 0)
+                        mSelectedValve.setProgress(mProgress);
                 }
 
                 @Override

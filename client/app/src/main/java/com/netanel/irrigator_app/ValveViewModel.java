@@ -94,8 +94,8 @@ public class ValveViewModel extends ObservableViewModel{
             notifyPropertyChanged(BR.progress);
             if(mEditedProgress == 0) {
                 notifyPropertyChanged(BR.open);
+                resetViewStates();
             }
-            resetViewStates();
         }
     }
 
