@@ -34,7 +34,7 @@ public class SensorViewModel extends ObservableViewModel{
         mSensor = sensor;
         mListenerRegistration = mSensor.addPropertyChangedListener(this::onPropertyChanged);
 
-        assignResources();
+        assignTypeResources();
     }
 
     @Bindable
@@ -87,16 +87,16 @@ public class SensorViewModel extends ObservableViewModel{
                 break;
 
             case Sensor.PROP_MEASURE:
+                assignTypeResources();
                 notifyPropertyChanged(BR.textValue);
-                notifyPropertyChanged(BR.drawable);
                 break;
         }
     }
 
-    private void assignResources() {
+    private void assignTypeResources() {
         switch (mSensor.getType()) {
             case EC:
-                // TODO: 19/12/2021 add drawable to EC: Electrical Conductivity
+                setDrawable(R.drawable.ic_electric_meter);
                 mResolution = Resolution.Double0x1;
                 break;
             case PH:
