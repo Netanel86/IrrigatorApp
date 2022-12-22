@@ -224,7 +224,7 @@ class EPModule(DictParseable):
         self,
         ip: str = "",
         port: int = 502,
-        timeout: float = 0.5,
+        timeout: float = 1,
         max_duration: int = 600,
     ):
         self._id: str = ""
@@ -233,12 +233,12 @@ class EPModule(DictParseable):
         self.on_time: datetime = datetime.now().astimezone()
         self.max_duration: int = max_duration
         self.duration: int = 0
-        self.ip: str = ip
+        self.ip = ip
         self.port: int = port
         self.timeout: float = timeout
         self.sensors: List[AnalogSensor] = []
 
-        self.client = ModbusClient()
+        self.client = ModbusClient(host=self.ip, port=self.port, timeout=self.timeout)
         self.bComError = True
         self.bConnected = False
         self.regs = []
@@ -257,10 +257,10 @@ class EPModule(DictParseable):
         self.RESET_TOTAL_WATER_FLOW = 0
 
     def connect(self):
-        self.client.host(self.ip)
-        self.client.port(self.port)
-        self.client.timeout(self.timeout)
-        if not self.client.is_open():
+        # self.client.host("192.168.0.201")
+        # self.client.port(self.port)
+        # self.client.timeout(self.timeout)
+        if not self.client.is_open:
             if not self.client.open():
                 self.bcomError = True
                 self.bConnected = False
@@ -269,7 +269,7 @@ class EPModule(DictParseable):
             self.bConnected = True
 
     def ReadClentRegs(self):
-        if self.client.is_open():
+        if self.client.is_open:
             self.regs = self.client.read_holding_registers(0, 15)
             if self.regs:
                 # self.bcomError = False
@@ -314,7 +314,7 @@ class EPModule(DictParseable):
             return False
 
     def SetDuration(self, Duration):
-        if self.bConnected and Duration > 0 and self.duration <= self.MaxDuration:
+        if self.bConnected and Duration > 0 and self.duration <= self.max_duration:
             self.client.write_single_register(4, Duration)
             return True
         else:

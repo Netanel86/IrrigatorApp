@@ -141,10 +141,10 @@ def update_module_sensors():
 
 
 repo = Repository()
+repo.init_command_listener(command_callback)
 update_module_sensors()
 # add_module_wSensors()
 # add_batch_modules_wSensors()
-# repo.init_command_listener(command_callback)
 modules = repo.get_modules()
 # dic = mods["0.0.0.0"].to_dict(("hell",))
 # mod = EPModule.from_dict({"hello": 1})
