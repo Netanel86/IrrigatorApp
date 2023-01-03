@@ -142,7 +142,7 @@ class AnalogSensor(DictParseable):
 
     def __init__(
         self,
-        _type: Sensors = None,
+        _type: SensorType = None,
         aIn=0,
         aIn_Min=1140,
         aIn_Max=3100,
@@ -151,7 +151,7 @@ class AnalogSensor(DictParseable):
         ScalingErrorOffset=3,
     ):
         self._id: str = ""
-        self.type: Sensors = _type
+        self.type: SensorType = _type
         self.curr_val: float = 0
         self.min_val: float = min_val
         self.max_val: float = max_val
@@ -184,11 +184,11 @@ class AnalogSensor(DictParseable):
 
         return self.curr_val
 
-    def GetSensorValue(self):
+    def getCurrentValue(self):
         return self.curr_val
 
 
-class Sensors(Enum):
+class SensorType(Enum):
     EC = "EC"
     FLOW = "L/s"
     HUMIDITY = "%"

@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from unittest import result
-from ModelLib import AnalogSensor, EPModule, Sensors
+from ModelLib import AnalogSensor, EPModule, SensorType
 from repository import Repository, Command, Actions
 
 
@@ -44,9 +44,9 @@ def add_module_wSensors():
     module = EPModule("0.1.0.0")
     module.description = "PYS#0"
     module.sensors = [
-        AnalogSensor(Sensors.EC),
-        AnalogSensor(Sensors.TEMPERATURE),
-        AnalogSensor(Sensors.FLOW),
+        AnalogSensor(SensorType.EC),
+        AnalogSensor(SensorType.TEMPERATURE),
+        AnalogSensor(SensorType.FLOW),
     ]
     id = repo.add_module(module)
     if id != None:
@@ -63,9 +63,9 @@ def add_batch_modules_wSensors():
     for idx, module in enumerate(modules):
         module.description = "PYS#{}".format(idx + 1)
         module.sensors = [
-            AnalogSensor(Sensors.EC),
-            AnalogSensor(Sensors.TEMPERATURE),
-            AnalogSensor(Sensors.FLOW),
+            AnalogSensor(SensorType.EC),
+            AnalogSensor(SensorType.TEMPERATURE),
+            AnalogSensor(SensorType.FLOW),
         ]
 
     ids = repo.add_modules(modules)
@@ -121,9 +121,9 @@ def update_module_sensors():
     res = False
     for sensor in module.sensors:
         sensor.curr_val += 1
-        if sensor.type == Sensors.TEMPERATURE.name:
+        if sensor.type == SensorType.TEMPERATURE.name:
             sensor.max_val = 200
-        if sensor.type == Sensors.EC.name:
+        if sensor.type == SensorType.EC.name:
             sensor.max_val = 7
 
     res = repo.update_sensors(

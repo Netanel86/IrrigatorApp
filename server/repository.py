@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Tuple
 from datetime import datetime
 from enum import Enum
-from ModelLib import AnalogSensor, DictParseable, EPModule, Sensors
+from ModelLib import AnalogSensor, DictParseable, EPModule, SensorType
 from firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
 from PyExtensions import reverseDict, isEmpty
@@ -233,7 +233,7 @@ class Repository(object):
 
         local_dicts = []
         module_ids = []
-        all_sensors: List[List[Sensors]] = []
+        all_sensors: List[List[SensorType]] = []
         for idx, module in enumerate(modules):
             module.id = doc_ids[idx]
             module_ids.append(module.id)
