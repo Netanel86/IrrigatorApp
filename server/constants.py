@@ -82,11 +82,10 @@ __LOC_TABLES = __LocTables("system", "modules", "sensors")
 
 __ModuleLocColumns = namedtuple(
     "__ModuleLocColumns",
-    "ID MASTER_ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT",
+    "ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT",
 )
 __LOC_MOD_COLUMNS = __ModuleLocColumns(
     "id",
-    "master_id",
     "ip",
     "description",
     "max_duration",
@@ -97,7 +96,6 @@ __LOC_MOD_COLUMNS = __ModuleLocColumns(
 )
 __LOC_MOD_TYPES = (
     (__LOC_MOD_COLUMNS.ID, TYPES.TEXT),
-    (__LOC_MOD_COLUMNS.MASTER_ID, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.IP, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.DESCRIPTION, TYPES.TEXT),
     (__LOC_MOD_COLUMNS.MAX_DURATION, TYPES.INT),

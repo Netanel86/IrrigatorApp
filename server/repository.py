@@ -263,7 +263,7 @@ class Repository(object):
         return self.__modules
 
     def __parse_modules(self, col_data: Tuple[Tuple], values: List[Tuple]):
-        mod_col_count = len(Local.Modules.COLUMNS) - 1
+        mod_col_count = len(Local.Modules.COLUMNS)
         sen_col_last_idx = mod_col_count + len(SENSOR_COLUMNS)
 
         modules: Dict[str, EPModule] = {}
@@ -281,6 +281,7 @@ class Repository(object):
                 modules[module_ip] = EPModule.from_dict(
                     module_dict, MODULE_FROM_LOCAL_MAP
                 )
+                modules[module_ip].init_client()
 
             if sensor_dict[Local.Sensors.ColName.ID] is not None:
                 module = AnalogSensor.from_dict(sensor_dict, SENSOR_FROM_LOCAL_MAP)
