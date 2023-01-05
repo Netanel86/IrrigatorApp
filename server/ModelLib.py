@@ -5,9 +5,9 @@ from collections import namedtuple
 from enum import Enum
 import logging
 from PyExtensions import isEmpty
-from pyModbusTCP.client import ModbusClient
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Tuple
+from paho.mqtt import client as mqtt_client
 
 
 class DictParseable(ABC):
@@ -241,14 +241,7 @@ class EPModule(DictParseable):
         self.bComError = True
         self.bConnected = False
         self.regs = []
-        if isEmpty(ip):
-            self.client = None
-        else:
-            self.init_client()
 
-        # self.SoilSensor1 = AnalogSensor()
-        # self.SoilSensor2 = AnalogSensor()
-        # self.SoilSensor3 = AnalogSensor()
         self.RelayOut = 0
         self.WATER_REQUEST = 0
         self.OUTPUT_MODE = 0
@@ -260,85 +253,40 @@ class EPModule(DictParseable):
         self.TOTAL_WATER_FLOW = 0
         self.RESET_TOTAL_WATER_FLOW = 0
 
-    def init_client(self):
-        if self.client is not None:
-            logging.warning(
-                "> in {}.{}(): Attempt to initialize a client that has already been initialized".format(
-                    self.__class__.__name__, self.init_client.__name__
-                )
-            )
-        else:
-            self.client = ModbusClient(
-                host=self.ip, port=self.port, timeout=self.timeout
-            )
+    def subscribe(self, client: mqtt_client):
+        client.subscribe(self.ip)
 
-    def connect(self):
-        # self.client.host("192.168.0.201")
-        # self.client.port(self.port)
-        # self.client.timeout(self.timeout)
-        if not self.client.is_open:
-            if not self.client.open():
-                self.bcomError = True
-                self.bConnected = False
-        else:
-            self.bcomError = False
-            self.bConnected = True
+        def on_message(client, data, msg):
+            print(msg.payload.decode())
 
-    def ReadClentRegs(self):
-        if self.client.is_open:
-            self.regs = self.client.read_holding_registers(0, 15)
-            if self.regs:
-                # self.bcomError = False
-                # self.bConnected = True
-                for idx, sensor in enumerate(self.sensors):
-                    sensor.LinearConversion(self.regs[idx])
-                # self.SoilSensor1.LinearConversion(self.regs[0])
-                # self.SoilSensor2.LinearConversion(self.regs[1])
-                # self.SoilSensor3.LinearConversion(self.regs[2])
-                self.RelayOut = self.regs[3]
-                self.duration = self.regs[4]
-                self.WATER_REQUEST = self.regs[5]
-                self.OUTPUT_MODE = self.regs[6]
-                self.REMAINING_TIME = self.regs[7]
-                self.RelayState = self.regs[8]
-                self.TEMPRATURE = self.regs[9]
-                self.HUMIDITY = self.regs[10]
-                self.CURRENT_WATER_FLOW = self.regs[11]
-                self.TOTAL_WATER_FLOW = self.regs[12]
-                self.RESET_TOTAL_WATER_FLOW = self.regs[13]
-        else:
-            self.bcomError = True
-            self.bConnected = False
+        client.on_message = on_message
 
-    def GetRegs(self):
-        if self.regs:
-            return self.regs
-        else:
-            return 0
+    def connect(self, client: mqtt_client):
+        client.on_connect = self.subscribe(client)
 
-    def get_sensors_values(self) -> List[int]:
+        # def get_sensors_values(self) -> List[int]:
         values = []
         for sensor in self.sensors:
             values.append(sensor.curr_val)
         return values
 
-    def SetRelay(self, state):
-        if self.bConnected:
-            self.client.write_single_register(3, state)
-            return True
-        else:
-            return False
+    # def SetRelay(self, state):
+    #     if self.bConnected:
+    #         self.client.write_single_register(3, state)
+    #         return True
+    #     else:
+    #         return False
 
-    def SetDuration(self, Duration):
-        if self.bConnected and Duration > 0 and self.duration <= self.max_duration:
-            self.client.write_single_register(4, Duration)
-            return True
-        else:
-            return False
+    # def SetDuration(self, Duration):
+    #     if self.bConnected and Duration > 0 and self.duration <= self.max_duration:
+    #         self.client.write_single_register(4, Duration)
+    #         return True
+    #     else:
+    #         return False
 
-    def GetComState(self):
-        print(str(self.bComError))
-        return self.bComError
+    # def GetComState(self):
+    #     print(str(self.bComError))
+    #     return self.bComError
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
