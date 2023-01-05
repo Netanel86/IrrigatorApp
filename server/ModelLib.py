@@ -4,6 +4,7 @@ from abc import ABC
 from collections import namedtuple
 from enum import Enum
 import logging
+from PyExtensions import isEmpty
 from pyModbusTCP.client import ModbusClient
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Tuple
@@ -95,13 +96,13 @@ class DictParseable(ABC):
         is_map = from_map is not None
         for prop, value in source.items():
             is_in_map = is_map and prop in from_map.keys()
-            obj_prop = prop if not is_map | (not is_in_map) else from_map[prop]
             if is_map and not is_in_map:
                 logging.warning(
                     "Key Missing: no such key in 'from_map': '{}', using key instead..".format(
                         prop
                     )
                 )
+            obj_prop = prop if not is_map | (not is_in_map) else from_map[prop]
             if not hasattr(module, obj_prop):
                 cls._raiseAttributeError(setattr.__name__, obj_prop)
             setattr(module, obj_prop, value)
@@ -237,11 +238,14 @@ class EPModule(DictParseable):
         self.port: int = port
         self.timeout: float = timeout
         self.sensors: List[AnalogSensor] = []
-
-        self.client = ModbusClient(host=self.ip, port=self.port, timeout=self.timeout)
         self.bComError = True
         self.bConnected = False
         self.regs = []
+        if isEmpty(ip):
+            self.client = None
+        else:
+            self.init_client()
+
         # self.SoilSensor1 = AnalogSensor()
         # self.SoilSensor2 = AnalogSensor()
         # self.SoilSensor3 = AnalogSensor()
@@ -255,6 +259,18 @@ class EPModule(DictParseable):
         self.CURRENT_WATER_FLOW = 0
         self.TOTAL_WATER_FLOW = 0
         self.RESET_TOTAL_WATER_FLOW = 0
+
+    def init_client(self):
+        if self.client is not None:
+            logging.warning(
+                "> in {}.{}(): Attempt to initialize a client that has already been initialized".format(
+                    self.__class__.__name__, self.init_client.__name__
+                )
+            )
+        else:
+            self.client = ModbusClient(
+                host=self.ip, port=self.port, timeout=self.timeout
+            )
 
     def connect(self):
         # self.client.host("192.168.0.201")
