@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.controls;
 
 
 import android.content.Context;

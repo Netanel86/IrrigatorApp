@@ -2,7 +2,7 @@
     <string name="app_name">Irrigator App</string>
 
     <string name="error_no_valves">No valves found</string>
-    <string name="error_loading_valve">Error loading valve</string>
+    <string name="error_loading_valve">Error loading module</string>
 
     <string name="msg_connection_resumed">Connection resumed</string>
     <string name="msg_loading_valves">Loading valves</string>
@@ -11,7 +11,7 @@
     <string name="msg_loaded_successful">Data loaded successfully</string>
     <string name="msg_returned_null_result">Something went wrong, data base returned no result</string>
 
-    <string name="tip_use_power_button">Tip: use the power button to turn off a valve</string>
+    <string name="tip_use_power_button">Tip: use the power button to turn off a module</string>
 
     <string name="time_unit_seconds">sec</string>
     <string name="time_unit_minutes">min</string>

@@ -1,8 +1,10 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.controls;
 
 
 import android.content.Context;
 import android.util.AttributeSet;
+
+import com.netanel.irrigator_app.R;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageButton;

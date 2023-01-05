@@ -25,7 +25,11 @@
         <attr name="circle_fill" format="color"/>
     </declare-styleable>
 
-    <declare-styleable name="IMultiStateView.States">
+    <declare-styleable name="ExtCircularSeekBar">
+        <attr name="glow_enabled" format="boolean"/>
+    </declare-styleable>
+
+    <declare-styleable name="IMultiStateView.DrawableStates">
         <attr name="state_activated" format="boolean"/>
         <attr name="state_edited" format="boolean" />
     </declare-styleable>

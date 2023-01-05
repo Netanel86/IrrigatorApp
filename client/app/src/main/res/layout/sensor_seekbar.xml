@@ -11,7 +11,7 @@
     android:layout_height="match_parent"
     android:layout_width="match_parent"
     paddingInDp="@{3}">
-        <com.devadvance.circularseekbar.CircularSeekBar
+        <com.netanel.irrigator_app.controls.ExtCircularSeekBar
         android:id="@+id/seekbar_sensor"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -29,6 +29,7 @@
         app:pointer_halo_width="0dp"
         app:pointer_radius="0dp"
         app:use_custom_radii="true"
+        app:glow_enabled="false"
         app:max="@{sensorVM.maxProgress}"
         app:progress="@{sensorVM.progress}"
         enabled="@{false}"/>

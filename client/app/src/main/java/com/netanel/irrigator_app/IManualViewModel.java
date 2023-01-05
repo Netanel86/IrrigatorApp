@@ -27,20 +27,20 @@ public interface IManualViewModel extends Observable {
     Object[] getMessageArray();
 
     @Bindable
-    List<ValveViewModel> getValves();
+    List<ModuleViewModel> getValves();
 
     @Bindable
     List<SensorViewModel> getSensors();
 
     @Bindable
-    ValveViewModel getSelectedValve();
+    ModuleViewModel getSelectedValve();
 
     @Bindable
     boolean getEnabled();
 
     void setRelativeProgress(double relativeProgress);
 
-    void onTabValveSelected(ValveViewModel valveVm);
+    void onTabValveSelected(ModuleViewModel valveVm);
 
     void onSeekBarProgressChanged(final int progress, boolean fromUser);
 

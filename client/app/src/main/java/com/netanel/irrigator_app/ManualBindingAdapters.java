@@ -11,6 +11,8 @@ import android.widget.ViewSwitcher;
 import com.devadvance.circularseekbar.CircularSeekBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.netanel.irrigator_app.controls.FilledTabLayout;
+import com.netanel.irrigator_app.controls.IMultiStateView;
 import com.netanel.irrigator_app.databinding.SensorSeekbarBinding;
 import com.netanel.irrigator_app.databinding.TabValveBinding;
 import com.netanel.irrigator_app.services.StringExt;
@@ -40,12 +42,12 @@ public class ManualBindingAdapters {
     private static int mOptimizedSensorCount = 0;
 
     @BindingAdapter("tabs")
-    public static void setValveTabs(FilledTabLayout tabLayout, List<ValveViewModel> valves) {
-        if(valves != null) {
+    public static void setModuleTabs(FilledTabLayout tabLayout, List<ModuleViewModel> modules) {
+        if(modules != null) {
             LifecycleOwner lifecycleOwner = FragmentManager
                     .findFragment(tabLayout).getViewLifecycleOwner();
-            for (ValveViewModel viewModel :
-            valves) {
+            for (ModuleViewModel viewModel :
+            modules) {
 
                 TabValveBinding binding =
                         DataBindingUtil.inflate(
@@ -67,25 +69,56 @@ public class ManualBindingAdapters {
 
     @BindingAdapter("cells")
     public static void setSensorsGrid(GridLayout grid, List<SensorViewModel> sensors) {
-        if(sensors != null) {
-            LifecycleOwner lifeCycleOwner = FragmentManager
-                    .findFragment(grid).getViewLifecycleOwner();
-            for (SensorViewModel viewModel :
-                    sensors) {
+        if(sensors != null && !sensors.isEmpty()) {
+            int viewCount = grid.getChildCount();
 
-                SensorSeekbarBinding binding =
-                        DataBindingUtil.inflate(LayoutInflater.from(grid.getContext()),
-                                R.layout.sensor_seekbar,
-                                grid,
-                                false);
-                binding.setSensorVM(viewModel);
-                binding.setLifecycleOwner(lifeCycleOwner);
-                View sensorView = binding.getRoot();
-
-                grid.addView(sensorView);
+            for (int i = 0; i < sensors.size(); i++) {
+                SensorViewModel viewModel = sensors.get(i);
+                View sensorView;
+                if (i < viewCount) {
+                    sensorView = grid.getChildAt(i);
+                    SensorSeekbarBinding binding = DataBindingUtil.getBinding(sensorView);
+                    binding.setSensorVM(viewModel);
+                    sensorView.setActivated(true);
+                    sensorView.setVisibility(View.VISIBLE);
+                } else {
+                    sensorView = newSensorViewBinding(grid, viewModel);
+                    grid.addView(sensorView);
+                }
                 calculateSensorOptimalDimen(sensorView, grid, sensors.size());
             }
+
+            if(viewCount > sensors.size()) {
+                unbindAndHideSensorViews(grid,sensors.size());
+            }
+        }else{
+            unbindAndHideSensorViews(grid,0);
         }
+    }
+
+    private static void unbindAndHideSensorViews(ViewGroup parent, int start) {
+        int viewCount = parent.getChildCount();
+        for(int i = start; i < viewCount; i++) {
+            View sensorView = parent.getChildAt(i);
+            SensorSeekbarBinding binding = DataBindingUtil.getBinding(sensorView);
+            binding.unbind();
+            sensorView.setVisibility(View.GONE);
+        }
+    }
+    private static View newSensorViewBinding(ViewGroup parent, SensorViewModel viewModel) {
+        LifecycleOwner lifeCycleOwner = FragmentManager
+                .findFragment(parent).getViewLifecycleOwner();
+
+        SensorSeekbarBinding binding =
+                DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()),
+                        R.layout.sensor_seekbar,
+                        parent,
+                        false);
+        binding.setSensorVM(viewModel);
+        binding.setLifecycleOwner(lifeCycleOwner);
+        View sensorView = binding.getRoot();
+
+        return sensorView;
     }
 
     @BindingAdapter("onTabSelected")
@@ -95,7 +128,7 @@ public class ManualBindingAdapters {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 TabValveBinding binding = DataBindingUtil.getBinding(tab.getCustomView());
-                ValveViewModel selectedVm = binding.getValveViewModel();
+                ModuleViewModel selectedVm = binding.getValveViewModel();
                 listener.onTabSelected(selectedVm);
             }
 
@@ -123,12 +156,12 @@ public class ManualBindingAdapters {
     }
 
     @BindingAdapter("states")
-    public static void setViewStates(View view, EnumSet<ValveViewModel.State> states) {
+    public static void setViewStates(View view, EnumSet<ModuleViewModel.State> states) {
         if(view instanceof IMultiStateView) {
             IMultiStateView stateView = (IMultiStateView) view;
-            boolean isActivated = states != null && states.contains(ValveViewModel.State.ACTIVATED);
-            boolean isEnabled = states != null && states.contains(ValveViewModel.State.ENABLED);
-            boolean isEdited = states != null && states.contains(ValveViewModel.State.EDITED);
+            boolean isActivated = states != null && states.contains(ModuleViewModel.State.ACTIVATED);
+            boolean isEnabled = states != null && states.contains(ModuleViewModel.State.ENABLED);
+            boolean isEdited = states != null && states.contains(ModuleViewModel.State.EDITED);
 
             stateView.setEnabled(isEnabled);
             stateView.setActivated(isActivated);
@@ -233,6 +266,6 @@ public class ManualBindingAdapters {
      */
 
     public interface OnTabSelectedListener {
-        void onTabSelected(ValveViewModel valveVm);
+        void onTabSelected(ModuleViewModel valveVm);
     }
 }

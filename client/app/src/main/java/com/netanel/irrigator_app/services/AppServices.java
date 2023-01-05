@@ -3,8 +3,9 @@ package com.netanel.irrigator_app.services;
 import android.app.Application;
 import android.util.Log;
 
-import com.netanel.irrigator_app.services.connection.FirebaseConnection;
-import com.netanel.irrigator_app.services.connection.IDataBaseConnection;
+import com.netanel.irrigator_app.connection.FirebaseConnection;
+import com.netanel.irrigator_app.connection.IDataBaseConnection;
+import com.netanel.irrigator_app.connection.Repository;
 import com.netanel.irrigator_app.services.json_parser.GsonParser;
 import com.netanel.irrigator_app.services.json_parser.IJsonParser;
 

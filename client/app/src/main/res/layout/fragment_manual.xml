@@ -18,7 +18,7 @@
         messageResource="@{manualViewModel.messageResource}"
         message="@{manualViewModel.message}"
         messageComposed="@{manualViewModel.messageArray}">
-        <com.netanel.irrigator_app.FilledTabLayout
+        <com.netanel.irrigator_app.controls.FilledTabLayout
             android:id="@+id/tab_layout_valves"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -179,7 +179,7 @@
 
                             </androidx.appcompat.widget.LinearLayoutCompat>
 
-                            <com.netanel.irrigator_app.ExtCircularSeekBar
+                            <com.netanel.irrigator_app.controls.ExtCircularSeekBar
                                 android:id="@+id/seekbar_timer"
                                 android:layout_width="300dp"
                                 android:layout_height="300dp"
@@ -204,7 +204,7 @@
                                 onProgressChanged="@{manualViewModel::onSeekBarProgressChanged}"
                                 states="@{manualViewModel.selectedValve.viewStates}"/>
 
-                            <com.netanel.irrigator_app.ExtImageButton
+                            <com.netanel.irrigator_app.controls.ExtImageButton
                                 android:id="@+id/img_btn_power"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"

@@ -1,4 +1,4 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.controls;
 
 
 /**
@@ -10,7 +10,7 @@ package com.netanel.irrigator_app;
  * Created on 24/10/2021
  */
 
-interface IMultiStateView {
+public interface IMultiStateView {
     void setActivated(boolean activated);
     void setEdited(boolean edited);
     void setEnabled(boolean enabled);

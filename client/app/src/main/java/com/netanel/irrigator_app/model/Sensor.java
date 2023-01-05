@@ -17,74 +17,103 @@ import com.netanel.irrigator_app.services.StringExt;
 public class Sensor extends Observable{
     public static final int PROP_MEASURE = 0;
     public static final int PROP_MAX_VALUE = 1;
+    public static final int PROP_MIN_VALUE = 3;
     public static final int PROP_VALUE = 2;
     public static final int PROP_PARENT_ID = 3;
+
+    public String getId() {
+        return mId;
+    }
+
+    public void setId(String mId) {
+        this.mId = mId;
+    }
 
     @DocumentId
     public String mId;
 
-    private String mControllerId;
-    private Measure mMeasure;
-    private double mValue;
-    private double mMaxValue;
+    private String mModuleId;
+    private SensorType mType;
+    private double mCurrVal;
+    private double mMaxVal;
+    private double mMinVal;
 
     public Sensor() {
     }
 
-    public Sensor(Measure measure, int maxValue) {
-        mMeasure = measure;
-        mMaxValue = maxValue;
+    public Sensor(SensorType type, int maxValue) {
+        mType = type;
+        mMaxVal = maxValue;
     }
 
-    public Measure getMeasures() {
-        return this.mMeasure;
+    public SensorType getType() {
+        return this.mType;
     }
 
-    public void setMeasures(Measure measure) {
-        if (mMeasure != measure) {
-            Measure oldVal = mMeasure;
-            mMeasure = measure;
-            notifyPropertyChanged(PROP_MEASURE, oldVal, mMeasure);
+    public void setType(SensorType type) {
+        if (mType != type) {
+            SensorType oldVal = mType;
+            mType = type;
+            notifyPropertyChanged(PROP_MEASURE, oldVal, mType);
         }
     }
 
-    public double getValue() {
-        return mValue;
+    public double getCurrVal() {
+        return mCurrVal;
     }
 
-    public void setValue(double value) {
-        if (mValue != value) {
-            double oldVal = mValue;
-            mValue = value;
-            notifyPropertyChanged(PROP_VALUE, oldVal, mValue);
+    public void setCurrVal(double value) {
+        if (mCurrVal != value) {
+            double oldVal = mCurrVal;
+            mCurrVal = value;
+            notifyPropertyChanged(PROP_VALUE, oldVal, mCurrVal);
         }
     }
 
-    public String getControllerId() {
-        return mControllerId;
+    public String getModuleId() {
+        return mModuleId;
     }
 
-    public void setControllerId(String parentId) {
-        if (!mControllerId.equals(parentId)) {
-            String oldVal = mControllerId;
-            mControllerId = parentId;
-            notifyPropertyChanged(PROP_PARENT_ID, oldVal, mControllerId);
+    public void setModuleId(String parentId) {
+        if (mModuleId == null || !mModuleId.equals(parentId)) {
+            String oldVal = mModuleId;
+            mModuleId = parentId;
+            notifyPropertyChanged(PROP_PARENT_ID, oldVal, mModuleId);
         }
     }
 
-    public double getMaxValue() {
-        return mMaxValue;
+    public double getMaxVal() {
+        return mMaxVal;
     }
 
-    public void setMaxValue(double maxValue) {
-        if (mMaxValue != maxValue) {
-            double oldVal = mMaxValue;
-            mMaxValue = maxValue;
-            notifyPropertyChanged(PROP_MAX_VALUE, oldVal, mMaxValue);
+    public void setMaxVal(double maxValue) {
+        if (mMaxVal != maxValue) {
+            double oldVal = mMaxVal;
+            mMaxVal = maxValue;
+            notifyPropertyChanged(PROP_MAX_VALUE, oldVal, mMaxVal);
         }
     }
 
-    public enum Measure {
+    public double getMinVal() {
+        return mMaxVal;
+    }
+
+    public void setMinVal(double minValue) {
+        if (mMinVal != minValue) {
+            double oldVal = mMinVal;
+            mMinVal = minValue;
+            notifyPropertyChanged(PROP_MIN_VALUE, oldVal, mMinVal);
+        }
+    }
+
+    public void update(Sensor updated) {
+        this.setModuleId(updated.getModuleId());
+        this.setMaxVal(updated.getMaxVal());
+        this.setType(updated.getType());
+        this.setCurrVal(updated.getCurrVal());
+    }
+
+    public enum SensorType {
         HUMIDITY("%"),
         TEMPERATURE(StringExt.SYMBOL_CELSIUS),
         PH("pH"),
@@ -93,7 +122,7 @@ public class Sensor extends Observable{
 
         public final String symbol;
 
-        Measure(String symbol) {
+        SensorType(String symbol) {
             this.symbol = symbol;
         }
     }

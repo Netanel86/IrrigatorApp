@@ -1,13 +1,14 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.controls;
 
 
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
+import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
+import com.netanel.irrigator_app.R;
 
 /**
  * <p></p>
@@ -36,6 +37,26 @@ public class ExtCircularSeekBar extends CircularSeekBar implements IMultiStateVi
 
     public ExtCircularSeekBar(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+    }
+
+    @Override
+    protected void init(AttributeSet attrs, int defStyle) {
+        super.init(attrs, defStyle);
+
+        TypedArray typedArray = getContext().obtainStyledAttributes(attrs, R.styleable.ExtCircularSeekBar, defStyle, 0);
+
+        initExtAttributes(typedArray);
+
+        typedArray.recycle();
+    }
+
+    protected void initExtAttributes(TypedArray attrArray) {
+
+        boolean glowEnabled = attrArray.getBoolean(R.styleable.ExtCircularSeekBar_glow_enabled, true);
+
+        if (!glowEnabled) {
+            mCircleProgressGlowPaint = new Paint(mCircleProgressPaint);
+        }
     }
 
     @Override
@@ -71,7 +92,7 @@ public class ExtCircularSeekBar extends CircularSeekBar implements IMultiStateVi
             mergeDrawableStates(baseState, STATE_EDITED);
         }
         if (mIsActivated) {
-            mergeDrawableStates(baseState,STATE_ACTIVATED);
+            mergeDrawableStates(baseState, STATE_ACTIVATED);
         }
 
         return baseState;

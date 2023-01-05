@@ -3,10 +3,15 @@ package com.netanel.irrigator_app.model;
 
 import com.google.firebase.firestore.DocumentId;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -16,59 +21,62 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0
  * Created on 02/09/2020
  */
-public class Valve extends Observable {
+public class Module extends Observable {
     public static final int PROP_ID_DESCRIPTION = 0;
     public static final int PROP_ID_ON_TIME = 1;
     public static final int PROP_ID_DURATION = 2;
     public static final int PROP_ID_INDEX = 3;
     public static final int PROP_ID_MAX_DURATION = 4;
+    public static final int PROP_ID_SENSORS = 5;
     public static final String PROP_DESCRIPTION = "description";
-    public static final String PROP_ON_TIME = "time";
+    public static final String PROP_ON_TIME = "onTime";
     public static final String PROP_DURATION = "duration";
-    public static final String PROP_INDEX = "index";
-    public static final String PROP_MAX_DURATION = "max_duration";
+    public static final String PROP_IP = "ip";
+    public static final String PROP_MAX_DURATION = "maxDuration";
 
     @DocumentId
     public String mId;
 
-    private int mIndex;
+    private String mIp;
     private int mMaxDuration;
     private String mDescription;
     private Date mOnTime;
     private int mDurationInSec;
+    private Map<String, Sensor> mSensors;
 
-    public Valve(){}
+    public Module(){}
 
-    public Valve(int index) {
-        mIndex = index;
+    public Module(String ip) {
+        mIp = ip;
         mOnTime = new Date();
+        mSensors = new HashMap<>();
     }
 
-    public void update(Valve updatedValve) {
-        this.setOnTime(updatedValve.getOnTime());
-        this.setDuration(updatedValve.getDuration());
-        this.setDescription(updatedValve.getDescription());
-        this.setIndex(updatedValve.getIndex());
-        this.setMaxDuration(updatedValve.getMaxDuration());
+    public void update(Module updatedModule) {
+        this.setOnTime(updatedModule.getOnTime());
+        this.setDuration(updatedModule.getDuration());
+        this.setDescription(updatedModule.getDescription());
+        this.setIp(updatedModule.getIp());
+        this.setMaxDuration(updatedModule.getMaxDuration());
     }
 
     public void update(Map<String, Object> propertyDict) {
         for (String propKey :
                 propertyDict.keySet()) {
             switch (propKey){
-                case Valve.PROP_ON_TIME:
+                case Module.PROP_ON_TIME:
                     this.setOnTime((Date)propertyDict.get(propKey));
                     break;
-                case Valve.PROP_DURATION:
+                case Module.PROP_DURATION:
                     this.setDuration((int)propertyDict.get(propKey));
                     break;
-                case Valve.PROP_DESCRIPTION:
+                case Module.PROP_DESCRIPTION:
                     this.setDescription((String)propertyDict.get(propKey));
                     break;
-                case Valve.PROP_INDEX:
-                    this.setIndex((int)propertyDict.get(propKey));
+                case Module.PROP_IP:
+                    this.setIp((String)propertyDict.get(propKey));
                     break;
-                case Valve.PROP_MAX_DURATION:
+                case Module.PROP_MAX_DURATION:
                     this.setMaxDuration((int)propertyDict.get(propKey));
                     break;
             }
@@ -138,15 +146,15 @@ public class Valve extends Observable {
         }
     }
 
-    public int getIndex() {
-        return mIndex;
+    public String getIp() {
+        return mIp;
     }
 
-    public void setIndex(int index) {
-        if(this.mIndex != index) {
-            int oldIndex = this.mIndex;
-            this.mIndex = index;
-            notifyPropertyChanged(PROP_ID_INDEX, oldIndex,index);
+    public void setIp(String ip) {
+        if(this.mIp != ip) {
+            String oldIndex = this.mIp;
+            this.mIp = ip;
+            notifyPropertyChanged(PROP_ID_INDEX, oldIndex, ip);
         }
     }
 
@@ -161,5 +169,20 @@ public class Valve extends Observable {
             this.mMaxDuration = maxDuration;
             notifyPropertyChanged(PROP_ID_MAX_DURATION, oldMaxDuration,maxDuration);
         }
+    }
+
+    public List<Sensor> getSensors() {
+        return mSensors != null ? new ArrayList<>(this.mSensors.values()) : null;
+    }
+
+    public void setSensors(List<Sensor> sensors){
+            Map<String, Sensor> oldVal = this.mSensors;
+            this.mSensors = sensors.stream()
+                    .collect(Collectors.toMap(Sensor::getId, Function.identity()));
+            notifyPropertyChanged(PROP_ID_SENSORS, oldVal, sensors);
+    }
+
+    public Sensor getSensor(String id) {
+        return this.mSensors.get(id);
     }
 }

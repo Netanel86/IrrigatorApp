@@ -1,7 +1,9 @@
-package com.netanel.irrigator_app;
+package com.netanel.irrigator_app.services;
 
 
 import android.app.Application;
+
+import com.netanel.irrigator_app.ManualViewModel;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
