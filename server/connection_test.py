@@ -40,6 +40,23 @@ def add_single_module():
         print("Something went wrong while trying to add a module!")
 
 
+def add_two_modules_wSensor():
+    module_1 = EPModule("192.168.0.201")
+    module_1.description = "PY#0"
+    module_1.sensors.append(AnalogSensor(SensorType.HUMIDITY))
+
+    module_2 = EPModule("192.168.0.202")
+    module_2.description = "PY#0"
+    module_2.sensors.append(AnalogSensor(SensorType.HUMIDITY))
+
+    id_1 = repo.add_module(module_1)
+    id_2 = repo.add_module(module_2)
+    if id_1 != None and id_2 != None:
+        print("Succesfully added modules! IDs:{},{}".format(id_1, id_2))
+    else:
+        print("Something went wrong while trying to add a module!")
+
+
 def add_module_wSensors():
     module = EPModule("0.1.0.0")
     module.description = "PYS#0"
@@ -141,11 +158,16 @@ def update_module_sensors():
 
 
 repo = Repository()
-repo.init_command_listener(command_callback)
-update_module_sensors()
+modules = repo.get_modules()
+# modules["192.168.0.202"].description = "PY#1"
+# repo.update_module(
+#     modules["192.168.0.202"], [EPModule.Props().DESCRIPTION], remote=True
+# )
+# add_two_modules_wSensor()
+# repo.init_command_listener(command_callback)
+# update_module_sensors()
 # add_module_wSensors()
 # add_batch_modules_wSensors()
-modules = repo.get_modules()
 # dic = mods["0.0.0.0"].to_dict(("hell",))
 # mod = EPModule.from_dict({"hello": 1})
 # print(dic)

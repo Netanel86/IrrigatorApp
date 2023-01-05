@@ -1,11 +1,11 @@
 from tkinter import *  # export DISPLAY=:0.0  if runing from VS code SSH
 import threading  # thread module imported
 import os
-import ModelLib
+from typing import Dict
 from gui import GUI
-from ModelLib import AnalogSensor, SensorType
+from ModelLib import EPModule
+from repository import Repository
 import time
-
 
 # check if execute from SSH and run GUI on the remote Device
 if os.environ.get("DISPLAY", "") == "":
@@ -16,40 +16,38 @@ if os.environ.get("DISPLAY", "") == "":
 running = True
 bFirstCycle = True
 GlobalCounter = 0
-Devices = [
-    ModelLib.EPModule(ip="192.168.0.201"),
-    ModelLib.EPModule(ip="192.168.0.202"),
-    ModelLib.EPModule(ip="192.168.0.213"),
-    ModelLib.EPModule(ip="192.168.0.212"),
-]
 
-Devices[0].sensors = [
-    AnalogSensor(SensorType.HUMIDITY)
-]
+repo = Repository()
+modules: Dict[str, EPModule] = repo.get_modules()
+
 
 def on_close():
     global running
     running = False
 
-Gui = GUI()
-Gui.set_on_close_event(on_close)
 
-for module in Devices:
-    Gui.add_button(lambda: module.SetRelay(not module.RelayOut))
+Gui = GUI()
+Gui.set_on_close_callback(on_close)
+
+for m_idx, module in enumerate(modules.values()):
+    Gui.add_button(str(m_idx), lambda: module.SetRelay(not module.RelayOut))
+    if len(module.sensors) != 0:
+        for s_idx, sensor in enumerate(module.sensors):
+            Gui.add_label("{}_{}".format(m_idx, s_idx), "Module {}".format(m_idx))
+
 
 def prgMain():
     while running:
         time.sleep(0.4)
-        for i in range(len(Gui.buttons)):
-
-            if Devices[i].bConnected:
-                Devices[i].ReadClentRegs()
-                if i <= 2:
-                    print("Device: " + str(Devices[i].ip) + str(Devices[i].bConnected))
-                # print("Device " + str(Devices[i].IP))
-                if Devices[i].RelayOut:
-                    buttonText = "ON -> " + str(Devices[i].REMAINING_TIME)
-                    Gui.buttons[i].config(
+        for m_idx, module in enumerate(modules.values()):
+            btn_key = str(m_idx)
+            if module.bConnected:
+                module.ReadClentRegs()
+                if m_idx <= 2:
+                    print("Device: {} Connected: {}".format(Device.ip, Device.bConnected))
+                if module.RelayOut:
+                    buttonText = "ON -> " + str(module.REMAINING_TIME)
+                    Gui.buttons[btn_key].config(
                         text=buttonText,
                         fg="black",
                         bg="green",
@@ -57,29 +55,39 @@ def prgMain():
                     )
                 else:
                     buttonText = "OFF"
-                    Gui.buttons[i].config(
+                    Gui.buttons[btn_key].config(
                         text=buttonText, fg="white", bg="gray", activebackground="gray"
                     )
+
+                for s_idx in enumerate(module.sensors):
+                    lbl_key = btn_key + "_" + str(s_idx)
+                    sDeviceText = "Module: {}\nS#{}: {}%".format(
+                        module.ip, s_idx, sensor.curr_val
+                    )
+                    Gui.lables[lbl_key].config(text=sDeviceText)
             else:
                 # print("Device " + str(Devices[i].IP) + "  ComError!!!")
                 buttonText = "Com Error"
-                Gui.buttons[i].config(
+                Gui.buttons[btn_key].config(
                     text=buttonText, fg="black", bg="red", activebackground="red"
                 )
 
-        # for i in range(len(gDevicesSensors)):
-        #         sDeviceText = "Device " + str(Devices[i].ip) + "\n S1: " + str(Devices[i].SoilSensor1.SensorValue) + "%"
-        #         sDeviceText = sDeviceText + "\n S2: " + str(Devices[i].SoilSensor2.SensorValue) + "%"
-        #         sDeviceText = sDeviceText + "\n S3: " + str(Devices[i].SoilSensor3.SensorValue) + "%"
+        # for i in range(len(module.sensors)):
+        #         sDeviceText = "Device " + str(modules[i].ip) + "\n S1: " + str(modules[i].SoilSensor1.SensorValue) + "%"
+        #         sDeviceText = sDeviceText + "\n S2: " + str(modules[i].SoilSensor2.SensorValue) + "%"
+        #         sDeviceText = sDeviceText + "\n S3: " + str(modules[i].SoilSensor3.SensorValue) + "%"
 
-        #         gDevicesSensors[i].config(text=sDeviceText)
+        #         Gui.lables[i].config(text=sDeviceText)
 
-        for Device in Devices:
+        for Device in modules.values():
             if not Device.bConnected:
                 Device.connect()
-            print("Device: " + str(Device.ip) + str(Device.bConnected))
-            print("Device " + Device.ip + str(Device.bConnected))
-            print("Device " + Device.ip + "  Soil Sensors Value(%): "+ str(Device.sensors))
+            print("Device: {} Connected: {}".format(Device.ip, Device.bConnected))
+            print(
+                "Device: {} Humidity Value: {}%".format(
+                    Device.ip, Device.sensors[0].curr_val
+                )
+            )
             # Device.SetRelay(not Device.RelayOut)
             # Device.SetDuration(Device.duration + 1)
 
