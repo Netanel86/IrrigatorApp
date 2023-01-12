@@ -7,7 +7,7 @@ import logging
 from PyExtensions import isEmpty
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Tuple
-from paho.mqtt import client as mqtt_client
+import paho.mqtt.client as mqtt
 
 
 class DictParseable(ABC):
@@ -68,7 +68,7 @@ class DictParseable(ABC):
                 if not hasattr(self, prop):
                     self._raiseAttributeError(getattr.__name__, prop)
                 if is_map and prop not in to_map.keys():
-                    raise KeyError("Key: Dict 'to_map' has no key '{}' ".format(prop))
+                    raise KeyError(f"Key: Dict 'to_map' has no key '{prop}' ")
                 prop_key = to_map[prop] if is_map else prop
                 attr_val = getattr(self, prop)
                 prop_dict[prop_key] = (
@@ -98,9 +98,7 @@ class DictParseable(ABC):
             is_in_map = is_map and prop in from_map.keys()
             if is_map and not is_in_map:
                 logging.warning(
-                    "Key Missing: no such key in 'from_map': '{}', using key instead..".format(
-                        prop
-                    )
+                    f"Key Missing: no such key in 'from_map': '{prop}', using key instead.."
                 )
             obj_prop = prop if not is_map | (not is_in_map) else from_map[prop]
             if not hasattr(module, obj_prop):
@@ -112,11 +110,7 @@ class DictParseable(ABC):
     @classmethod
     def _raiseAttributeError(cls, method_name, prop_name):
         raise AttributeError(
-            "'{_class}.{_method}()': no such attribute: '{_property}'".format(
-                _method=method_name,
-                _property=prop_name,
-                _class=cls.__name__,
-            )
+            f"'{cls.__name__}.{method_name}()': no such attribute: '{prop_name}'"
         )
 
 
@@ -253,22 +247,11 @@ class EPModule(DictParseable):
         self.TOTAL_WATER_FLOW = 0
         self.RESET_TOTAL_WATER_FLOW = 0
 
-    def subscribe(self, client: mqtt_client):
-        client.subscribe(self.ip)
-
-        def on_message(client, data, msg):
-            print(msg.payload.decode())
-
-        client.on_message = on_message
-
-    def connect(self, client: mqtt_client):
-        client.on_connect = self.subscribe(client)
-
-        # def get_sensors_values(self) -> List[int]:
-        values = []
-        for sensor in self.sensors:
-            values.append(sensor.curr_val)
-        return values
+    # def get_sensors_values(self) -> List[int]:
+    #     values = []
+    #     for sensor in self.sensors:
+    #         values.append(sensor.curr_val)
+    #     return values
 
     # def SetRelay(self, state):
     #     if self.bConnected:

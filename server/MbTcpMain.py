@@ -1,12 +1,13 @@
 from tkinter import *  # export DISPLAY=:0.0  if runing from VS code SSH
 import threading  # thread module imported
 import os
-from typing import Dict
+import logging
+from typing import Dict, List, Callable
 from gui import GUI
-from ModelLib import EPModule, AnalogSensor, SensorType
+from ModelLib import *
+import paho.mqtt.client as mqtt
 
 # from repository import Repository
-from paho.mqtt import client as mqtt_client
 
 # check if execute from SSH and run GUI on the remote Device
 if os.environ.get("DISPLAY", "") == "":
@@ -26,18 +27,46 @@ module_1.description = "PY#0"
 module_1.sensors.append(AnalogSensor(SensorType.HUMIDITY))
 
 
-def on_connect(client, userdata, flags, rc):
-    # This will be called once the client connects
-    print(f"Connected with result code {rc}")
-    # Subscribe here!
-    module_1.connect(client)
+class ClientManager:
+    def __init__(self, modules: List[EPModule]) -> None:
+        self.clients: Dict[str, mqtt.Client] = {}
+        self.__init_clients(modules)
 
+    def add_client(
+        self, name, mac_id, topic, callback: Callable[[Dict[str, Any]], None]
+    ):
+        client = self.clients[mac_id] = mqtt.Client(name)
 
-def connect_mqtt():
-    client = mqtt_client.Client("pi")
-    client.on_connect = on_connect
-    client.connect("192.168.0.177", 1883)
-    return client
+        def on_message(client, data, msg):
+            print(msg.payload.decode())
+            # use a json parser to parse msg.payload to dictionary
+            callback(msg)
+
+        def on_connect(client: mqtt.Client, userdata, flags, rc):
+            logging.info(f"Connected with result code {rc}")
+            client.subscribe(topic)
+
+        client.on_connect = on_connect
+        client.on_message = on_message
+
+    def __init_clients(self, modules: List[EPModule]):
+        for module in modules:
+            client = self.clients[module.ip] = mqtt.Client(module.description)
+
+            def on_message(client, data, msg):
+                print(msg.payload.decode())
+
+            def on_connect(client: mqtt.Client, userdata, flags, rc):
+                logging.info(f"Connected with result code {rc}")
+                client.subscribe(module.ip)
+
+            client.on_connect = on_connect
+            client.on_message = on_message
+
+    def connect_clients(self):
+        for client in self.clients.values():
+            client.connect(module.ip, 1883)
+            client.loop_start()
 
 
 # def on_close():
