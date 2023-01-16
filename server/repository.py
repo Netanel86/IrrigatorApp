@@ -281,7 +281,6 @@ class Repository(object):
                 modules[module_ip] = EPModule.from_dict(
                     module_dict, MODULE_FROM_LOCAL_MAP
                 )
-                modules[module_ip].init_client()
 
             if sensor_dict[Local.Sensors.ColName.ID] is not None:
                 module = AnalogSensor.from_dict(sensor_dict, SENSOR_FROM_LOCAL_MAP)
