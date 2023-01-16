@@ -18,7 +18,7 @@ class MQTTManager:
                 client.subscribe(topics)
 
         def on_message(client, data, msg: MQTTMessage):
-            self.__execute_callbacks(msg.topic.split("_")[0], json.load(msg.payload.decode()))
+            self.__execute_callbacks(msg.topic, json.load(msg.payload.decode()))
 
         self.__client.on_connect = on_connect
         self.__client.on_message = on_message
@@ -52,7 +52,7 @@ class MQTTManager:
 
             if isEmpty(topic_callbacks):
                 self.__callbacks.pop(topic)
-                self.__client.unsubscribe(topic + MQTTManager.SUFFIX_SUB)
+                self.__client.unsubscribe(topic)
         else:
             logging.info(f"{method_sig}: topic '{topic}' is empty.")
 

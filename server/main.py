@@ -3,7 +3,7 @@ import threading  # thread module imported
 import os
 from typing import Dict, List, Callable
 from gui import GUI
-from ModelLib import *
+from model import *
 from repository import Repository
 from mqtt_manager import MQTTManager
 
@@ -20,12 +20,6 @@ GlobalCounter = 0
 
 # "78:21:84:8C:AF:FC"
 
-
-module_1 = EPModule("esp32")
-module_1.description = "PY#0"
-module_1.sensors.append(AnalogSensor(SensorType.HUMIDITY))
-
-
 # def on_close():
 #     global running
 #     running = False
@@ -38,6 +32,8 @@ module_1.sensors.append(AnalogSensor(SensorType.HUMIDITY))
 #             Gui.add_label("{}_{}".format(m_idx, s_idx), "Module {}".format(m_idx))
 
 repo = Repository()
+
+
 def connected_devices(data: Dict[str, Any]):
     modules = repo.get_modules()
     for val in data.values():
@@ -45,15 +41,17 @@ def connected_devices(data: Dict[str, Any]):
         if module is None:
             repo.add_module(EPModule(val))
 
+
 def prgMain():
     modules: Dict[str, EPModule] = repo.get_modules()
-    
+
     client = MQTTManager("RaspberryPi")
-    client.connect("192.168.1.177",1883)
-    
+    client.connect("192.168.1.177", 1883)
+
     client.subscribe("connected_devices", connected_devices)
     for module in modules.values():
-        client.subscribe(module.ip, lambda dict: module.update(dict))
+        client.subscribe(module.mac_id, lambda dict: module.update_dict(dict))
+
 
 prgMain()
 
@@ -62,8 +60,8 @@ prgMain()
 
 # RUN PROGRAM
 # if __name__ == "__main__":
-    # RUN prgMain
-    # prg_Main.start()
-    # RUN GUI
-    # Gui.run()
-    # gui.mainloop()
+# RUN prgMain
+# prg_Main.start()
+# RUN GUI
+# Gui.run()
+# gui.mainloop()

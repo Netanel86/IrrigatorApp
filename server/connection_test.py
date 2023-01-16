@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from unittest import result
-from ModelLib import AnalogSensor, EPModule, SensorType
+from model import AnalogSensor, EPModule, SensorType
 from repository import Repository, Command, Actions
 
 
@@ -157,8 +157,18 @@ def update_module_sensors():
         print("Failed to update sensors.")
 
 
-repo = Repository()
-modules = repo.get_modules()
+def test_dictParsable():
+    module = EPModule("78:21:84:8C:AF:FC")
+    module.id = "123"
+    dict = module.to_dict()
+    module1 = EPModule.from_dict(dict)
+    print(module1)
+
+
+test_dictParsable()
+# repo = Repository()
+# modules = repo.get_modules()
+# repo.reset_databases()
 # modules["192.168.0.202"].description = "PY#1"
 # repo.update_module(
 #     modules["192.168.0.202"], [EPModule.Props().DESCRIPTION], remote=True
@@ -175,4 +185,4 @@ modules = repo.get_modules()
 # add_single_module()
 # add_batch_modules()
 # repo.reset_databases()
-repo.disconnect()
+# repo.disconnect()
