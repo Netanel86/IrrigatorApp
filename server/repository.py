@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Tuple
 from datetime import datetime
 from enum import Enum
-from ModelLib import AnalogSensor, DictParseable, EPModule, SensorType
+from model import AnalogSensor, DictParseable, EPModule, SensorType
 from firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
 from PyExtensions import reverseDict, isEmpty
@@ -18,7 +18,7 @@ from sqlite import (
 
 MODULE_TO_LOCAL_MAP = {
     EPModule.Props().ID: Local.Modules.ColName.ID,
-    EPModule.Props().IP: Local.Modules.ColName.IP,
+    EPModule.Props().MAC_ID: Local.Modules.ColName.MAC_ID,
     EPModule.Props().DESCRIPTION: Local.Modules.ColName.DESCRIPTION,
     EPModule.Props().MAX_DURATION: Local.Modules.ColName.MAX_DURATION,
     EPModule.Props().DURATION: Local.Modules.ColName.DURATION,
@@ -32,7 +32,7 @@ MODULE_FROM_LOCAL_MAP = reverseDict(MODULE_TO_LOCAL_MAP)
 """A Mapping of local database 'Module' table columns to `ModelLib.EPModule` properties (key=col_name, val=prop_name)."""
 
 MODULE_TO_REMOTE_MAP = {
-    EPModule.Props().IP: Remote.Modules.FieldName.IP,
+    EPModule.Props().MAC_ID: Remote.Modules.FieldName.IP,
     EPModule.Props().DESCRIPTION: Remote.Modules.FieldName.DESCRIPTION,
     EPModule.Props().MAX_DURATION: Remote.Modules.FieldName.MAX_DURATION,
     EPModule.Props().DURATION: Remote.Modules.FieldName.DURATION,
@@ -153,7 +153,7 @@ class Repository(object):
 
         self.add_sensors(module.id, module.sensors)
 
-        self.__modules[module.ip] = module
+        self.__modules[module.mac_id] = module
 
         return module.id if not isEmpty(module.id) else None
 
@@ -239,7 +239,7 @@ class Repository(object):
             module_ids.append(module.id)
             all_sensors.append(module.sensors if not isEmpty(module.sensors) else None)
             local_dicts.append(module.to_dict(to_map=MODULE_TO_LOCAL_MAP))
-            self.__modules[module.ip] = module
+            self.__modules[module.mac_id] = module
 
         insert_count = self.__local.insert(Local.Modules.TABLE_NAME, local_dicts)
 
@@ -424,9 +424,11 @@ class Repository(object):
 
     def delete_module(self, module: EPModule):
         self.__remote.delete_document(self.PATH_MODULES, module.id)
-        self.__modules.pop(module.ip)
+        self.__modules.pop(module.mac_id)
 
     def reset_databases(self):
+        # TODO handle deletion of sensors prior to modules
+
         ret = self.__remote.delete_collection(self.PATH_MODULES)
         print("Collection {} Deleted: {}".format(Remote.Modules.COLL_NAME, ret))
 
