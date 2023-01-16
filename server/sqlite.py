@@ -95,7 +95,7 @@ class SQLiteConnection(object):
         values: Tuple | List[Tuple] = None,
         result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] = None,
     ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
-
+        logging.info(f"sqlite execute> {q_type.name}: {query}")
         result = None
         is_many = False
         try:
