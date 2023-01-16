@@ -1,49 +1,88 @@
-# PLANTOS Modules Modbus TCP Communication Lib
 from __future__ import annotations
 from abc import ABC
 from collections import namedtuple
 from enum import Enum
 import logging
-from PyExtensions import isEmpty
 from datetime import datetime
-from typing import Any, Dict, List, NamedTuple, Tuple
-import paho.mqtt.client as mqtt
+from typing import Any, Dict, List, NamedTuple, Tuple, Callable
+
+
+class Observable(object):
+    def __init__(self) -> None:
+        self.__callbacks: List[Callable[[Observable, str, Any, Any], None]] = None
+
+    def register_callback(self, callback: Callable[[Observable, str, Any, Any], None]):
+        if self.__callbacks is None:
+            self.__callbacks = []
+        self.__callbacks.append(callback)
+
+    def unregister_callback(
+        self, callback: Callable[[Observable, str, Any, Any], None]
+    ):
+        self.__callbacks.remove(callback)
+        if len(self.__callbacks) == 0:
+            self.__callbacks.clear()
+            self.__callbacks = None
+
+    def _notify_change(self, property: str, old_value, new_value):
+        if old_value != new_value:
+            if self.__callbacks is not None:
+                for callback in self.__callbacks:
+                    callback(self, property, old_value, new_value)
 
 
 class DictParseable(ABC):
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @id.setter
-    def id(self, value):
-        self._id = value
-
-    @staticmethod
-    def Props() -> NamedTuple:
+    @classmethod
+    def Props(cls) -> NamedTuple:
         """An abstract representation of object's property names.
 
         To be implemented and initialized with object property names.
         """
         raise NotImplementedError(
-            "property getter not implemented in class '{}': '{}'".format(
-                "cls.__class__.__name__", "Props"
-            )
+            f"property getter not implemented in class {cls.__class__.__name__}.Props()"
         )
 
-    def __to_dict(self) -> Dict[str, Any]:
-        """Parses the 'DictParseable' object to a dictionary.
+    @classmethod
+    def from_dict(
+        cls, source: Dict[str, Any], from_map: Dict[str, str] = None
+    ) -> DictParseable:
+        """Parses and creates a new object from a dictionary.
+
+        Args:
+            source: a dictionary with object's properties (name: value) pairs, with to initiate the new object.
+                possible values: included in `DictParseable.Props()`.
+
+            from_map(optional): a dictionary mapping the source properties to this class properties,
+                (src_prop_x: object_prop_x) pairs. use when the source and object propery names are not identical.
+                default: None.
 
         Returns:
-            A dictionary with the object properties, (name: value) pairs"""
-        obj_dict: Dict[str, Any] = {}
-        for prop in self.Props:
-            attr_val = getattr(self, prop)
-            if not isinstance(attr_val, list):
-                obj_dict[prop] = (
-                    attr_val.name if isinstance(attr_val, Enum) else attr_val
-                )
-        return obj_dict
+            `DictParseable`: the child object derived from `DictParseable`, initialized with dictionary data.
+
+        Raises:
+            `AttributeError`: if object does not contain a property name.
+        """
+        module = cls()
+        module.update_dict(source, from_map)
+        return module
+
+    @classmethod
+    def _raiseAttributeError(cls, method_name, prop_name):
+        raise AttributeError(
+            f"'{cls.__name__}.{method_name}()': has no attribute: '{prop_name}'"
+        )
+
+    @property
+    def id(self) -> str:
+        raise NotImplementedError(
+            f"'id': property getter not implemented in class '{self.__class__.__name__}'"
+        )
+
+    @id.setter
+    def id(self, value: str):
+        raise NotImplementedError(
+            f"'id': property setter not implemented in class '{self.__class__.__name__}'"
+        )
 
     def to_dict(
         self, props: Tuple[str] = None, to_map: Dict[str, str] = None
@@ -53,9 +92,17 @@ class DictParseable(ABC):
         Args:
             props(optional) -- a list of properties names to parse, if set only the specified properties would be parsed,
                 possible values: included in `DictParseable.Props()`.
+                default: None.
+
+            from_map(optional): a dictionary mapping this class properties to a set of custom properties,
+                (cls_prop_x: trg_prop_x) pairs. use when a set of custom property names is needed.
+                default: None.
 
         Returns:
-            A dictionary with the object's specified properties, (name: value) pairs
+            A dictionary with the object's properties, (name: value) pairs
+
+        Raises:
+            `AttributeError`: if object does not contain a property name.
         """
         prop_dict = {}
         is_map = to_map is not None
@@ -66,7 +113,7 @@ class DictParseable(ABC):
         if collection is not None:
             for prop in collection:
                 if not hasattr(self, prop):
-                    self._raiseAttributeError(getattr.__name__, prop)
+                    DictParseable._raiseAttributeError(getattr.__name__, prop)
                 if is_map and prop not in to_map.keys():
                     raise KeyError(f"Key: Dict 'to_map' has no key '{prop}' ")
                 prop_key = to_map[prop] if is_map else prop
@@ -79,20 +126,20 @@ class DictParseable(ABC):
 
         return prop_dict
 
-    @classmethod
-    def from_dict(
-        cls, source: Dict[str, Any], from_map: Dict[str, str] = None
-    ) -> DictParseable:
-        """Parses and creates a new object from a dictionary.
+    def update_dict(self, source: Dict[str, Any], from_map: Dict[str, str] = None):
+        """Updates the object with data from a dictionary.
 
         Args:
-            source: a dictionary with object's properties, (name: value) pairs.
+            source: a dictionary with object's properties (name: value) pairs, with to update the object.
                 possible values: included in `DictParseable.Props()`.
 
-        Returns:
-            `DictParseable`: the child object derived from `DictParseable`, initialized with dictionary data.
+            from_map(optional): a dictionary mapping the source properties to this class properties,
+                (src_prop_x: object_prop_x) pairs. use when the source and object propery names are not identical.
+                default: None.
+
+        Raises:
+            `AttributeError`: if object does not contain a property name.
         """
-        module = cls()
         is_map = from_map is not None
         for prop, value in source.items():
             is_in_map = is_map and prop in from_map.keys()
@@ -100,18 +147,24 @@ class DictParseable(ABC):
                 logging.warning(
                     f"Key Missing: no such key in 'from_map': '{prop}', using key instead.."
                 )
-            obj_prop = prop if not is_map | (not is_in_map) else from_map[prop]
-            if not hasattr(module, obj_prop):
-                cls._raiseAttributeError(setattr.__name__, obj_prop)
-            setattr(module, obj_prop, value)
+            obj_prop = prop if (not is_map) | (not is_in_map) else from_map[prop]
+            if not hasattr(self, obj_prop):
+                DictParseable._raiseAttributeError(setattr.__name__, obj_prop)
+            setattr(self, obj_prop, value)
 
-        return module
+    def __to_dict(self) -> Dict[str, Any]:
+        """Parses the 'DictParseable' object to a dictionary.
 
-    @classmethod
-    def _raiseAttributeError(cls, method_name, prop_name):
-        raise AttributeError(
-            f"'{cls.__name__}.{method_name}()': no such attribute: '{prop_name}'"
-        )
+        Returns:
+            A dictionary with the object properties, (name: value) pairs"""
+        obj_dict: Dict[str, Any] = {}
+        for prop in self.__class__.Props():
+            attr_val = getattr(self, prop)
+            if not isinstance(attr_val, list):
+                obj_dict[prop] = (
+                    attr_val.name if isinstance(attr_val, Enum) else attr_val
+                )
+        return obj_dict
 
 
 # Linear Conversion
@@ -191,16 +244,15 @@ class SensorType(Enum):
     TEMPERATURE = "C"
 
 
-class EPModule(DictParseable):
+class EPModule(DictParseable, Observable):
     __Properties = namedtuple(
         "__Props",
-        "ID MASTER_ID IP DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT SENSORS",
+        "ID MAC_ID DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT SENSORS",
     )
 
     __Props = __Properties(
         "id",
-        "master_id",
-        "ip",
+        "mac_id",
         "description",
         "max_duration",
         "duration",
@@ -210,25 +262,45 @@ class EPModule(DictParseable):
         "sensors",
     )
 
-    @staticmethod
-    def Props() -> __Properties:
+    @classmethod
+    def Props(cls) -> __Properties:
         """A view on :class:`EPModule` property names"""
         return EPModule.__Props
 
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @id.setter
+    def id(self, value: str):
+        old = self._id
+        self._id = value
+        self._notify_change(EPModule.Props().ID, old, value)
+
+    @property
+    def mac_id(self) -> str:
+        return self._mac_id
+
+    @mac_id.setter
+    def mac_id(self, value):
+        old = self._mac_id
+        self._mac_id = value
+        self._notify_change(EPModule.Props().MAC_ID, old, value)
+
     def __init__(
         self,
-        ip: str = "",
+        mac_id: str = "",
         port: int = 502,
         timeout: float = 1,
         max_duration: int = 600,
     ):
+        super().__init__()
         self._id: str = ""
-        self.master_id: str = ""
+        self._mac_id = mac_id
         self.description: str = ""
         self.on_time: datetime = datetime.now().astimezone()
         self.max_duration: int = max_duration
         self.duration: int = 0
-        self.ip = ip
         self.port: int = port
         self.timeout: float = timeout
         self.sensors: List[AnalogSensor] = []
@@ -273,7 +345,7 @@ class EPModule(DictParseable):
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
-            self.ip,
+            self.mac_id,
             self.description,
             self.max_duration,
             self.on_time.strftime("%x"),
