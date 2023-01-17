@@ -166,23 +166,6 @@ def test_dictParsable():
 
 
 test_dictParsable()
-# repo = Repository()
-# modules = repo.get_modules()
-# repo.reset_databases()
-# modules["192.168.0.202"].description = "PY#1"
-# repo.update_module(
-#     modules["192.168.0.202"], [EPModule.Props().DESCRIPTION], remote=True
-# )
-# add_two_modules_wSensor()
-# repo.init_command_listener(command_callback)
-# update_module_sensors()
-# add_module_wSensors()
-# add_batch_modules_wSensors()
-# dic = mods["0.0.0.0"].to_dict(("hell",))
-# mod = EPModule.from_dict({"hello": 1})
-# print(dic)
-# update_module()
-# add_single_module()
-# add_batch_modules()
-# repo.reset_databases()
+repo = Repository()
+modules = repo.get_modules()
 # repo.disconnect()

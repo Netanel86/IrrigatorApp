@@ -5,6 +5,7 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.client import MQTTMessage
 from PyExtensions import isEmpty
 
+
 class MQTTManager:
     def __init__(self, name) -> None:
         self.__client: mqtt.Client = mqtt.Client(name)
@@ -66,4 +67,3 @@ class MQTTManager:
     def disconnect(self):
         self.__client.loop_stop()
         self.__client.disconnect()
-
