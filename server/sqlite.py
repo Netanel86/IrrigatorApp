@@ -20,8 +20,8 @@ PARSE = __Parsers(0, 1)
 COL_ROWID = "ROWID"
 VALUE_NULL = "IS NULL"
 
-_TUP_COLUMNS = "col_names"
-_TUP_VALUES = "values"
+_TUP_COLUMNS = 0
+_TUP_VALUES = 1
 
 
 class SQLiteConnection(object):
@@ -56,15 +56,15 @@ class SQLiteConnection(object):
         """Parse a `Queries.Select` query result to a list using a merger method.
 
         Args:
-            col_data: a list of column names.
-            values: a list of values in order of there respective column names.
-            merger: the id for the parser type to be used.
-                possible values: `PARSE.DICT` and `PARSE.TUPLE` (default `PARSE.TUPLE`)
+            * `col_data`: a list of column names.
+            * `values`: a list of values in order of there respective column names.
+            * `merger`: the id for the parser type to be used.
+                * possible values: `PARSE.DICT` and `PARSE.TUPLE`, default: `PARSE.TUPLE`
 
         Returns:
-            If `merger` is:
-                *`PARSE.DICT`: A list of dictionaries with (column-name: value) pairs.
-                *`PARSE.TUPLE`: A list of tuples with (column-name, value) pairs.
+            * If `merger` is:
+                * `PARSE.DICT`: A list of dictionaries with (column-name: value) pairs.
+                * `PARSE.TUPLE`: A list of tuples with (column-name, value) pairs.
         """
         merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
             self.merge_to_tuple
@@ -77,16 +77,16 @@ class SQLiteConnection(object):
         return result
 
     def __to_tuple_set(self, data: Dict[str, Any] | List[Dict[str, Any]]):
-        tuples_dict: Dict[str, Tuple | List] = {}
+        tuples_list: List[Tuple | List] = []
         if isinstance(data, dict):
-            tuples_dict[_TUP_COLUMNS] = tuple(data.keys())
-            tuples_dict[_TUP_VALUES] = tuple(data.values())
+            tuples_list.append(tuple(data.keys()))
+            tuples_list.append(tuple(data.values()))
         else:
-            tuples_dict[_TUP_COLUMNS] = tuple(data[0].keys())
-            tuples_dict[_TUP_VALUES] = []
+            tuples_list.append(tuple(data[0].keys()))
+            tuples_list.append([])
             for val_dict in data:
-                tuples_dict[_TUP_VALUES].append(tuple(val_dict.values()))
-        return tuples_dict
+                tuples_list[_TUP_VALUES].append(tuple(val_dict.values()))
+        return tuples_list
 
     def _execute(
         self,
@@ -144,14 +144,14 @@ class SQLiteConnection(object):
         """Formats the given data and arguments into a single string.
 
         Args:
-            data: a string or strings to format.
-            separator: a charcter or string to be used as a separator after each element in `data`.
-            count(optional): if `data` is a string, sets the number of times to repeat it
-                (default: `None`).
-            kwargs(optional): additional arguments to format.
-                possible values:
-                    'suffix' :type:`Tuple[str] | str`: to be added after each element in `data`.
-                    'prefix' :type:`Tuple[str] | str`: to be added before each element in `data`.
+            * `data`: a string or strings to format.
+            * `separator`: a charcter or string to be used as a separator after each element in `data`.
+            * `count`(optional): if `data` is a string, sets the number of times to repeat it,
+                default: `None`
+            * `kwargs`(optional): additional arguments to format.
+                * possible values:
+                    * `suffix`- `Tuple[str] | str`: to be added after each element in `data`.
+                    * `prefix`- `Tuple[str] | str`: to be added before each element in `data`.
 
         Returns:
             A formatted string.
@@ -193,13 +193,13 @@ class SQLiteConnection(object):
         """Create a new table in the database.
 
         Args:
-            table: the name for the table to be created.
-            data: a tuple of (column-name, type) pairs describing each column data type in the table.
-                note: if 'id' (name, type) pair is set, it should be the first pair in `data`.
+            * `table`: the name for the table to be created.
+            * `data`: a tuple of (column-name, type) pairs describing each column data type in the table.
+                * note: if 'id' (name, type) pair is set, it should be the first pair in `data`.
                 default 'id' type: `int` (if not specified)
 
         Raises:
-            ValueError: if `id` (column-name, type) pair is set, but is not the first element in `data`.
+            `ValueError`: if `id` (column-name, type) pair is set, but is not the first element in `data`.
 
         Returns:
             `True` if the table was created successfully or already existed, `False` otherwise.
@@ -210,9 +210,7 @@ class SQLiteConnection(object):
             type = col[1]
             if name == "id" and idx != 0:
                 raise ValueError(
-                    "in {}.{}(): 'id' should be the first (index = 0) name, type pair in col_data, current 'id' index is {}".format(
-                        SQLiteConnection.__name__, self.create.__name__, idx
-                    )
+                    f"in {SQLiteConnection.__name__}.{self.create.__name__}(): 'id' should be the first (index = 0) name, type pair in col_data, current 'id' index is {idx}"
                 )
 
             if idx == 0:
@@ -237,15 +235,14 @@ class SQLiteConnection(object):
         """Insert a new row to table.
 
         Args:
-            table: the name for the table to be created.
-            data: a dictionary of (column-name, value) pairs to insert.
+            * `table`: the table name to insert the new row in.
+            * `data`: a dictionary of (column-name, value) pairs to insert.
 
         Returns:
-            If successful and `values` is:
-            * a single row, returns its id or rowid if id is empty.
-            * multiple rows, returns the count of inserted rows.
-
-            otherwise returns `False`
+            * If successful and `data` is:
+                * a single row, returns its id or rowid if id is empty.
+                * multiple rows, returns the count of inserted rows.
+            * If failed returns `False`
         """
         attrs = self.__to_tuple_set(data)
         col_names: Tuple = attrs[_TUP_COLUMNS]
@@ -267,8 +264,8 @@ class SQLiteConnection(object):
         """Update's the columns fields in the specified row id.
 
         Args:
-            table: name of the updated table.
-            data: a dictionary of (column-name, value) pairs to update.
+            * `table`: name of the updated table.
+            * `data`: a dictionary of (column-name, value) pairs to update.
 
         Returns:
             a `QueryBuilder` instance of the update query.
@@ -290,9 +287,9 @@ class SQLiteConnection(object):
         """Delete a single row or an entire table
 
         Args:
-            table: name of table.
-            id(optional): the row id to delete, if not specified deletes the entire table.
-                (default: `None`).
+            * `table`: name of table.
+            * `id`(optional): the row id to delete, if not specified deletes the entire table.
+                default: `None`.
 
         Returns:
             `True` if deleted successfully, `False` otherwise.
@@ -307,8 +304,8 @@ class SQLiteConnection(object):
         """Select columns from rows in the specified table.
 
         Args:
-            table: name of table to select from.
-            col_names: a tuple of column-names to return.
+            * `table`: name of table to select from.
+            * `col_names`: a tuple of column-names to return.
 
         Returns:
             a `QueryBuilder` instance of the select query.
@@ -324,8 +321,8 @@ class SQLiteConnection(object):
         """Merge two tuples of column-names and values to a dictionary.
 
         Args:
-            col_names: the column names in order of there respective value.
-            values: the values in order of there respective column name.
+            * `col_names`: the column names in order of there respective value.
+            * `values`: the values in order of there respective column name.
 
         Returns:
             A dictionary with (column-name: value) pairs
@@ -336,8 +333,8 @@ class SQLiteConnection(object):
         """Merge two tuples of column-names and values to a single tuple of tuple pairs.
 
         Args:
-            col_names: the column names in order of their respective values.
-            values: the values in order of their respective column names.
+            * `col_names`: the column names in order of their respective values.
+            * `values`: the values in order of their respective column names.
 
         Returns:
             A tuple with (column-name, value) tuple pairs
@@ -353,20 +350,20 @@ class SQLiteConnection(object):
         """Map a list of returned database dictionaries to a dictionary of any object type
 
         Args:
-            dicts: a list of database returned dictionaries to map.
-            from_dict: a method to convert a database dictionary row to the requested object.
-                Args:
-                    `Dict[str, Any]`: a dictionary with (column-name, value) pairs.
-                Returns:
-                    `Any`: the parsed object
-            key_col(optional): the column name to be used as key in the returned dict.
-                default: None.
+            * `dicts`: a list of database returned dictionaries to map.
+            * `from_dict`: a method to convert a database dictionary row to the requested object.
+                * Args:
+                    * `Dict[str, Any]`: a dictionary with (column-name, value) pairs.
+                * Returns:
+                    * `Any`: the parsed object
+            * `key_col`(optional): the column name to be used as key in the returned dict.
+                default: `None`.
 
         Returns:
             A collection of objects: If `key_col` is set returns a dictionary, otherwise returns a list.
 
         Raises:
-            KeyError: if `key_col` does not exist in `dicts` keys
+            `KeyError`: if `key_col` does not exist in `dicts` keys
         """
         objects: Dict[str, Any] | List = {} if key_col is not None else []
 
@@ -404,14 +401,14 @@ class QueryBuilder(object):
         """Creates a new builder instance.
 
         Args:
-            connection: sqlite client.
-            type: the type of query being built.
-            base_query: the base string for the query.
-            **kwargs: additional argument to pass.
-                possible values:
-                    *`table`: name of the base table in the query.
-                    *`col_names`: list of the selected columns in the query.
-                    *`data`: list of initial data for `base_query`.
+            * `connection`: sqlite client.
+            * `type`: the type of query being built.
+            * `base_query`: the base string for the query.
+            * `kwargs`: additional argument to pass.
+                * possible values:
+                    * `table`- `str`: name of the base table in the query.
+                    * `col_names`- `Tuple[str]`: list of the selected columns in the query.
+                    * `data`- `Tuple`: list of initial data for `base_query`.
         """
         data: Tuple = kwargs.get("data", None)
         table: str = kwargs.get("table", None)
@@ -452,13 +449,13 @@ class QueryBuilder(object):
         """Set a condition for filtering documents.
 
         Args:
-            col_names: a tuple of column-names to filter by.
-            values: a tuple of values to filter in order of there respective column-names.
+            * `col_names`: a tuple of column-names to filter by.
+            * `values`: a tuple of values to filter in order of there respective column-names.
 
         Raises:
-            IntegrityError: if:
-            * more then one `WHERE` clause is set.
-            * `WHERE` clause is set after an `ORDER BY` clause.
+            * `IntegrityError` if:
+                * more then one `WHERE` clause is set.
+                * `WHERE` clause is set after an `ORDER BY` clause.
 
         Returns:
             a `QueryBuilder` instance of the where query.
@@ -509,15 +506,14 @@ class QueryBuilder(object):
         """Set fields and directions for ordering documents.
 
         Args:
-            col_names: a tuple of column-names to order by.
-            directions(optional): a tuple of directions in order of there respective column-name.
-                possible values: `ORDER_ASC` or `ORDER_DESC`.
-                (default: `ORDER_ASC`).
+            * `col_names`: a tuple of column-names to order by.
+            * `directions`(optional): a tuple of directions in order of there respective column-name.
+                * possible values: `ORDER.ASCENDING` or `ORDER.DESCENDING`, default: `ORDER.ASCENDING`.
 
         Raises:
-            IntegrityError: if:
-            * more then one `ORDER BY` clause is set
-            * `ORDER BY` clause is set in an `UPDATE` query
+            * `IntegrityError` if:
+                * more then one `ORDER BY` clause is set
+                * `ORDER BY` clause is set in an `UPDATE` query
 
         Returns:
             a `QueryBuilder` instance of the orderby query.
@@ -544,25 +540,25 @@ class QueryBuilder(object):
         """Join data from an additional table to the query
 
         Args:
-            table: name of table to select from.
-            col_names: a tuple of column-names to select.
-            type(optional): join type.
-                possible values: `JOIN.INNER`, `JOIN.LEFT` and `JOIN.CROSS`
+            * `table`: name of table to select from.
+            * `col_names`: a tuple of column-names to select.
+            * `type`(optional): join type.
+                * possible values: `JOIN.INNER`, `JOIN.LEFT` and `JOIN.CROSS`
                 default: `None`.
-            kwargs(optional): additional filtering conditions.
-                possible values:
-                    *`src_col`: column name from base table to compare
-                    *`target_col`: column name from joined table to compare,
+            * `kwargs`(optional): additional filtering conditions.
+                * possible values:
+                    * `src_col`: column name from base table to compare
+                    * `target_col`: column name from joined table to compare,
                         if both columns names are the same set only `src_col`
 
         Returns:
             a `QueryBuilder` instance of the join query.
 
         Raises:
-            IntegrityError: if:
-            * more then one `JOIN` clause is set
-            * `JOIN` clause is set after a `WHERE` clause
-            * `JOIN` clause is set after a `ORDER BY` clause
+            * `IntegrityError` if:
+                * more then one `JOIN` clause is set
+                * `JOIN` clause is set after a `WHERE` clause
+                * `JOIN` clause is set after a `ORDER BY` clause
         """
         self.__integrity_error(
             QueryBuilder.__SUBQR.JOIN,
@@ -622,25 +618,23 @@ class QueryBuilder(object):
         """Executes the query.
 
         Args:
-            result_parser: :type:`int`(optional): the id for the parser type to be used.
-                possible values: `PARSE.TUPLE` and `PARSE.DICT`
-                default: `PARSE.TUPLE`
-                    OR
-            result_parser: :type:`Callable[[Tuple[Tuple], List[Tuple]]`(optional): a custom method
-                to parse the database result.
-                    Args:
-                        col_data: :type:`Tuple[Tuple]`: the result columns data
+            * `result_parser`(optional)- `int`: the id for the parser type to be used.
+                * possible values: `PARSE.TUPLE` and `PARSE.DICT`, default: `PARSE.TUPLE`
+                    * OR
+            * `result_parser`(optional)- `Callable[[Tuple[Tuple], List[Tuple]]`: a custom method to parse the database result.
+                    * Args:
+                        * `col_data`- `Tuple[Tuple]`: the result columns data
+                        * `values`- `List[Tuple]`: the result values
+                    * Returns:
+                        * `Any`: the parsed data
 
-                        values: :type:`List[Tuple]`: the result values
-                    Returns:
-                        `Any`: the parsed data
         Returns:
-            The result of the executed query, If query is:
-                *`Queries.SELECT`: returns a tuple set of returned rows (if result_parser is default).
-                *`Queries.UPDATE`: returns `True` if successful, `False` otherwise.
+            * The result of the executed query, If query is:
+                * `Queries.SELECT`: returns a tuple set of returned rows (if `result_parser` is default).
+                * `Queries.UPDATE`: returns `True` if successful, `False` otherwise.
 
         Raises:
-            IntegrityError: if `WHERE` clause has not been set in an `Queries.UPDATE` query.
+            `IntegrityError`: if `WHERE` clause has not been set in an `Queries.UPDATE` query.
         """
 
         self.__integrity_error(
