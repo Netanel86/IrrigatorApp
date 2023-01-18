@@ -5,10 +5,10 @@ from typing import Any, Callable, Dict, List, Tuple
 from datetime import datetime
 from enum import Enum
 from model import AnalogSensor, DictParseable, EPModule, SensorType
-from firestore import FirestoreConnection, OrderBy, Where
+from data.firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
-from PyExtensions import reverseDict, isEmpty
-from sqlite import (
+from extensions import reverseDict, isEmpty
+from data.sqlite import (
     COL_ROWID,
     PARSE,
     QueryBuilder,
@@ -151,7 +151,7 @@ class Repository(object):
             module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
         )
 
-        self.add_sensors(module.id, module.sensors)
+        self.add_sensors(module.id, module._sensors)
 
         self.__modules[module.mac_id] = module
 
@@ -237,7 +237,9 @@ class Repository(object):
         for idx, module in enumerate(modules):
             module.id = doc_ids[idx]
             module_ids.append(module.id)
-            all_sensors.append(module.sensors if not isEmpty(module.sensors) else None)
+            all_sensors.append(
+                module._sensors if not isEmpty(module._sensors) else None
+            )
             local_dicts.append(module.to_dict(to_map=MODULE_TO_LOCAL_MAP))
             self.__modules[module.mac_id] = module
 
@@ -284,7 +286,7 @@ class Repository(object):
 
             if sensor_dict[Local.Sensors.ColName.ID] is not None:
                 module = AnalogSensor.from_dict(sensor_dict, SENSOR_FROM_LOCAL_MAP)
-                modules[module_ip].sensors.append(module)
+                modules[module_ip]._sensors.append(module)
 
         return modules
 
@@ -369,14 +371,14 @@ class Repository(object):
     def update_sensors(self, module: EPModule, props: List[str] = None, **kwargs):
         local: bool = kwargs.get("local", True)
         remote: bool = kwargs.get("remote", False)
-        sensor_ids = [sensor.id for sensor in module.sensors]
+        sensor_ids = [sensor.id for sensor in module._sensors]
         sensor_dicts: List[Dict[str, Any]] = None
         if local:
             sensor_dicts = [
                 sensor.to_dict(props, SENSOR_TO_LOCAL_MAP)
                 if props
                 else sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
-                for sensor in module.sensors
+                for sensor in module._sensors
             ]
 
             local_result = (
@@ -389,12 +391,12 @@ class Repository(object):
                 rem_props = tuple(prop for prop in props if prop in SENSOR_FIELDS)
                 rem_dicts = [
                     sensor.to_dict(rem_props, SENSOR_TO_REMOTE_MAP)
-                    for sensor in module.sensors
+                    for sensor in module._sensors
                 ]
             else:
                 rem_dicts = [
                     sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP)
-                    for sensor in module.sensors
+                    for sensor in module._sensors
                 ]
 
             self.__remote.update_documents(

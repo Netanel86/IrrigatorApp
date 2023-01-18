@@ -3,7 +3,7 @@
 from __future__ import annotations
 from collections import namedtuple
 from typing import NamedTuple, Tuple
-from sqlite import TYPES
+from data.sqlite import TYPES
 
 # region Remote constants
 __RemCollections = namedtuple("__RemColls", "SYSTEMS MODULES COMMANDS SENSORS")

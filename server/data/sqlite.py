@@ -4,7 +4,7 @@ from enum import Enum
 import logging
 import os
 import sqlite3
-from PyExtensions import isEmpty
+from extensions import isEmpty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
@@ -27,7 +27,7 @@ _TUP_VALUES = 1
 class SQLiteConnection(object):
     def __init__(self) -> None:
         self.__PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "sqlite\db\pysqlite.db"
+            os.path.dirname(os.path.abspath(__file__).split("data")[0]), "sqlite\db\pysqlite.db"
         )
         self.__create_db_dir()
         self.__init_db()
