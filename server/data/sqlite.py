@@ -4,7 +4,7 @@ from enum import Enum
 import logging
 import os
 import sqlite3
-from extensions import isEmpty
+from extensions import is_empty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
@@ -583,7 +583,7 @@ class QueryBuilder(object):
             self.connection._formatter(
                 self.__cols[0], ", ", prefix=self.__tables[0] + "."
             )
-            if not isEmpty(self.__cols)
+            if not is_empty(self.__cols)
             else self.__tables[0] + ".*"
         )
 
@@ -598,7 +598,7 @@ class QueryBuilder(object):
         src_col = kwargs.get("src_col", None)
         target_col = kwargs.get("target_col", None)
 
-        type_str = (" " + type) if not isEmpty(type) else ""
+        type_str = (" " + type) if not is_empty(type) else ""
         join_data = ""
 
         if src_col is not None:

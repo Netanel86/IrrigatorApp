@@ -2,8 +2,8 @@ from typing import Dict, List, Callable, Any
 import logging
 import json
 import paho.mqtt.client as mqtt
+from extensions import is_empty
 from paho.mqtt.client import MQTTMessage
-from PyExtensions import isEmpty
 
 
 class MQTTManager:
@@ -15,7 +15,7 @@ class MQTTManager:
             logging.info(f"Connected with result code {rc}")
             topics = [(topic, 0) for topic in self.__callbacks.keys()]
 
-            if not isEmpty(topics):
+            if not is_empty(topics):
                 client.subscribe(topics)
 
         def on_message(client, data, msg: MQTTMessage):
@@ -51,7 +51,7 @@ class MQTTManager:
                     f"{method_sig}: callback '{callback.__name__}()' is not present under '{topic}'"
                 )
 
-            if isEmpty(topic_callbacks):
+            if is_empty(topic_callbacks):
                 self.__callbacks.pop(topic)
                 self.__client.unsubscribe(topic)
         else:

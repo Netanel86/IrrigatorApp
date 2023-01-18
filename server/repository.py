@@ -7,7 +7,7 @@ from enum import Enum
 from model import AnalogSensor, DictParseable, EPModule, SensorType
 from data.firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
-from extensions import reverseDict, isEmpty
+from extensions import reverse_dict, is_empty
 from data.sqlite import (
     COL_ROWID,
     PARSE,
@@ -28,7 +28,7 @@ MODULE_TO_LOCAL_MAP = {
 }
 """A Mapping of `ModelLib.EPModule` properties to local database 'Module' table columns (key=prop_name, val=col_name)."""
 
-MODULE_FROM_LOCAL_MAP = reverseDict(MODULE_TO_LOCAL_MAP)
+MODULE_FROM_LOCAL_MAP = reverse_dict(MODULE_TO_LOCAL_MAP)
 """A Mapping of local database 'Module' table columns to `ModelLib.EPModule` properties (key=col_name, val=prop_name)."""
 
 MODULE_TO_REMOTE_MAP = {
@@ -40,7 +40,7 @@ MODULE_TO_REMOTE_MAP = {
 }
 """A Mapping of `ModelLib.EPModule` properties to remote database 'Modules' collection fields (key=prop_name, val=field_name)."""
 
-MODULE_FROM_REMOTE_MAP = reverseDict(MODULE_TO_REMOTE_MAP)
+MODULE_FROM_REMOTE_MAP = reverse_dict(MODULE_TO_REMOTE_MAP)
 """A Mapping of remote database 'Modules' collection fields to `ModelLib.EPModule` properties (key=field_name, val=prop_name)."""
 
 MODULE_FIELDS = tuple(MODULE_TO_REMOTE_MAP.keys())
@@ -53,7 +53,7 @@ SENSOR_TO_LOCAL_MAP = {
     AnalogSensor.Props().CURRENT_VAL: Local.Sensors.ColName.CURR_VAL,
 }
 
-SENSOR_FROM_LOCAL_MAP = reverseDict(SENSOR_TO_LOCAL_MAP)
+SENSOR_FROM_LOCAL_MAP = reverse_dict(SENSOR_TO_LOCAL_MAP)
 
 SENSOR_COLUMNS = tuple(SENSOR_FROM_LOCAL_MAP.keys())
 
@@ -64,7 +64,7 @@ SENSOR_TO_REMOTE_MAP = {
     AnalogSensor.Props().CURRENT_VAL: Remote.Sensors.FieldName.CURR_VAL,
 }
 
-SENSOR_FROM_REMOTE_MAP = reverseDict(SENSOR_TO_REMOTE_MAP)
+SENSOR_FROM_REMOTE_MAP = reverse_dict(SENSOR_TO_REMOTE_MAP)
 
 SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
 
@@ -155,11 +155,11 @@ class Repository(object):
 
         self.__modules[module.mac_id] = module
 
-        return module.id if not isEmpty(module.id) else None
+        return module.id if not is_empty(module.id) else None
 
     def add_sensors(self, module_id: str, sensors: List[AnalogSensor]):
-        if not isEmpty(sensors):
-            new_sensors = [sensor for sensor in sensors if isEmpty(sensor.id)]
+        if not is_empty(sensors):
+            new_sensors = [sensor for sensor in sensors if is_empty(sensor.id)]
 
             sens_rem_dicts = [
                 sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP) for sensor in new_sensors
@@ -191,7 +191,7 @@ class Repository(object):
 
         for sensors in sensor_lists:
             new_sensor_lists.append(
-                [sensor for sensor in sensors if isEmpty(sensor.id)]
+                [sensor for sensor in sensors if is_empty(sensor.id)]
                 if sensors
                 else None
             )
@@ -238,7 +238,7 @@ class Repository(object):
             module.id = doc_ids[idx]
             module_ids.append(module.id)
             all_sensors.append(
-                module._sensors if not isEmpty(module._sensors) else None
+                module._sensors if not is_empty(module._sensors) else None
             )
             local_dicts.append(module.to_dict(to_map=MODULE_TO_LOCAL_MAP))
             self.__modules[module.mac_id] = module

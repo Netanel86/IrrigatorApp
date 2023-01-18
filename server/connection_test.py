@@ -6,9 +6,8 @@ from repository import Repository, Command, Actions
 
 
 def command_callback(cmnd_list: List[Command], timestamp: datetime.datetime):
-    print(
-        "[{0}] Commands recieved".format(timestamp.astimezone().strftime("%Y-%m-%d %X"))
-    )
+    time = timestamp.astimezone().strftime("%Y-%m-%d %X")
+    print(f"[{time}] Commands recieved")
     for command in cmnd_list:
 
         print(command)
@@ -43,11 +42,11 @@ def add_single_module():
 def add_two_modules_wSensor():
     module_1 = EPModule("192.168.0.201")
     module_1.description = "PY#0"
-    module_1.sensors.append(AnalogSensor(SensorType.HUMIDITY))
+    module_1.add_sensors(AnalogSensor(SensorType.HUMIDITY))
 
     module_2 = EPModule("192.168.0.202")
     module_2.description = "PY#0"
-    module_2.sensors.append(AnalogSensor(SensorType.HUMIDITY))
+    module_2.add_sensors(AnalogSensor(SensorType.HUMIDITY))
 
     id_1 = repo.add_module(module_1)
     id_2 = repo.add_module(module_2)
@@ -79,7 +78,7 @@ def add_batch_modules_wSensors():
     ]
     for idx, module in enumerate(modules):
         module.description = "PYS#{}".format(idx + 1)
-        module.sensors = [
+        module._sensors = [
             AnalogSensor(SensorType.EC),
             AnalogSensor(SensorType.TEMPERATURE),
             AnalogSensor(SensorType.FLOW),
@@ -112,10 +111,10 @@ def add_batch_modules():
 def update_module():
     modules = repo.get_modules()
     module = modules["0.0.0.0"]
-    module.port = 8080
+    module._port = 8080
     module.description = "Python#0"
-    module.max_duration = 3600
-    module.duration = 100
+    module._max_duration = 3600
+    module._duration = 100
     is_success = repo.update_module(
         module,
         [
@@ -136,7 +135,7 @@ def update_module_sensors():
     modules = repo.get_modules()
     module = modules["0.2.0.0"]
     res = False
-    for sensor in module.sensors:
+    for sensor in module._sensors:
         sensor.curr_val += 1
         if sensor.type == SensorType.TEMPERATURE.name:
             sensor.max_val = 200

@@ -1,9 +1,9 @@
 from typing import Any, Callable, Dict, Generic, Iterable, TypeVar
 
 
-def reverseDict(dict: Dict):
+def reverse_dict(dict: Dict):
     return {val: key for key, val in dict.items()}
 
 
-def isEmpty(iterable: Iterable):
+def is_empty(iterable: Iterable):
     return len(iterable) == 0
