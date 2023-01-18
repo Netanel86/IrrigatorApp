@@ -34,9 +34,9 @@ class Observable(object):
 class DictParseable(ABC):
     @classmethod
     def Props(cls) -> NamedTuple:
-        """An abstract representation of object's property names.
+        """An abstract representation of class property names.
 
-        To be implemented and initialized with object property names.
+        To be implemented and initialized with a list of derived class property names.
         """
         raise NotImplementedError(
             f"property getter not implemented in class {cls.__class__.__name__}.Props()"
@@ -90,19 +90,17 @@ class DictParseable(ABC):
         """Parses the 'DictParseable' object to a dictionary.
 
         Args:
-            props(optional) -- a list of properties names to parse, if set only the specified properties would be parsed,
-                possible values: included in `DictParseable.Props()`.
-                default: None.
-
-            from_map(optional): a dictionary mapping this class properties to a set of custom properties,
-                (cls_prop_x: trg_prop_x) pairs. use when a set of custom property names is needed.
+            * `props`(optional) -- a list of properties names to parse, if set only the specified properties would be parsed,
+                * possible values: included in `DictParseable.Props()`, default: `None`.
+            * `from_map`(optional) -- a dictionary mapping this class properties to a set of custom properties,
+                (cls_prop_x: trg_prop_x) pairs. use when custom property names are needed.
                 default: None.
 
         Returns:
             A dictionary with the object's properties, (name: value) pairs
 
         Raises:
-            `AttributeError`: if object does not contain a property name.
+            `AttributeError`: if object does not contain one of the property names in `props` or `from_map`.
         """
         prop_dict = {}
         is_map = to_map is not None
@@ -130,15 +128,14 @@ class DictParseable(ABC):
         """Updates the object with data from a dictionary.
 
         Args:
-            source: a dictionary with object's properties (name: value) pairs, with to update the object.
+            * `source` -- a dictionary with object's properties (name: value) pairs, with to update the object.
                 possible values: included in `DictParseable.Props()`.
-
-            from_map(optional): a dictionary mapping the source properties to this class properties,
-                (src_prop_x: object_prop_x) pairs. use when the source and object propery names are not identical.
+            * `from_map`(optional) -- a dictionary mapping the source properties to this class properties,
+                (src_prop_x: object_prop_x) pairs. use when the source and object properties names are not identical.
                 default: None.
 
         Raises:
-            `AttributeError`: if object does not contain a property name.
+            `AttributeError`: if object does not contain one of the property names in `props` or `from_map`.
         """
         is_map = from_map is not None
         for prop, value in source.items():
@@ -267,6 +264,7 @@ class EPModule(DictParseable, Observable):
         """A view on :class:`EPModule` property names"""
         return EPModule.__Props
 
+    # region Properties
     @property
     def id(self) -> str:
         return self._id
@@ -287,6 +285,52 @@ class EPModule(DictParseable, Observable):
         self._mac_id = value
         self._notify_change(EPModule.Props().MAC_ID, old, value)
 
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        old = self._description
+        self._description = value
+        self._notify_change(EPModule.Props().DESCRIPTION, old, value)
+
+    @property
+    def max_duration(self):
+        return self._max_duration
+
+    @max_duration.setter
+    def max_duration(self, value):
+        old = self._max_duration
+        self._max_duration = value
+        self._notify_change(EPModule.Props().MAX_DURATION, old, value)
+
+    @property
+    def duration(self):
+        return self._duration
+
+    @duration.setter
+    def duration(self, value):
+        old = self._duration
+        self._duration = value
+        self._notify_change(EPModule.Props().DURATION, old, value)
+
+    @property
+    def on_time(self):
+        return self._on_time
+
+    @on_time.setter
+    def on_time(self, value):
+        old = self._on_time
+        self._on_time = value
+        self._notify_change(EPModule.Props().ON_TIME, old, value)
+
+    @property
+    def sensors(self):
+        return self._sensors
+
+    # endregion Properties
+
     def __init__(
         self,
         mac_id: str = "",
@@ -297,13 +341,13 @@ class EPModule(DictParseable, Observable):
         super().__init__()
         self._id: str = ""
         self._mac_id = mac_id
-        self.description: str = ""
-        self.on_time: datetime = datetime.now().astimezone()
-        self.max_duration: int = max_duration
-        self.duration: int = 0
-        self.port: int = port
-        self.timeout: float = timeout
-        self.sensors: List[AnalogSensor] = []
+        self._description: str = ""
+        self._on_time: datetime = datetime.now().astimezone()
+        self._max_duration: int = max_duration
+        self._duration: int = 0
+        self._port: int = port
+        self._timeout: float = timeout
+        self._sensors: List[AnalogSensor] = []
         self.bComError = True
         self.bConnected = False
         self.regs = []
@@ -318,6 +362,13 @@ class EPModule(DictParseable, Observable):
         self.CURRENT_WATER_FLOW = 0
         self.TOTAL_WATER_FLOW = 0
         self.RESET_TOTAL_WATER_FLOW = 0
+
+    def add_sensors(self, new_sensors: AnalogSensor | List[AnalogSensor]):
+        if isinstance(new_sensors, list):
+            self._sensors.extend(new_sensors)
+        else:
+            self._sensors.append(new_sensors)
+        self._notify_change(EPModule.Props().SENSORS, None, new_sensors)
 
     # def get_sensors_values(self) -> List[int]:
     #     values = []
@@ -347,8 +398,8 @@ class EPModule(DictParseable, Observable):
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
             self.mac_id,
             self.description,
-            self.max_duration,
-            self.on_time.strftime("%x"),
-            self.on_time.strftime("%X"),
-            self.duration,
+            self._max_duration,
+            self._on_time.strftime("%x"),
+            self._on_time.strftime("%X"),
+            self._duration,
         )
