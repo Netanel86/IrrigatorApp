@@ -165,7 +165,7 @@ class DictParseable(ABC):
 
 
 # Linear Conversion
-class AnalogSensor(DictParseable):
+class AnalogSensor(DictParseable, Observable):
     # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
     __Properties = namedtuple(
         "__Props",
@@ -184,6 +184,16 @@ class AnalogSensor(DictParseable):
     def Props() -> __Properties:
         """A view on :class:`AnalogSensor` property names"""
         return AnalogSensor.__Props
+    
+    @property
+    def curr_val(self):
+        return self.__curr_val
+
+    @curr_val.setter
+    def curr_val(self, value):
+        old = self.__curr_val
+        self.__curr_val = value
+        self._notify_change(AnalogSensor.Props().CURRENT_VAL,old,value)
 
     def __init__(
         self,
@@ -195,11 +205,12 @@ class AnalogSensor(DictParseable):
         max_val=100,
         ScalingErrorOffset=3,
     ):
-        self._id: str = ""
-        self.type: SensorType = _type
-        self.curr_val: float = 0
-        self.min_val: float = min_val
-        self.max_val: float = max_val
+        super().__init__()
+        self.__id: str = ""
+        self.__type: SensorType = _type
+        self.__curr_val: float = 0
+        self.__min_val: float = min_val
+        self.__max_val: float = max_val
 
         self.aIn = aIn
         self.aIn_Min = aIn_Min
@@ -231,7 +242,9 @@ class AnalogSensor(DictParseable):
 
     def getCurrentValue(self):
         return self.curr_val
-
+    
+    def __str__(self) -> str:
+        return f"{self.__type.name} Sensor [{self.__id}]: Max: {self.__max_val}, Min: {self.__min_val}, Current: {self.__curr_val}"
 
 class SensorType(Enum):
     EC = "EC"
@@ -267,67 +280,67 @@ class EPModule(DictParseable, Observable):
     # region Properties
     @property
     def id(self) -> str:
-        return self._id
+        return self.__id
 
     @id.setter
     def id(self, value: str):
-        old = self._id
-        self._id = value
+        old = self.__id
+        self.__id = value
         self._notify_change(EPModule.Props().ID, old, value)
 
     @property
     def mac_id(self) -> str:
-        return self._mac_id
+        return self.__mac_id
 
     @mac_id.setter
     def mac_id(self, value):
-        old = self._mac_id
-        self._mac_id = value
+        old = self.__mac_id
+        self.__mac_id = value
         self._notify_change(EPModule.Props().MAC_ID, old, value)
 
     @property
     def description(self):
-        return self._description
+        return self.__description
 
     @description.setter
     def description(self, value):
-        old = self._description
-        self._description = value
+        old = self.__description
+        self.__description = value
         self._notify_change(EPModule.Props().DESCRIPTION, old, value)
 
     @property
     def max_duration(self):
-        return self._max_duration
+        return self.__max_duration
 
     @max_duration.setter
     def max_duration(self, value):
-        old = self._max_duration
-        self._max_duration = value
+        old = self.__max_duration
+        self.__max_duration = value
         self._notify_change(EPModule.Props().MAX_DURATION, old, value)
 
     @property
     def duration(self):
-        return self._duration
+        return self.__duration
 
     @duration.setter
     def duration(self, value):
-        old = self._duration
-        self._duration = value
+        old = self.__duration
+        self.__duration = value
         self._notify_change(EPModule.Props().DURATION, old, value)
 
     @property
     def on_time(self):
-        return self._on_time
+        return self.__on_time
 
     @on_time.setter
     def on_time(self, value):
-        old = self._on_time
-        self._on_time = value
+        old = self.__on_time
+        self.__on_time = value
         self._notify_change(EPModule.Props().ON_TIME, old, value)
 
     @property
     def sensors(self):
-        return self._sensors
+        return self.__sensors
 
     # endregion Properties
 
@@ -339,15 +352,15 @@ class EPModule(DictParseable, Observable):
         max_duration: int = 600,
     ):
         super().__init__()
-        self._id: str = ""
-        self._mac_id = mac_id
-        self._description: str = ""
-        self._on_time: datetime = datetime.now().astimezone()
-        self._max_duration: int = max_duration
-        self._duration: int = 0
-        self._port: int = port
-        self._timeout: float = timeout
-        self._sensors: List[AnalogSensor] = []
+        self.__id: str = ""
+        self.__mac_id = mac_id
+        self.__description: str = ""
+        self.__on_time: datetime = datetime.now().astimezone()
+        self.__max_duration: int = max_duration
+        self.__duration: int = 0
+        self.__port: int = port
+        self.__timeout: float = timeout
+        self.__sensors: List[AnalogSensor] = []
         self.bComError = True
         self.bConnected = False
         self.regs = []
@@ -365,9 +378,9 @@ class EPModule(DictParseable, Observable):
 
     def add_sensors(self, new_sensors: AnalogSensor | List[AnalogSensor]):
         if isinstance(new_sensors, list):
-            self._sensors.extend(new_sensors)
+            self.__sensors.extend(new_sensors)
         else:
-            self._sensors.append(new_sensors)
+            self.__sensors.append(new_sensors)
         self._notify_change(EPModule.Props().SENSORS, None, new_sensors)
 
     # def get_sensors_values(self) -> List[int]:
@@ -398,8 +411,8 @@ class EPModule(DictParseable, Observable):
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
             self.mac_id,
             self.description,
-            self._max_duration,
-            self._on_time.strftime("%x"),
-            self._on_time.strftime("%X"),
-            self._duration,
+            self.__max_duration,
+            self.__on_time.strftime("%x"),
+            self.__on_time.strftime("%X"),
+            self.__duration,
         )

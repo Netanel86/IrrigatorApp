@@ -72,8 +72,19 @@ SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
 class Repository(object):
     def __init__(self):
         self.__modules: Dict[str, EPModule] = {}
+        self.__init_logger()
         self.__init_local()
         self.__init_remote()
+
+    def __init_logger(self):
+        self.__logger = logging.getLogger(self.__class__.__name__)
+        self.__logger.propagate = False
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", "%x %X"
+        )
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        self.__logger.addHandler(handler)
 
     def __init_local(self):
         self.__local = SQLiteConnection()
@@ -151,9 +162,10 @@ class Repository(object):
             module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
         )
 
-        self.add_sensors(module.id, module._sensors)
+        self.add_sensors(module.id, module.__sensors)
 
         self.__modules[module.mac_id] = module
+        self.__init_on_change_callbacks(module)
 
         return module.id if not is_empty(module.id) else None
 
@@ -238,7 +250,7 @@ class Repository(object):
             module.id = doc_ids[idx]
             module_ids.append(module.id)
             all_sensors.append(
-                module._sensors if not is_empty(module._sensors) else None
+                module.__sensors if not is_empty(module.__sensors) else None
             )
             local_dicts.append(module.to_dict(to_map=MODULE_TO_LOCAL_MAP))
             self.__modules[module.mac_id] = module
@@ -249,20 +261,87 @@ class Repository(object):
         return doc_ids if len(doc_ids) == insert_count else None
 
     def get_modules(self) -> Dict[str, EPModule]:
-        if len(self.__modules) == 0:
-            self.__modules = (
-                self.__local.select(Local.Modules.TABLE_NAME)
-                .join(
-                    Local.Sensors.TABLE_NAME,
-                    SENSOR_COLUMNS,
-                    QueryBuilder.JOIN.LEFT,
-                    src_col=Local.Modules.ColName.ID,
-                    target_col=Local.Sensors.ColName.MODULE_ID,
-                )
-                .orderby((Local.Modules.ColName.IP,))
-                .execute(self.__parse_modules)
-            )
+        if is_empty(self.__modules):
+            # self.__modules = (
+            #     self.__local.select(Local.Modules.TABLE_NAME)
+            #     .join(
+            #         Local.Sensors.TABLE_NAME,
+            #         SENSOR_COLUMNS,
+            #         QueryBuilder.JOIN.LEFT,
+            #         src_col=Local.Modules.ColName.ID,
+            #         target_col=Local.Sensors.ColName.MODULE_ID,
+            #     )
+            #     .orderby((Local.Modules.ColName.MAC_ID,))
+            #     .execute(self.__parse_modules)
+            # )
+            module = EPModule("1:2:3:4:5")
+            module.description = "callback tester"
+            module.add_sensors(AnalogSensor(SensorType.EC))
+            self.__modules[module.mac_id] = module
+
+            for module in self.__modules.values():
+                self.__init_on_change_callbacks(module)
+
         return self.__modules
+
+    def __init_on_change_callbacks(self, module: EPModule):
+        module.register_callback(self.__on_module_change)
+        for sensor in module.sensors:
+            sensor.register_callback(
+                lambda sen, prop, old, new: self.__on_sensor_change(
+                    module.id, sen, prop, old, new
+                )
+            )
+
+    def __on_module_change(self, module: EPModule, property: str, old_val, new_val):
+        if property == EPModule.Props().SENSORS:
+            self.add_sensors(module.id, new_val)
+
+            self.__logger.info(
+                f"updated> add {len(new_val) if isinstance(new_val,list) else 1} new sensors {[val for val in new_val] if isinstance(new_val,list) else new_val}"
+            )
+        else:
+            # updated = self.update_module(
+            #     module,
+            #     [
+            #         property,
+            #     ],
+            #     remote=True,
+            # )
+            # if not updated:
+            #     method_sig = (
+            #         f"{self.__class__.__name__}.{self.__on_module_change.__name__}()"
+            #     )
+            #     self.__logger.warn(
+            #         f"{method_sig}: Failed to update property '{property}' in module [{module.mac_id}]"
+            #     )
+            # else:
+            self.__logger.info(
+                f"updated> update module property '{property}' from '{old_val}' to '{new_val}'"
+            )
+
+    def __on_sensor_change(
+        self, module_id, sensor: AnalogSensor, property: str, old_val, new_val
+    ):
+        # updated = self.update_sensor(
+        #     module_id,
+        #     sensor,
+        #     [
+        #         property,
+        #     ],
+        #     remote=True,
+        # )
+        # if not updated:
+        #     method_sig = (
+        #         f"{self.__class__.__name__}.{self.__on_sensor_change.__name__}()"
+        #     )
+        #     self.__logger.warning(
+        #         f"{method_sig}: Failed to update property '{property}' in sensor id [{sensor.id}], parent module id [{module_id}]"
+        #     )
+        # else:
+        self.__logger.info(
+            f"callback> update sensor in module {module_id} property '{property}' from '{old_val}' to '{new_val}'"
+        )
 
     def __parse_modules(self, col_data: Tuple[Tuple], values: List[Tuple]):
         mod_col_count = len(Local.Modules.COLUMNS)
@@ -278,7 +357,7 @@ class Repository(object):
                 sensor_cols, tup[mod_col_count:sen_col_last_idx]
             )
 
-            module_ip = module_dict[Local.Modules.ColName.IP]
+            module_ip = module_dict[Local.Modules.ColName.MAC_ID]
             if module_ip not in modules.keys():
                 modules[module_ip] = EPModule.from_dict(
                     module_dict, MODULE_FROM_LOCAL_MAP
@@ -286,7 +365,7 @@ class Repository(object):
 
             if sensor_dict[Local.Sensors.ColName.ID] is not None:
                 module = AnalogSensor.from_dict(sensor_dict, SENSOR_FROM_LOCAL_MAP)
-                modules[module_ip]._sensors.append(module)
+                modules[module_ip].sensors.append(module)
 
         return modules
 
@@ -371,14 +450,14 @@ class Repository(object):
     def update_sensors(self, module: EPModule, props: List[str] = None, **kwargs):
         local: bool = kwargs.get("local", True)
         remote: bool = kwargs.get("remote", False)
-        sensor_ids = [sensor.id for sensor in module._sensors]
+        sensor_ids = [sensor.id for sensor in module.__sensors]
         sensor_dicts: List[Dict[str, Any]] = None
         if local:
             sensor_dicts = [
                 sensor.to_dict(props, SENSOR_TO_LOCAL_MAP)
                 if props
                 else sensor.to_dict(to_map=SENSOR_TO_LOCAL_MAP)
-                for sensor in module._sensors
+                for sensor in module.__sensors
             ]
 
             local_result = (
@@ -391,12 +470,12 @@ class Repository(object):
                 rem_props = tuple(prop for prop in props if prop in SENSOR_FIELDS)
                 rem_dicts = [
                     sensor.to_dict(rem_props, SENSOR_TO_REMOTE_MAP)
-                    for sensor in module._sensors
+                    for sensor in module.__sensors
                 ]
             else:
                 rem_dicts = [
                     sensor.to_dict(to_map=SENSOR_TO_REMOTE_MAP)
-                    for sensor in module._sensors
+                    for sensor in module.__sensors
                 ]
 
             self.__remote.update_documents(

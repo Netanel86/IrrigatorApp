@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import List
 from unittest import result
 from model import AnalogSensor, EPModule, SensorType
@@ -78,7 +79,7 @@ def add_batch_modules_wSensors():
     ]
     for idx, module in enumerate(modules):
         module.description = "PYS#{}".format(idx + 1)
-        module._sensors = [
+        module.__sensors = [
             AnalogSensor(SensorType.EC),
             AnalogSensor(SensorType.TEMPERATURE),
             AnalogSensor(SensorType.FLOW),
@@ -111,10 +112,10 @@ def add_batch_modules():
 def update_module():
     modules = repo.get_modules()
     module = modules["0.0.0.0"]
-    module._port = 8080
+    module.__port = 8080
     module.description = "Python#0"
-    module._max_duration = 3600
-    module._duration = 100
+    module.__max_duration = 3600
+    module.__duration = 100
     is_success = repo.update_module(
         module,
         [
@@ -135,7 +136,7 @@ def update_module_sensors():
     modules = repo.get_modules()
     module = modules["0.2.0.0"]
     res = False
-    for sensor in module._sensors:
+    for sensor in module.__sensors:
         sensor.curr_val += 1
         if sensor.type == SensorType.TEMPERATURE.name:
             sensor.max_val = 200
@@ -164,7 +165,17 @@ def test_dictParsable():
     print(module1)
 
 
-test_dictParsable()
+logging.getLogger().setLevel(logging.INFO)
+
 repo = Repository()
 modules = repo.get_modules()
-# repo.disconnect()
+module = modules["1:2:3:4:5"]
+module.id = "Hell YA!"
+module.description = "Tester"
+module.max_duration = 500
+module.duration = 25
+module.on_time = datetime.datetime.now().astimezone()
+module.add_sensors(AnalogSensor(SensorType.FLOW))
+module.sensors[0].curr_val = 20
+
+repo.disconnect()
