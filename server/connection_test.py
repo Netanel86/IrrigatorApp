@@ -79,7 +79,7 @@ def add_batch_modules_wSensors():
     ]
     for idx, module in enumerate(modules):
         module.description = "PYS#{}".format(idx + 1)
-        module.__sensors = [
+        module._sensors = [
             AnalogSensor(SensorType.EC),
             AnalogSensor(SensorType.TEMPERATURE),
             AnalogSensor(SensorType.FLOW),
@@ -159,13 +159,19 @@ def update_module_sensors():
 
 def test_dictParsable():
     module = EPModule("78:21:84:8C:AF:FC")
+    module2 = EPModule("GG:21:22:8C:AF:11")
     module.id = "123"
+    module2.id = "456"
     dict = module.to_dict()
-    module1 = EPModule.from_dict(dict)
-    print(module1)
+    dict2 = module2.to_dict()
+    module = EPModule.from_dict(dict)
+    module2 = EPModule.from_dict(dict2)
+    print(f"{module} + {module2}")
 
 
 logging.getLogger().setLevel(logging.INFO)
+# test_dictParsable()
+
 
 repo = Repository()
 modules = repo.get_modules()

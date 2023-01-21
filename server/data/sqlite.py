@@ -1,13 +1,13 @@
 from __future__ import annotations
 from collections import namedtuple
 from enum import Enum
-import logging
 import os
 import sqlite3
 from extensions import is_empty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
+from infra import Loggable
 
 __ValueTypes = namedtuple("__ValueTypes", "TEXT INT TIME FLOAT")
 
@@ -24,10 +24,11 @@ _TUP_COLUMNS = 0
 _TUP_VALUES = 1
 
 
-class SQLiteConnection(object):
+class SQLiteConnection(Loggable):
     def __init__(self) -> None:
         self.__PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__).split("data")[0]), "sqlite\db\pysqlite.db"
+            os.path.dirname(os.path.abspath(__file__).split("data")[0]),
+            "sqlite\db\pysqlite.db",
         )
         self.__create_db_dir()
         self.__init_db()
@@ -39,7 +40,8 @@ class SQLiteConnection(object):
                 detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
             )
         except Error as ex:
-            logging.error(ex)
+            method_sig = self.__init_db.__name__.removeprefix("__")
+            self.logger.error(f"{method_sig}> {ex}")
 
     def __create_db_dir(self):
         """Creates database directory if it does not exist"""
@@ -95,7 +97,8 @@ class SQLiteConnection(object):
         values: Tuple | List[Tuple] = None,
         result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] = None,
     ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
-        logging.info(f"sqlite execute> {q_type.name}: {query}")
+        method_sig = self._execute.__name__.removeprefix("_")
+        self.logger.info(f"{method_sig}> {q_type.name}: {query}")
         result = None
         is_many = False
         try:
@@ -133,7 +136,7 @@ class SQLiteConnection(object):
                 self.__db.commit()
 
         except Exception as ex:
-            logging.warning(ex)
+            self.logger.warning(f"{method_sig}> {ex}")
             result = False
         finally:
             return result
