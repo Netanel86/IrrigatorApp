@@ -1,35 +1,32 @@
+from __future__ import annotations
 from typing import Dict, List, Callable, Any
-import json
+import json, logging
 import paho.mqtt.client as mqtt
 from extensions import is_empty
-from infra import Loggable
+from infra import Logger
 from paho.mqtt.client import MQTTMessage
+from datetime import datetime
 
 
-class MQTTManager(Loggable):
+class MQTTManager(object):
     def __init__(self, name) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
         self._client: mqtt.Client = mqtt.Client(name)
         self._callbacks: Dict[str, List[Callable[[Dict[str, Any]], None]]] = {}
         self._suffixs: List[str] = [None, None]
 
         def on_connect(client: mqtt.Client, userdata, flags, rc):
-            self.logger.info(f"Connected with result code {rc}")
+            self.logger.info(f"{on_connect.__name__}> Connected with result code {rc}")
             topics = [(topic, 0) for topic in self._callbacks.keys()]
 
             if not is_empty(topics):
                 client.subscribe(topics)
 
         def on_message(client, data, msg: MQTTMessage):
-            self.__execute_callbacks(msg.topic, json.load(msg.payload.decode()))
+            self.__execute_callbacks(msg.topic, json.loads(msg.payload.decode()))
 
         self._client.on_connect = on_connect
         self._client.on_message = on_message
-
-    def __execute_callbacks(self, topic, data: Dict[str, Any]):
-        topic_callbacks = self._callbacks.get(topic, None)
-        if topic_callbacks is not None:
-            for callback in topic_callbacks:
-                callback(data)
 
     def subscribe(self, topic, callback: Callable[[Dict[str, Any]], None]):
         topic_callbacks = self._callbacks.get(topic, None)
@@ -58,21 +55,11 @@ class MQTTManager(Loggable):
         else:
             self.logger.info(f"{method_sig}: topic '{topic}' is empty.")
 
-    def publish(self, topic, data: Dict[str, Any]):
-        self._client.publish(topic, json.dumps(data))
-
-    SUBSCRIBE = 0
-    PUBLISH = 1
-
-    def set_suffix(self, suffix: str, suffix_id: int):
-        self._suffixs.insert(suffix_id, suffix)
-
-    def __topic(self, topic: str, suffix_id: int) -> str:
-        return (
-            topic
-            if self._suffixs[suffix_id] is None
-            else topic + self._suffixs[suffix_id]
+    def publish(self, topic, data: Dict[str, Any]) -> bool:
+        info = self._client.publish(
+            topic, json.dumps(data, default=self.__json_serializer)
         )
+        return info.is_published()
 
     def connect(self, broker_ip, port):
         self._client.connect(broker_ip, port)
@@ -81,3 +68,19 @@ class MQTTManager(Loggable):
     def disconnect(self):
         self._client.loop_stop()
         self._client.disconnect()
+
+    def __execute_callbacks(self, topic, data: Dict[str, Any]):
+        topic_callbacks = self._callbacks.get(topic, None)
+        if topic_callbacks is not None:
+            for callback in topic_callbacks:
+                callback(data)
+
+    def __json_serializer(self, obj) -> str:
+        if isinstance(obj, datetime):
+            serialized = obj.isoformat()
+        else:
+            raise TypeError(
+                f"{self.__class__.__name__}.{self.__json_serializer.__name__}(): Type {type(obj)} is not serializable"
+            )
+
+        return serialized

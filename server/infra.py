@@ -2,26 +2,21 @@ from __future__ import annotations
 from abc import ABC
 from enum import Enum
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Tuple, Callable
 from extensions import is_empty
 
 
-class Loggable(ABC):
-    _logger: logging.Logger = None
-
-    @property
-    def logger(self) -> logging.Logger:
-        if self.__class__._logger is None:
-            self.__class__._logger = logging.getLogger(self.__class__.__name__)
-            self.__class__._logger.propagate = False
-            formatter = logging.Formatter(
-                "%(levelname)s %(asctime)s %(name)s - %(message)s", "%X"
-            )
-            handler = logging.StreamHandler()
-            handler.setFormatter(formatter)
-            self.__class__._logger.addHandler(handler)
-
-        return self.__class__._logger
+class Logger(logging.Logger):
+    def __init__(self, name) -> None:
+        super().__init__(name, logging.INFO)
+        self.propagate = False
+        formatter = logging.Formatter(
+            "%(levelname)s %(asctime)s %(name)s - %(message)s", "%X"
+        )
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        self.addHandler(handler)
 
 
 class Observable(object):
@@ -51,7 +46,11 @@ class Observable(object):
                     callback(self, property, old_value, new_value)
 
 
-class DictParseable(Loggable):
+class DictParseable(ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+
     @classmethod
     def Props(cls) -> NamedTuple:
         """An abstract representation of class property names.
@@ -165,8 +164,20 @@ class DictParseable(Loggable):
                     f"Key: Dict 'from_map' has no key '{prop}', trying to use 'source' key instead.."
                 )
             obj_prop = prop if (not is_map) | (not is_in_map) else from_map[prop]
+
             if not hasattr(self, obj_prop):
                 DictParseable._raise_AttributeError(setattr.__name__, obj_prop)
+
+            value_type = type(value)
+            attr_type = type(getattr(self, obj_prop))
+
+            if value_type is not attr_type:
+                if isinstance(getattr(self, obj_prop), datetime):
+                    value = datetime.fromisoformat(value)
+
+                elif isinstance(getattr(self, obj_prop), Enum):
+                    value = attr_type[f"{value}"]
+
             setattr(self, obj_prop, value)
 
     def __to_dict(self) -> Dict[str, Any]:

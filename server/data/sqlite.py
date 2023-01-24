@@ -1,13 +1,13 @@
 from __future__ import annotations
 from collections import namedtuple
 from enum import Enum
+import logging
 import os
 import sqlite3
 from extensions import is_empty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
-from infra import Loggable
 
 __ValueTypes = namedtuple("__ValueTypes", "TEXT INT TIME FLOAT")
 
@@ -24,8 +24,9 @@ _TUP_COLUMNS = 0
 _TUP_VALUES = 1
 
 
-class SQLiteConnection(Loggable):
+class SQLiteConnection(object):
     def __init__(self) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.__PATH = os.path.join(
             os.path.dirname(os.path.abspath(__file__).split("data")[0]),
             "sqlite\db\pysqlite.db",

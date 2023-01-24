@@ -1,10 +1,11 @@
 from __future__ import annotations
 from collections import namedtuple
+import logging
 from typing import Any, Callable, Dict, List, Tuple
 from datetime import datetime
 from enum import Enum
 from model import AnalogSensor, EPModule, SensorType
-from infra import Loggable, DictParseable
+from infra import DictParseable
 from data.firestore import FirestoreConnection, OrderBy, Where
 from constants import Local, Remote
 from extensions import reverse_dict, is_empty
@@ -69,8 +70,9 @@ SENSOR_FROM_REMOTE_MAP = reverse_dict(SENSOR_TO_REMOTE_MAP)
 SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
 
 
-class Repository(Loggable):
+class Repository(object):
     def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self._modules: Dict[str, EPModule] = {}
         self.__init_local()
         self.__init_remote()
@@ -142,16 +144,16 @@ class Repository(Loggable):
             obj.id = ids_list[idx]
 
     def add_module(self, module: EPModule):
-        module.id = self.__remote.add_document(
-            self.PATH_MODULES, module.to_dict(to_map=MODULE_TO_REMOTE_MAP)
-        )
+        # module.id = self.__remote.add_document(
+        #     self.PATH_MODULES, module.to_dict(to_map=MODULE_TO_REMOTE_MAP)
+        # )
 
-        self._local.insert(
-            Local.Modules.TABLE_NAME,
-            module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
-        )
+        # self._local.insert(
+        #     Local.Modules.TABLE_NAME,
+        #     module.to_dict(to_map=MODULE_TO_LOCAL_MAP),
+        # )
 
-        self.add_sensors(module.id, module._sensors)
+        # self.add_sensors(module.id, module._sensors)
 
         self._modules[module.mac_id] = module
         self.__init_on_change_callbacks(module)
@@ -288,7 +290,7 @@ class Repository(Loggable):
             # self.add_sensors(module.id, new_val)
 
             self.logger.info(
-                f"{method_sig}> add {len(new_val) if isinstance(new_val,list) else 1} new sensors."
+                f"{method_sig}> add {len(new_val) if isinstance(new_val, list) else 1} new sensors."
             )
         else:
             # updated = self.update_module(
