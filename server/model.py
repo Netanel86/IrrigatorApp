@@ -5,6 +5,16 @@ from enum import Enum
 from datetime import datetime
 from infra import *
 
+
+class SensorType(Enum):
+    NONE = ""
+    EC = "EC"
+    FLOW = "L/s"
+    HUMIDITY = "%"
+    PH = "pH"
+    TEMPERATURE = "C"
+
+
 # Linear Conversion
 class AnalogSensor(DictParseable, Observable):
     # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
@@ -28,41 +38,51 @@ class AnalogSensor(DictParseable, Observable):
 
     # region Properties
     @property
-    def id(self):
+    def id(self) -> str:
         return self.__id
 
     @id.setter
-    def id(self, value):
+    def id(self, value: str):
         old = self.__id
         self.__id = value
         self._notify_change(AnalogSensor.Props().ID, old, value)
 
     @property
-    def min_val(self):
+    def type(self) -> SensorType:
+        return self.__type
+
+    @type.setter
+    def type(self, value: SensorType):
+        old = self.__type
+        self.__type = value
+        self._notify_change(AnalogSensor.Props().TYPE, old, value)
+
+    @property
+    def min_val(self) -> float:
         return self.__min_val
 
     @min_val.setter
-    def min_val(self, value):
+    def min_val(self, value: float):
         old = self.__min_val
         self.__min_val = value
         self._notify_change(AnalogSensor.Props().MIN_VALUE, old, value)
 
     @property
-    def max_val(self):
+    def max_val(self) -> float:
         return self.__max_val
 
     @max_val.setter
-    def max_val(self, value):
+    def max_val(self, value: float):
         old = self.__max_val
         self.__max_val = value
         self._notify_change(AnalogSensor.Props().MAX_VALUE, old, value)
 
     @property
-    def curr_val(self):
+    def curr_val(self) -> float:
         return self.__curr_val
 
     @curr_val.setter
-    def curr_val(self, value):
+    def curr_val(self, value: float):
         old = self.__curr_val
         self.__curr_val = value
         self._notify_change(AnalogSensor.Props().CURRENT_VAL, old, value)
@@ -71,18 +91,18 @@ class AnalogSensor(DictParseable, Observable):
 
     def __init__(
         self,
-        _type: SensorType = None,
+        _type: SensorType = SensorType.NONE,
         aIn=0,
         aIn_Min=1140,
         aIn_Max=3100,
-        min_val=0,
-        max_val=100,
+        min_val=0.0,
+        max_val=100.0,
         ScalingErrorOffset=3,
     ):
         super().__init__()
         self.__id: str = ""
         self.__type: SensorType = _type
-        self.__curr_val: float = 0
+        self.__curr_val: float = 0.0
         self.__min_val: float = min_val
         self.__max_val: float = max_val
 
@@ -116,14 +136,6 @@ class AnalogSensor(DictParseable, Observable):
 
     def __str__(self) -> str:
         return f"{self.__type.name} Sensor [{self.__id}]: Max: {self.__max_val}, Min: {self.__min_val}, Current: {self.__curr_val}"
-
-
-class SensorType(Enum):
-    EC = "EC"
-    FLOW = "L/s"
-    HUMIDITY = "%"
-    PH = "pH"
-    TEMPERATURE = "C"
 
 
 class EPModule(DictParseable, Observable):
@@ -181,7 +193,7 @@ class EPModule(DictParseable, Observable):
         self._notify_change(EPModule.Props().DESCRIPTION, old, value)
 
     @property
-    def max_duration(self):
+    def max_duration(self) -> int:
         return self._max_duration
 
     @max_duration.setter
@@ -191,7 +203,7 @@ class EPModule(DictParseable, Observable):
         self._notify_change(EPModule.Props().MAX_DURATION, old, value)
 
     @property
-    def duration(self):
+    def duration(self) -> int:
         return self._duration
 
     @duration.setter
@@ -211,8 +223,8 @@ class EPModule(DictParseable, Observable):
         self._notify_change(EPModule.Props().ON_TIME, old, value)
 
     @property
-    def sensors(self):
-        return self._sensors
+    def sensors(self) -> List[AnalogSensor]:
+        return list(self._sensors.values())
 
     # endregion Properties
 
@@ -232,7 +244,7 @@ class EPModule(DictParseable, Observable):
         self._duration: int = 0
         self.port: int = port
         self.timeout: float = timeout
-        self._sensors: List[AnalogSensor] = []
+        self._sensors: Dict[str, AnalogSensor] = {}
         self.bComError = True
         self.bConnected = False
         self.regs = []
@@ -250,10 +262,14 @@ class EPModule(DictParseable, Observable):
 
     def add_sensors(self, new_sensors: AnalogSensor | List[AnalogSensor]):
         if isinstance(new_sensors, list):
-            self._sensors.extend(new_sensors)
+            self._sensors.update({sensor.id: sensor for sensor in new_sensors})
         else:
-            self._sensors.append(new_sensors)
+            self._sensors[new_sensors.id] = new_sensors
+
         self._notify_change(EPModule.Props().SENSORS, None, new_sensors)
+
+    def get_sensor(self, id: str) -> AnalogSensor:
+        return self._sensors[id]
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
