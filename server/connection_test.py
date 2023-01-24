@@ -1,9 +1,11 @@
 import datetime
 import logging
-from typing import List
+import os, subprocess
+from typing import Any, List, Dict
 from unittest import result
-from model import AnalogSensor, EPModule, SensorType
+from model import AnalogSensor, EPModule, SensorType, Logger
 from repository import Repository, Command, Actions
+from mqtt_manager import MQTTManager
 
 
 def command_callback(cmnd_list: List[Command], timestamp: datetime.datetime):
@@ -169,19 +171,42 @@ def test_dictParsable():
     print(f"{module} + {module2}")
 
 
-logging.getLogger().setLevel(logging.INFO)
+def test_mqtt():
+    module = EPModule("88:21:84:8C:AF:FC")
+    sens1 = AnalogSensor(SensorType.EC)
+    sens1.id = "1"
+    sens2 = AnalogSensor(SensorType.TEMPERATURE)
+    sens2.id = "2"
+    sens3 = AnalogSensor(SensorType.EC)
+    sens3.id = "3"
+    module.add_sensors(sens3)
+    module.add_sensors([sens1, sens2])
+    client = MQTTManager("tester")
+    client.connect("192.168.1.177", 1883)
+    publish_dict: Dict[str, Any | List | Dict] = {
+        "module": module.to_dict(),
+        "sensors": [],
+    }
+    for sensor in module.sensors:
+        publish_dict["sensors"].append(sensor.to_dict())
+    client.publish("connected_devices", publish_dict)
+
+
+logging.setLoggerClass(Logger)
+test_mqtt()
+# logging.getLogger().setLevel(logging.INFO)
 # test_dictParsable()
 
 
-repo = Repository()
-modules = repo.get_modules()
-module = modules["1:2:3:4:5"]
-module.id = "Hell YA!"
-module.description = "Tester"
-module.max_duration = 500
-module.duration = 25
-module.on_time = datetime.datetime.now().astimezone()
-module.add_sensors(AnalogSensor(SensorType.FLOW))
-module.sensors[0].curr_val = 20
+# repo = Repository()
+# modules = repo.get_modules()
+# module = modules["1:2:3:4:5"]
+# module.id = "Hell YA!"
+# module.description = "Tester"
+# module.max_duration = 500
+# module.duration = 25
+# module.on_time = datetime.datetime.now().astimezone()
+# module.add_sensors(AnalogSensor(SensorType.FLOW))
+# module.sensors[0].curr_val = 20
 
-repo.disconnect()
+# repo.disconnect()
