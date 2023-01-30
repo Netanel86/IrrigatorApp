@@ -3,12 +3,11 @@ from typing import Dict, List, Callable, Any
 import json, logging
 import paho.mqtt.client as mqtt
 from extensions import is_empty
-from infra import Logger
 from paho.mqtt.client import MQTTMessage
 from datetime import datetime
 
 
-class MQTTManager(object):
+class MQTTConnection(object):
     def __init__(self, name) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self._client: mqtt.Client = mqtt.Client(name)

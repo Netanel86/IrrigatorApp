@@ -5,7 +5,7 @@ from typing import Any, List, Dict
 from unittest import result
 from model import AnalogSensor, EPModule, SensorType, Logger
 from repository import Repository, Command, Actions
-from mqtt_manager import MQTTManager
+from data.mqtt import MQTTConnection
 
 
 def command_callback(cmnd_list: List[Command], timestamp: datetime.datetime):
@@ -181,7 +181,7 @@ def test_mqtt():
     sens3.id = "3"
     module.add_sensors(sens3)
     module.add_sensors([sens1, sens2])
-    client = MQTTManager("tester")
+    client = MQTTConnection("tester")
     client.connect("192.168.1.177", 1883)
     publish_dict: Dict[str, Any | List | Dict] = {
         "module": module.to_dict(),
