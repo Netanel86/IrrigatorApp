@@ -3,7 +3,7 @@
 from __future__ import annotations
 from collections import namedtuple
 from typing import NamedTuple, Tuple
-from data.sqlite import TYPES
+from data.sqlite import TYPE, ATTR
 
 # region Remote constants
 __RemCollections = namedtuple("__RemColls", "SYSTEMS MODULES COMMANDS SENSORS")
@@ -77,15 +77,15 @@ Remote = __Remote(__REM_COMM, __REM_MODULE, __REM_SENS, __REM_SYS)
 # endregion
 
 # region Local constants
-__LocTables = namedtuple("__LocTableNames", "SYSTEM MODULES SENSORS")
-__LOC_TABLES = __LocTables("system", "modules", "sensors")
+__LocalTableNames = namedtuple("__LocalTables", "system module sensor xref")
+__local_table_names = __LocalTableNames("system", "module", "sensor", "xref")
 
-__ModuleLocColumns = namedtuple(
-    "__ModuleLocColumns",
-    "ID MAC_ID DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT",
+__LocalModuleColumns = namedtuple(
+    "__LocalModuleColumns",
+    "id mac_id description max_duration duration on_time port timeout",
 )
-__LOC_MOD_COLUMNS = __ModuleLocColumns(
-    "id",
+__local_module_columns = __LocalModuleColumns(
+    "module_id",
     "mac_id",
     "description",
     "max_duration",
@@ -94,84 +94,113 @@ __LOC_MOD_COLUMNS = __ModuleLocColumns(
     "port",
     "timeout",
 )
-__LOC_MOD_TYPES = (
-    (__LOC_MOD_COLUMNS.ID, TYPES.TEXT),
-    (__LOC_MOD_COLUMNS.MAC_ID, TYPES.TEXT),
-    (__LOC_MOD_COLUMNS.DESCRIPTION, TYPES.TEXT),
-    (__LOC_MOD_COLUMNS.MAX_DURATION, TYPES.INT),
-    (__LOC_MOD_COLUMNS.DURATION, TYPES.INT),
-    (__LOC_MOD_COLUMNS.ON_TIME, TYPES.TIME),
-    (__LOC_MOD_COLUMNS.PORT, TYPES.INT),
-    (__LOC_MOD_COLUMNS.TIMEOUT, TYPES.FLOAT),
+__local_module_types = (
+    (__local_module_columns.id, TYPE.INT, ATTR.PRIMARY_KEY),
+    (__local_module_columns.mac_id, TYPE.TEXT),
+    (__local_module_columns.description, TYPE.TEXT),
+    (__local_module_columns.max_duration, TYPE.INT),
+    (__local_module_columns.duration, TYPE.INT),
+    (__local_module_columns.on_time, TYPE.TIME),
+    (__local_module_columns.port, TYPE.INT),
+    (__local_module_columns.timeout, TYPE.FLOAT),
 )
 
-__SensorLocColumns = namedtuple(
-    "__SensorLocColumns", "ID MODULE_ID TYPE MIN_VAL MAX_VAL CURR_VAL"
+__LocalSensorColumns = namedtuple(
+    "__LocalSensorColumns", "id module_id type min_val max_val curr_val"
 )
-__LOC_SENS_COLUMNS = __SensorLocColumns(
-    "id", "module_id", "type", "min_val", "max_val", "curr_val"
+__local_sensor_columns = __LocalSensorColumns(
+    "id", "module_id", "type", "min_value", "max_value", "current_value"
 )
-__LOC_SENS_TYPES = (
-    (__LOC_SENS_COLUMNS.ID, TYPES.TEXT),
-    (__LOC_SENS_COLUMNS.MODULE_ID, TYPES.TEXT),
-    (__LOC_SENS_COLUMNS.TYPE, TYPES.TEXT),
-    (__LOC_SENS_COLUMNS.MIN_VAL, TYPES.FLOAT),
-    (__LOC_SENS_COLUMNS.MAX_VAL, TYPES.FLOAT),
-    (__LOC_SENS_COLUMNS.CURR_VAL, TYPES.FLOAT),
-)
-
-__SystemLocColumns = namedtuple("__SystemLocColumns", "ID")
-__LOC_SYS_COLUMNS = __SystemLocColumns("id")
-__LOC_SYS_TYPES = ((__LOC_SYS_COLUMNS.ID, TYPES.TEXT),)
-
-
-class __SensorLoc(NamedTuple):
-    ColName: __SensorLocColumns
-    COLUMNS: Tuple
-    TABLE_NAME: str
-    TYPE_MAP: Tuple[Tuple]
-
-
-__LOC_SENS = __SensorLoc(
-    __LOC_SENS_COLUMNS,
-    tuple(__LOC_SENS_COLUMNS),
-    __LOC_TABLES.SENSORS,
-    __LOC_SENS_TYPES,
+__local_sensor_types = (
+    (__local_sensor_columns.id, TYPE.TEXT),
+    (__local_sensor_columns.module_id, TYPE.TEXT),
+    (__local_sensor_columns.type, TYPE.TEXT),
+    (__local_sensor_columns.min_val, TYPE.FLOAT),
+    (__local_sensor_columns.max_val, TYPE.FLOAT),
+    (__local_sensor_columns.curr_val, TYPE.FLOAT),
 )
 
+__LocalXrefColumns = namedtuple("__LocalXrefColumns", "type local_id remote_id")
+__local_xref_columns = __LocalXrefColumns("type", "local_id", "remote_id")
+__local_xref_types = (
+    (__local_xref_columns.type, TYPE.TEXT),
+    (__local_xref_columns.local_id, TYPE.INT),
+    (__local_xref_columns.remote_id, TYPE.TEXT),
+)
 
-class __ModuleLoc(NamedTuple):
-    ColName: __ModuleLocColumns
-    COLUMNS: Tuple
-    TABLE_NAME: str
-    TYPE_MAP: Tuple[Tuple]
+__LocalSystemColumns = namedtuple("__SystemLocColumns", "id")
+__local_system_columns = __LocalSystemColumns("id")
+__local_system_types = ((__local_system_columns.id, TYPE.TEXT),)
 
 
-__LOC_MOD = __ModuleLoc(
-    __LOC_MOD_COLUMNS,
-    tuple(__LOC_MOD_COLUMNS),
-    __LOC_TABLES.MODULES,
-    __LOC_MOD_TYPES,
+class __LocalTableSensor(NamedTuple):
+    column_name: __LocalSensorColumns
+    columns: Tuple
+    table_name: str
+    type_map: Tuple[Tuple]
+
+
+__local_sensor_table = __LocalTableSensor(
+    __local_sensor_columns,
+    tuple(__local_sensor_columns),
+    __local_table_names.sensor,
+    __local_sensor_types,
 )
 
 
-class __SystemLoc(NamedTuple):
-    ColName: __SystemLocColumns
-    COLUMNS: Tuple
-    TABLE_NAME: str
-    TYPE_MAP: Tuple[Tuple]
+class __LocalTableModule(NamedTuple):
+    column_name: __LocalModuleColumns
+    columns: Tuple
+    table_name: str
+    type_map: Tuple[Tuple]
 
 
-__LOC_SYS = __SystemLoc(
-    __LOC_SYS_COLUMNS, tuple(__LOC_SYS_COLUMNS), __LOC_TABLES.SYSTEM, __LOC_SYS_TYPES
+__local_module_table = __LocalTableModule(
+    __local_module_columns,
+    tuple(__local_module_columns),
+    __local_table_names.module,
+    __local_module_types,
 )
 
 
-class __Local(NamedTuple):
-    Modules: __ModuleLoc
-    Sensors: __SensorLoc
-    System: __SystemLoc
+class __LocalTableXref(NamedTuple):
+    column_name: __LocalXrefColumns
+    columns: Tuple
+    table_name: str
+    type_map: Tuple[Tuple]
 
 
-Local = __Local(__LOC_MOD, __LOC_SENS, __LOC_SYS)
+__local_xref_table = __LocalTableXref(
+    __local_xref_columns,
+    tuple(__local_xref_columns),
+    __local_table_names.xref,
+    __local_xref_types,
+)
+
+
+class __LocalTableSystem(NamedTuple):
+    column_name: __LocalSystemColumns
+    columns: Tuple
+    table_name: str
+    type_map: Tuple[Tuple]
+
+
+__local_system_table = __LocalTableSystem(
+    __local_system_columns,
+    tuple(__local_system_columns),
+    __local_table_names.system,
+    __local_system_types,
+)
+
+
+class __LocalTables(NamedTuple):
+    module: __LocalTableModule
+    sensor: __LocalTableSensor
+    system: __LocalTableSystem
+    xref: __LocalTableXref
+
+
+local_tables = __LocalTables(
+    __local_module_table, __local_sensor_table, __local_system_table, __local_xref_table
+)
 # endregion
