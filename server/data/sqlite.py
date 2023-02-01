@@ -7,16 +7,18 @@ import sqlite3
 from extensions import is_empty
 from sqlite3 import Error, IntegrityError
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 __ValueTypes = namedtuple("__ValueTypes", "TEXT INT TIME FLOAT")
 
-TYPES = __ValueTypes("TEXT", "INTEGER", "TIMESTAMP", "FLOAT")
+TYPE = __ValueTypes("TEXT", "INTEGER", "TIMESTAMP", "FLOAT")
 """A list of sqlite supported database types"""
 
 __Parsers = namedtuple("__Parsers", "DICT TUPLE")
-PARSE = __Parsers(0, 1)
+PARSER = __Parsers(0, 1)
 
+_Attributes = namedtuple("_Attributes", "PRIMARY_KEY FORIEGN_KEY NULL NOT_NULL")
+ATTR = _Attributes("PRIMARY KEY", "FORIEGN KEY", "IS NULL", "NOT NULL")
 COL_ROWID = "ROWID"
 VALUE_NULL = "IS NULL"
 
@@ -71,7 +73,7 @@ class SQLiteConnection(object):
         """
         merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
             self.merge_to_tuple
-            if merger is None or merger == PARSE.TUPLE
+            if merger is None or merger == PARSER.TUPLE
             else self.merge_to_dict
         )
         result: List[Tuple[Tuple]] = []
@@ -198,9 +200,9 @@ class SQLiteConnection(object):
 
         Args:
             * `table`: the name for the table to be created.
-            * `data`: a tuple of (column-name, type) pairs describing each column data type in the table.
-                * note: if 'id' (name, type) pair is set, it should be the first pair in `data`.
-                default 'id' type: `int` (if not specified)
+            * `data`: a tuple of (name, type, attributes...) describing name, type and attributes for
+            each column in the table.
+                * possible values for attributes available in `sqlite.ATTR`
 
         Raises:
             `ValueError`: if `id` (column-name, type) pair is set, but is not the first element in `data`.
@@ -212,29 +214,21 @@ class SQLiteConnection(object):
         for idx, col in enumerate(data):
             name = col[0]
             type = col[1]
-            if name == "id" and idx != 0:
-                raise ValueError(
-                    f"in {SQLiteConnection.__name__}.{self.create.__name__}(): 'id' should be the first (index = 0) name, type pair in col_data, current 'id' index is {idx}"
-                )
+            attrs = col[2 : len(col)]
 
-            if idx == 0:
-                if name == "id":
-                    cols_query += "id {} PRIMARY KEY".format(type)
-                else:
-                    cols_query += "id INTEGER PRIMARY KEY"
-                if len(data) - 1 > 1:
-                    cols_query += ", "
-            else:
-                cols_query += "{} {}".format(name, type)
-                if idx < len(data) - 1:
-                    cols_query += ", "
+            cols_query += f"{name} {type}"
+            if not is_empty(attrs):
+                cols_query += f" {self._formatter(attrs, ' ')}"
 
-        query = "CREATE TABLE IF NOT EXISTS {} ({})".format(table, cols_query)
+            if idx < len(data) - 1:
+                cols_query += ", "
+
+        query = f"CREATE TABLE IF NOT EXISTS {table} ({cols_query})"
 
         return self._execute(Queries.CREATE, query)
 
     def insert(
-        self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]
+        self, table: str, data: Dict[str, Any] | List[Dict[str, Any]], ret_column: str = None
     ) -> str | int:
         """Insert a new row to table.
 
@@ -257,8 +251,8 @@ class SQLiteConnection(object):
 
         query = "INSERT INTO {}({}) VALUES ({})".format(table, cols_query, vals_query)
 
-        if not isinstance(values, list):
-            query += " RETURNING id"
+        if ret_column is not None:
+            query += f" RETURNING {ret_column}"
 
         return self._execute(Queries.INSERT, query, values)
 
@@ -512,7 +506,7 @@ class QueryBuilder(object):
         Args:
             * `col_names`: a tuple of column-names to order by.
             * `directions`(optional): a tuple of directions in order of there respective column-name.
-                * possible values: `ORDER.ASCENDING` or `ORDER.DESCENDING`, default: `ORDER.ASCENDING`.
+                * possible values available in `QueryBuilder.ORDER`, default: `ORDER.ASCENDING`.
 
         Raises:
             * `IntegrityError` if:
@@ -547,8 +541,7 @@ class QueryBuilder(object):
             * `table`: name of table to select from.
             * `col_names`: a tuple of column-names to select.
             * `type`(optional): join type.
-                * possible values: `JOIN.INNER`, `JOIN.LEFT` and `JOIN.CROSS`
-                default: `None`.
+                * possible values available in `QueryBuilder.JOIN`, default: `None`.
             * `kwargs`(optional): additional filtering conditions.
                 * possible values:
                     * `src_col`: column name from base table to compare
