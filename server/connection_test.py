@@ -1,11 +1,12 @@
 import datetime
 import logging
-import os, subprocess
+import random
 from typing import Any, List, Dict
-from unittest import result
+from local_dao import LocalDAO
 from model import AnalogSensor, EPModule, SensorType, Logger
 from repository import Repository, Command, Actions
-from data.mqtt import MQTTConnection
+from connections.mqtt import MQTTConnection
+from django.utils.crypto import get_random_string
 
 
 def command_callback(cmnd_list: List[Command], timestamp: datetime.datetime):
@@ -33,80 +34,75 @@ def command_callback(cmnd_list: List[Command], timestamp: datetime.datetime):
 
 
 def add_single_module():
-    first_module = EPModule("0.0.0.0")
-    first_module.description = "PY#0"
-    id = repo.add_module(first_module)
+    db: LocalDAO = LocalDAO()
+    first_module = createModules()
+    id = db.add_module(first_module)
     if id != None:
         print("Succesfully added module! ID:", first_module.id)
     else:
         print("Something went wrong while trying to add a module!")
 
 
-def add_two_modules_wSensor():
-    module_1 = EPModule("192.168.0.201")
-    module_1.description = "PY#0"
-    module_1.add_sensors(AnalogSensor(SensorType.HUMIDITY))
-
-    module_2 = EPModule("192.168.0.202")
-    module_2.description = "PY#0"
-    module_2.add_sensors(AnalogSensor(SensorType.HUMIDITY))
-
-    id_1 = repo.add_module(module_1)
-    id_2 = repo.add_module(module_2)
-    if id_1 != None and id_2 != None:
-        print("Succesfully added modules! IDs:{},{}".format(id_1, id_2))
-    else:
-        print("Something went wrong while trying to add a module!")
-
-
 def add_module_wSensors():
-    module = EPModule("0.1.0.0")
-    module.description = "PYS#0"
-    module.sensors = [
-        AnalogSensor(SensorType.EC),
-        AnalogSensor(SensorType.TEMPERATURE),
-        AnalogSensor(SensorType.FLOW),
-    ]
-    id = repo.add_module(module)
+    db: LocalDAO = LocalDAO()
+    db.purge()
+    db._build_tables()
+    module = createModules(1, 2)
+
+    id = db.add_module(module)
     if id != None:
         print("Succesfully added module! ID:", module.id)
     else:
         print("Something went wrong while trying to add a module!")
 
 
-def add_batch_modules_wSensors():
-    modules = [
-        EPModule("0.2.0.0"),
-        EPModule("0.3.0.0"),
+def createModules(mdul_cnt=1, snsor_cnt=0):
+    def randint():
+        return random.randint(1, 255)
+
+    descriptions = [
+        "Cactus",
+        "Lilach",
+        "Vegetables",
+        "Lillys",
+        "Fruits",
+        "Pineapple",
+        "Avocado",
+        "Spices",
+        "Herbs",
+        "Cannabis",
     ]
-    for idx, module in enumerate(modules):
-        module.description = "PYS#{}".format(idx + 1)
-        module._sensors = [
-            AnalogSensor(SensorType.EC),
-            AnalogSensor(SensorType.TEMPERATURE),
-            AnalogSensor(SensorType.FLOW),
-        ]
+    sensor_types = list(SensorType.__members__.values())
 
-    ids = repo.add_modules(modules)
-    if ids != None:
-        print("Succesfully added", len(ids), "modules! ID's:", ids)
-    else:
-        print("Something went wrong while trying to add a batch of modules!")
-
-
-def add_batch_modules():
     modules = [
-        EPModule("0.0.0.1"),
-        EPModule("0.0.0.2"),
-        EPModule("0.0.0.3"),
-        EPModule("0.0.0.4"),
+        EPModule(f"{randint()}.{randint()}.{randint()}.{randint()}")
+        for _ in range(mdul_cnt)
     ]
-    for idx, module in enumerate(modules):
-        module.description = "PY#{0}".format(idx + 1)
+    for module in modules:
+        module.description = random.choice(descriptions)
+        if snsor_cnt > 0:
+            module.add_sensors(
+                [
+                    AnalogSensor(random.choice(sensor_types), get_random_string(8))
+                    for _ in range(snsor_cnt)
+                ]
+            )
+    return modules if len(modules) > 1 else modules[0]
 
-    ids = repo.add_modules(modules)
-    if ids != None:
-        print("Succesfully added", len(ids), "modules! ID's:", ids)
+
+def add_many_modules_wSensors():
+    db = LocalDAO()
+    db.purge()
+    db._build_tables()
+    modules = createModules(4, 3)
+    result = db.add_modules(modules)
+    if result:
+        print(
+            "Succesfully added",
+            len(modules),
+            "modules! ID's:",
+            {module.id for module in modules},
+        )
     else:
         print("Something went wrong while trying to add a batch of modules!")
 
@@ -159,6 +155,13 @@ def update_module_sensors():
         print("Failed to update sensors.")
 
 
+def get_modules():
+    db = LocalDAO()
+    modules = db.get_modules()
+    for module in modules:
+        print(module)
+
+
 def test_dictParsable():
     module = EPModule("78:21:84:8C:AF:FC")
     module2 = EPModule("GG:21:22:8C:AF:11")
@@ -173,14 +176,14 @@ def test_dictParsable():
 
 def test_mqtt():
     module = EPModule("88:21:84:8C:AF:FC")
-    sens1 = AnalogSensor(SensorType.EC)
-    sens1.id = "1"
-    sens2 = AnalogSensor(SensorType.TEMPERATURE)
-    sens2.id = "2"
-    sens3 = AnalogSensor(SensorType.EC)
-    sens3.id = "3"
-    module.add_sensors(sens3)
-    module.add_sensors([sens1, sens2])
+    module.add_sensors(
+        [
+            AnalogSensor(SensorType.EC, get_random_string(8)),
+            AnalogSensor(SensorType.TEMPERATURE, get_random_string(8)),
+            AnalogSensor(SensorType.EC, get_random_string(8)),
+        ]
+    )
+
     client = MQTTConnection("tester")
     client.connect("192.168.1.177", 1883)
     publish_dict: Dict[str, Any | List | Dict] = {
@@ -192,21 +195,11 @@ def test_mqtt():
     client.publish("connected_devices", publish_dict)
 
 
+def delete_module():
+    db = LocalDAO()
+    db.delete_module(1)
+
+
 logging.setLoggerClass(Logger)
-test_mqtt()
-# logging.getLogger().setLevel(logging.INFO)
-# test_dictParsable()
-
-
-# repo = Repository()
-# modules = repo.get_modules()
-# module = modules["1:2:3:4:5"]
-# module.id = "Hell YA!"
-# module.description = "Tester"
-# module.max_duration = 500
-# module.duration = 25
-# module.on_time = datetime.datetime.now().astimezone()
-# module.add_sensors(AnalogSensor(SensorType.FLOW))
-# module.sensors[0].curr_val = 20
-
-# repo.disconnect()
+logging.getLogger().setLevel(logging.INFO)
+add_many_modules_wSensors()
