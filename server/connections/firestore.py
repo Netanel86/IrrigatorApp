@@ -140,11 +140,10 @@ class FirestoreConnection(object):
         self.__db.collection(col_path).document(doc_id).delete()
 
     def delete_collection(self, col_path: str) -> int:
-        docs = self.__db.collection(col_path).stream()
+        docs: List[DocumentReference] = self.__db.collection(col_path).list_documents()
         deleted = 0
         for doc in docs:
-            ref: DocumentReference = doc.reference
-            ref.delete()
+            doc.delete()
             deleted += 1
         return deleted
 
