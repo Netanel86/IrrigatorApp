@@ -5,7 +5,7 @@ from typing import Dict, List, Callable
 from gui import GUI
 from model import *
 from repository import Repository
-from data.mqtt import MQTTConnection
+from connections.mqtt import MQTTConnection
 
 # check if execute from SSH and run GUI on the remote Device
 if os.environ.get("DISPLAY", "") == "":
@@ -47,11 +47,11 @@ MQTT_MODULE_FIELDS = mqttModuleFields(
 
 mqttSensorFields = namedtuple(
     "mqttSensorFields",
-    "KEY ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
+    "KEY DEVICE_ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
 )
 MQTT_SENSOR_FIELDS = mqttSensorFields(
     "sensors",
-    "id",
+    "device_id",
     "type",
     "min_val",
     "max_val",
@@ -77,7 +77,6 @@ MODULE_MAP_FROM_MQTT = {
     MQTT.MODULE.TIMEOUT: EPModule.Props().TIMEOUT,
 }
 SENSOR_MAP_FROM_MQTT = {
-    MQTT.SENSORS.ID: AnalogSensor.Props().ID,
     MQTT.SENSORS.TYPE: AnalogSensor.Props().TYPE,
     MQTT.SENSORS.MAX_VALUE: AnalogSensor.Props().MAX_VALUE,
     MQTT.SENSORS.MIN_VALUE: AnalogSensor.Props().MIN_VALUE,
@@ -134,18 +133,21 @@ class System(object):
         module: EPModule = EPModule.from_dict(
             data[MQTT.MODULE.KEY], MODULE_MAP_FROM_MQTT
         )
+        
         sensors: List[AnalogSensor] = []
         for sensor_dict in data[MQTT.SENSORS.KEY]:
             sensors.append(AnalogSensor.from_dict(sensor_dict, SENSOR_MAP_FROM_MQTT))
         module.add_sensors(sensors)
+        
         self.repo.add_module(module)
         self.client.subscribe(module.mac_id, self.update_module)
 
     def update_module(self, data: Dict[str, List | Dict]):
         module = self.modules[data[MQTT.MODULE.KEY][MQTT.MODULE.MAC_ID]]
         module.update_dict(data[MQTT.MODULE.KEY], MODULE_MAP_FROM_MQTT)
+        
         for sensor_dict in data[MQTT.SENSORS.KEY]:
-            module.get_sensor(sensor_dict[MQTT.SENSORS.ID]).update_dict(
+            module.get_sensor(sensor_dict[MQTT.SENSORS.DEVICE_ID]).update_dict(
                 sensor_dict, SENSOR_MAP_FROM_MQTT
             )
 

@@ -3,9 +3,11 @@ from typing import List
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
+import uuid
 from infra import *
 
-
+# TODO move SensorType inside AnalogSensor, rename to Type
+# TODO rename AnalogSensor to Sensor
 class SensorType(Enum):
     NONE = ""
     EC = "EC"
@@ -16,15 +18,16 @@ class SensorType(Enum):
 
 
 # Linear Conversion
-class AnalogSensor(DictParseable, Observable):
+class AnalogSensor(IDable, DictParseable, Observable):
     # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
     __Properties = namedtuple(
         "__Props",
-        "ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
+        "ID DEVICE_ID TYPE MIN_VALUE MAX_VALUE CURRENT_VAL",
     )
 
     __Props = __Properties(
         "id",
+        "device_id",
         "type",
         "min_val",
         "max_val",
@@ -38,11 +41,11 @@ class AnalogSensor(DictParseable, Observable):
 
     # region Properties
     @property
-    def id(self) -> str:
+    def id(self) -> int:
         return self.__id
 
     @id.setter
-    def id(self, value: str):
+    def id(self, value: int):
         old = self.__id
         self.__id = value
         self._notify_change(AnalogSensor.Props().ID, old, value)
@@ -87,11 +90,22 @@ class AnalogSensor(DictParseable, Observable):
         self.__curr_val = value
         self._notify_change(AnalogSensor.Props().CURRENT_VAL, old, value)
 
+    @property
+    def device_id(self) -> str:
+        return self._device_id
+
+    @device_id.setter
+    def device_id(self, value: str):
+        old = self._device_id
+        self._device_id = value
+        self._notify_change(AnalogSensor.Props().DEVICE_ID, old, value)
+
     # endregion Properties
 
     def __init__(
         self,
         _type: SensorType = SensorType.NONE,
+        device_id: str = "",
         aIn=0,
         aIn_Min=1140,
         aIn_Max=3100,
@@ -100,7 +114,8 @@ class AnalogSensor(DictParseable, Observable):
         ScalingErrorOffset=3,
     ):
         super().__init__()
-        self.__id: str = ""
+        self.__id: int = None
+        self._device_id: str = device_id
         self.__type: SensorType = _type
         self.__curr_val: float = 0.0
         self.__min_val: float = min_val
@@ -138,7 +153,7 @@ class AnalogSensor(DictParseable, Observable):
         return f"{self.__type.name} Sensor [{self.__id}]: Max: {self.__max_val}, Min: {self.__min_val}, Current: {self.__curr_val}"
 
 
-class EPModule(DictParseable, Observable):
+class EPModule(IDable, DictParseable, Observable):
     __Properties = namedtuple(
         "__Props",
         "ID MAC_ID DESCRIPTION MAX_DURATION DURATION ON_TIME PORT TIMEOUT SENSORS",
@@ -163,11 +178,11 @@ class EPModule(DictParseable, Observable):
 
     # region Properties
     @property
-    def id(self) -> str:
+    def id(self) -> int:
         return self._id
 
     @id.setter
-    def id(self, value: str):
+    def id(self, value: int):
         old = self._id
         self._id = value
         self._notify_change(EPModule.Props().ID, old, value)
@@ -236,7 +251,7 @@ class EPModule(DictParseable, Observable):
         max_duration: int = 600,
     ):
         super().__init__()
-        self._id: str = ""
+        self._id: int = None
         self._mac_id = mac_id
         self._description: str = ""
         self._on_time: datetime = datetime.now().astimezone()
@@ -261,15 +276,16 @@ class EPModule(DictParseable, Observable):
         self.RESET_TOTAL_WATER_FLOW = 0
 
     def add_sensors(self, new_sensors: AnalogSensor | List[AnalogSensor]):
+
         if isinstance(new_sensors, list):
-            self._sensors.update({sensor.id: sensor for sensor in new_sensors})
+            self._sensors.update({sensor.device_id: sensor for sensor in new_sensors})
         else:
-            self._sensors[new_sensors.id] = new_sensors
+            self._sensors[new_sensors.device_id] = new_sensors
 
         self._notify_change(EPModule.Props().SENSORS, None, new_sensors)
 
-    def get_sensor(self, id: str) -> AnalogSensor:
-        return self._sensors[id]
+    def get_sensor(self, device_id: str) -> AnalogSensor:
+        return self._sensors[device_id]
 
     def __str__(self) -> str:
         return "[Valve: #{0}]: {1}, Max: {2}s, Last on: {3} at {4} for {5}s".format(
