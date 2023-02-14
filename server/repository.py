@@ -6,10 +6,10 @@ from datetime import datetime
 from enum import Enum
 from model import AnalogSensor, EPModule, SensorType
 from infra import DictParseable
-from data.firestore import FirestoreConnection, OrderBy, Where
-from constants import local_tables, Remote
+from connections.firestore import FirestoreConnection, OrderBy, Where
+from constants import Remote
 from extensions import reverse_dict, is_empty
-from data.sqlite import (
+from connections.sqlite import (
     COL_ROWID,
     PARSER,
     QueryBuilder,
@@ -17,57 +17,57 @@ from data.sqlite import (
 )
 
 
-MODULE_MAP_TO_LOCAL = {
-    EPModule.Props().ID: local_tables.module.column_name.id,
-    EPModule.Props().MAC_ID: local_tables.module.column_name.mac_id,
-    EPModule.Props().DESCRIPTION: local_tables.module.column_name.description,
-    EPModule.Props().MAX_DURATION: local_tables.module.column_name.max_duration,
-    EPModule.Props().DURATION: local_tables.module.column_name.duration,
-    EPModule.Props().ON_TIME: local_tables.module.column_name.on_time,
-    EPModule.Props().PORT: local_tables.module.column_name.port,
-    EPModule.Props().TIMEOUT: local_tables.module.column_name.timeout,
-}
+# MODULE_MAP_TO_LOCAL = {
+#     EPModule.Props().ID: local_tables.module.column_name.id,
+#     EPModule.Props().MAC_ID: local_tables.module.column_name.mac_id,
+#     EPModule.Props().DESCRIPTION: local_tables.module.column_name.description,
+#     EPModule.Props().MAX_DURATION: local_tables.module.column_name.max_duration,
+#     EPModule.Props().DURATION: local_tables.module.column_name.duration,
+#     EPModule.Props().ON_TIME: local_tables.module.column_name.on_time,
+#     EPModule.Props().PORT: local_tables.module.column_name.port,
+#     EPModule.Props().TIMEOUT: local_tables.module.column_name.timeout,
+# }
 """A Mapping of `ModelLib.EPModule` properties to local database 'Module' table columns (key=prop_name, val=col_name)."""
 
-MODULE_MAP_FROM_LOCAL = reverse_dict(MODULE_MAP_TO_LOCAL)
+# MODULE_MAP_FROM_LOCAL = reverse_dict(MODULE_MAP_TO_LOCAL)
 """A Mapping of local database 'Module' table columns to `ModelLib.EPModule` properties (key=col_name, val=prop_name)."""
 
-MODULE_TO_REMOTE_MAP = {
-    EPModule.Props().MAC_ID: Remote.Modules.FieldName.IP,
-    EPModule.Props().DESCRIPTION: Remote.Modules.FieldName.DESCRIPTION,
-    EPModule.Props().MAX_DURATION: Remote.Modules.FieldName.MAX_DURATION,
-    EPModule.Props().DURATION: Remote.Modules.FieldName.DURATION,
-    EPModule.Props().ON_TIME: Remote.Modules.FieldName.ON_TIME,
-}
+# MODULE_TO_REMOTE_MAP = {
+#     EPModule.Props().MAC_ID: Remote.Modules.FieldName.IP,
+#     EPModule.Props().DESCRIPTION: Remote.Modules.FieldName.DESCRIPTION,
+#     EPModule.Props().MAX_DURATION: Remote.Modules.FieldName.MAX_DURATION,
+#     EPModule.Props().DURATION: Remote.Modules.FieldName.DURATION,
+#     EPModule.Props().ON_TIME: Remote.Modules.FieldName.ON_TIME,
+# }
 """A Mapping of `ModelLib.EPModule` properties to remote database 'Modules' collection fields (key=prop_name, val=field_name)."""
 
-MODULE_FROM_REMOTE_MAP = reverse_dict(MODULE_TO_REMOTE_MAP)
+# MODULE_FROM_REMOTE_MAP = reverse_dict(MODULE_TO_REMOTE_MAP)
 """A Mapping of remote database 'Modules' collection fields to `ModelLib.EPModule` properties (key=field_name, val=prop_name)."""
 
-MODULE_FIELDS = tuple(MODULE_TO_REMOTE_MAP.keys())
+# MODULE_FIELDS = tuple(MODULE_TO_REMOTE_MAP.keys())
 
-SENSOR_MAP_TO_LOCAL = {
-    AnalogSensor.Props().ID: local_tables.sensor.column_name.id,
-    AnalogSensor.Props().TYPE: local_tables.sensor.column_name.type,
-    AnalogSensor.Props().MIN_VALUE: local_tables.sensor.column_name.min_val,
-    AnalogSensor.Props().MAX_VALUE: local_tables.sensor.column_name.max_val,
-    AnalogSensor.Props().CURRENT_VAL: local_tables.sensor.column_name.curr_val,
-}
+# SENSOR_MAP_TO_LOCAL = {
+#     AnalogSensor.Props().ID: local_tables.sensor.column_name.id,
+#     AnalogSensor.Props().TYPE: local_tables.sensor.column_name.type,
+#     AnalogSensor.Props().MIN_VALUE: local_tables.sensor.column_name.min_val,
+#     AnalogSensor.Props().MAX_VALUE: local_tables.sensor.column_name.max_val,
+#     AnalogSensor.Props().CURRENT_VAL: local_tables.sensor.column_name.curr_val,
+# }
 
-SENSOR_MAP_FROM_LOCAL = reverse_dict(SENSOR_MAP_TO_LOCAL)
+# SENSOR_MAP_FROM_LOCAL = reverse_dict(SENSOR_MAP_TO_LOCAL)
 
-SENSOR_COLUMNS = tuple(SENSOR_MAP_FROM_LOCAL.keys())
+# SENSOR_COLUMNS = tuple(SENSOR_MAP_FROM_LOCAL.keys())
 
-SENSOR_TO_REMOTE_MAP = {
-    AnalogSensor.Props().TYPE: Remote.Sensors.FieldName.TYPE,
-    AnalogSensor.Props().MIN_VALUE: Remote.Sensors.FieldName.MIN_VAL,
-    AnalogSensor.Props().MAX_VALUE: Remote.Sensors.FieldName.MAX_VAL,
-    AnalogSensor.Props().CURRENT_VAL: Remote.Sensors.FieldName.CURR_VAL,
-}
+# SENSOR_TO_REMOTE_MAP = {
+#     AnalogSensor.Props().TYPE: Remote.Sensors.FieldName.TYPE,
+#     AnalogSensor.Props().MIN_VALUE: Remote.Sensors.FieldName.MIN_VAL,
+#     AnalogSensor.Props().MAX_VALUE: Remote.Sensors.FieldName.MAX_VAL,
+#     AnalogSensor.Props().CURRENT_VAL: Remote.Sensors.FieldName.CURR_VAL,
+# }
 
-SENSOR_FROM_REMOTE_MAP = reverse_dict(SENSOR_TO_REMOTE_MAP)
+# SENSOR_FROM_REMOTE_MAP = reverse_dict(SENSOR_TO_REMOTE_MAP)
 
-SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
+# SENSOR_FIELDS = tuple(SENSOR_TO_REMOTE_MAP.keys())
 
 
 class Repository(object):
@@ -508,22 +508,52 @@ class Repository(object):
         self.__remote.delete_document(self.PATH_MODULES, module.id)
         self._modules.pop(module.mac_id)
 
-    def reset_databases(self):
-        # TODO handle deletion of sensors prior to modules
+    def purge(self, local: bool, remote: bool):
+        label_table = "table"
+        label_collection = "collection"
 
-        ret = self.__remote.delete_collection(self.PATH_MODULES)
-        print("Collection {} Deleted: {}".format(Remote.Modules.COLL_NAME, ret))
+        def log_delete_msg(label: int, name, result):
+            self.logger.info(
+                f"{self.purge.__name__}> Delete {label} {name} returned result: '{result}'"
+            )
 
-        ret = self.__remote.delete_document(
-            Remote.Systems.COLL_NAME, self.__get_system_id()
-        )
-        print("Collection {} Deleted: {}".format(Remote.Systems.COLL_NAME, ret))
+        if remote:
+            for module_id, path in self.PATH_SUBCOL_SENSORS.items():
+                ret = self.__remote.delete_collection(path)
+                log_delete_msg(
+                    label_collection,
+                    f"{Remote.Sensors.COLL_NAME} on module id: '{module_id}'",
+                    ret,
+                )
 
-        ret = self._local.delete(local_tables.module.table_name)
-        print("Table {} Deleted: {}".format(local_tables.module.table_name, ret))
+            ret = self.__remote.delete_collection(self.PATH_MODULES)
+            log_delete_msg(label_collection, Remote.Modules.COLL_NAME, ret)
 
-        ret = self._local.delete(local_tables.system.table_name)
-        print("Table {} Deleted: {}".format(local_tables.system.table_name, ret))
+            ret = self.__remote.delete_collection(self.PATH_COMMANDS)
+            log_delete_msg(label_collection, Remote.Commands.COLL_NAME, ret)
+
+            ret = self.__remote.delete_document(
+                Remote.Systems.COLL_NAME, self.__get_system_id()
+            )
+            log_delete_msg(label_collection, Remote.Systems.COLL_NAME, ret)
+
+            self.PATH_SUBCOL_SENSORS.clear()
+            self.PATH_MODULES = None
+            self.PATH_COMMANDS = None
+            self.PATH_SYSTEM = None
+
+        if local:
+            ret = self._local.delete(local_tables.sensor.table_name)
+            log_delete_msg(label_table, local_tables.sensor.table_name, ret)
+
+            ret = self._local.delete(local_tables.module.table_name)
+            log_delete_msg(label_table, local_tables.module.table_name, ret)
+
+            ret = self._local.delete(label_table, local_tables.system.table_name)
+            log_delete_msg(label_table, local_tables.system.table_name, ret)
+
+            ret = self._local.delete(label_table, local_tables.xref.table_name)
+            log_delete_msg(label_table, local_tables.xref.table_name, ret)
 
     def disconnect(self):
         self.__remote.disconnect()
