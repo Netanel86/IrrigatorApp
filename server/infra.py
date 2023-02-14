@@ -7,9 +7,23 @@ from typing import Any, Dict, List, NamedTuple, Tuple, Callable
 from extensions import is_empty
 
 
+class IDable(ABC):
+    @property
+    def id(self) -> int:
+        raise NotImplementedError(
+            f"'id': property getter not implemented in class '{self.__class__.__name__}'"
+        )
+
+    @id.setter
+    def id(self, value: int):
+        raise NotImplementedError(
+            f"'id': property setter not implemented in class '{self.__class__.__name__}'"
+        )
+
+
 class Logger(logging.Logger):
     def __init__(self, name) -> None:
-        super().__init__(name, logging.INFO)
+        super().__init__(name)
         self.propagate = False
         formatter = logging.Formatter(
             "%(levelname)s %(asctime)s %(name)s - %(message)s", "%X"
@@ -19,7 +33,7 @@ class Logger(logging.Logger):
         self.addHandler(handler)
 
 
-class Observable(object):
+class Observable(ABC):
     def __init__(self) -> None:
         self._callbacks: List[Callable[[Observable, str, Any, Any], None]] = None
 
@@ -85,24 +99,6 @@ class DictParseable(ABC):
         module.update_dict(source, from_map)
         return module
 
-    @classmethod
-    def _raise_AttributeError(cls, method_name, prop_name):
-        raise AttributeError(
-            f"'{cls.__name__}.{method_name}()': has no attribute: '{prop_name}'"
-        )
-
-    @property
-    def id(self) -> str:
-        raise NotImplementedError(
-            f"'id': property getter not implemented in class '{self.__class__.__name__}'"
-        )
-
-    @id.setter
-    def id(self, value: str):
-        raise NotImplementedError(
-            f"'id': property setter not implemented in class '{self.__class__.__name__}'"
-        )
-
     def to_dict(
         self, props: Tuple[str] = None, to_map: Dict[str, str] = None
     ) -> Dict[str, Any]:
@@ -130,7 +126,8 @@ class DictParseable(ABC):
         if collection is not None:
             for prop in collection:
                 if not hasattr(self, prop):
-                    DictParseable._raise_AttributeError(getattr.__name__, prop)
+                    raise AttributeError(name=prop, obj=self)
+
                 if is_map and prop not in to_map.keys():
                     raise KeyError(f"Key: Dict 'to_map' has no key '{prop}'")
                 prop_key = to_map[prop] if is_map else prop
@@ -166,7 +163,8 @@ class DictParseable(ABC):
             obj_prop = prop if (not is_map) | (not is_in_map) else from_map[prop]
 
             if not hasattr(self, obj_prop):
-                DictParseable._raise_AttributeError(setattr.__name__, obj_prop)
+                raise AttributeError(name=obj_prop, obj=self)
+                # self.__class__._raise_AttributeError(setattr.__name__, obj_prop)
 
             value_type = type(value)
             attr_type = type(getattr(self, obj_prop))
