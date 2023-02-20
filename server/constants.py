@@ -3,7 +3,7 @@
 from __future__ import annotations
 from collections import namedtuple
 from typing import NamedTuple, Tuple
-from connections.sqlite import ValueType, Attributes
+from connections.sqlite import ValueType, Attribute
 from extensions import get_cls_fields_values, reverse_dict
 
 # region Remote constants

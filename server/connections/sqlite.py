@@ -5,25 +5,34 @@ import logging
 import os
 import sqlite3
 from extensions import is_empty
-from sqlite3 import Error, IntegrityError
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Tuple
+from typing import Any, Callable, Dict, List, Tuple
+
+
+class Queries(Enum):
+    CREATE = "create"
+    INSERT = "insert"
+    UPDATE = "update"
+    SELECT = "select"
+    DELETE = "delete"
+
+
+class Parsers(Enum):
+    Tuple = 0
+    Dict = 1
 
 
 class ValueType:
     """SQLite supported value types"""
 
-    TEXT = "TEXT"
+    NONE = "NULL"
+    STR = "TEXT"
     INT = "INTEGER"
     TIME = "TIMESTAMP"
-    FLOAT = "FLOAT"
+    FLOAT = "REAL"
 
 
-__Parsers = namedtuple("__Parsers", "DICT TUPLE")
-PARSER = __Parsers(0, 1)
-
-
-class Attributes:
+class Attribute:
     """SQLite column attributes"""
 
     class ForeignKey(object):
@@ -67,6 +76,7 @@ class Attributes:
 
 _Operators = namedtuple("_Operators", "IS_NULL")
 OPR = _Operators("IS NULL")
+
 COL_ROWID = "ROWID"
 VALUE_NULL = "IS NULL"
 
@@ -76,12 +86,20 @@ _TUP_VALUES = 1
 
 
 class SQLiteConnection(object):
-    def __init__(self, db_path) -> None:
+    def __init__(self, db_path, **kwargs) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self._db_path = db_path
 
         self.__create_db_dir()
         self.__init_db()
+
+        self.__init_args(kwargs)
+
+    def __init_args(self, **kwargs):
+        enable_foreign_keys: bool = kwargs.get("foreign_key", False)
+        if enable_foreign_keys:
+            self.__db.execute("PRAGMA foreign_keys = ON")
+            self.__db.commit()
 
     def __init_db(self):
         try:
@@ -89,9 +107,8 @@ class SQLiteConnection(object):
                 self._db_path,
                 detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
             )
-            self.__db.execute("PRAGMA foreign_keys = ON")
-            self.__db.commit()
-        except Error as ex:
+
+        except sqlite3.Error as ex:
             method_sig = self.__init_db.__name__.removeprefix("__")
             self.logger.error(f"{method_sig}> {ex}")
 
@@ -108,7 +125,7 @@ class SQLiteConnection(object):
         self,
         col_data: Tuple[Tuple],
         values: List[Tuple],
-        merger: int,
+        merger: Parsers,
     ):
         """Parse a `Queries.Select` query result to a list using a merger method.
 
@@ -124,9 +141,7 @@ class SQLiteConnection(object):
                 * `PARSE.TUPLE`: A list of tuples with (column-name, value) pairs.
         """
         merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
-            self.merge_to_tuple
-            if merger is None or merger == PARSER.TUPLE
-            else self.merge_to_dict
+            self.merge_to_dict if merger == Parsers.Dict else self.merge_to_tuple
         )
         result: List[Tuple[Tuple]] = []
         for tup_obj in values:
@@ -150,7 +165,8 @@ class SQLiteConnection(object):
         q_type: Queries,
         query: str,
         values: Tuple | List[Tuple] = None,
-        result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] = None,
+        result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any]
+        | Parsers = Parsers.Tuple,
     ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
         method_sig = self._execute.__name__.removeprefix("_")
         self.logger.info(f"{method_sig}> {q_type.name}: {query}")
@@ -195,8 +211,8 @@ class SQLiteConnection(object):
             if q_type == Queries.INSERT or Queries.UPDATE or Queries.DELETE:
                 self.__db.commit()
 
-        except Exception as ex:
-            self.logger.warning(f"{method_sig}> {ex}")
+        except sqlite3.Error as ex:
+            self.logger.error(f"{method_sig}> {ex}")
             result = False
         finally:
             return result
@@ -276,7 +292,7 @@ class SQLiteConnection(object):
             if not is_empty(attrs):
                 bare_attrs = []
                 for attr in attrs:
-                    if isinstance(attr, Attributes.ForeignKey):
+                    if isinstance(attr, Attribute.ForeignKey):
                         foreign_key_query = f"FOREIGN KEY ({name}) REFERENCES {attr.table}({attr.column})"
                         for action_tup in attr.actions:
                             on_query = action_tup[0]
@@ -730,7 +746,9 @@ class QueryBuilder(object):
         return self
 
     def execute(
-        self, result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any] | int = None
+        self,
+        result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any]
+        | Parsers = Parsers.Tuple,
     ):
         """Executes the query.
 
@@ -764,14 +782,6 @@ class QueryBuilder(object):
         return self.connection._execute(
             self.__query_type, self.query, self.__data, result_parser
         )
-
-
-class Queries(Enum):
-    CREATE = "create"
-    INSERT = "insert"
-    UPDATE = "update"
-    SELECT = "select"
-    DELETE = "delete"
 
 
 class QueryIntegrityError(Exception):
