@@ -6,7 +6,7 @@ import os
 import sqlite3
 from extensions import is_empty
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 
 class Queries(Enum):
@@ -33,16 +33,16 @@ class ValueType:
 
 
 class Attribute:
-    """SQLite column attributes"""
+    """Represents SQLite column attributes."""
 
-    class ForeignKey(object):
-        """An attribute describing a foreign key and its behavior"""
+    class ForeignKey:
+        """Represents a foreign key and its behavior."""
 
         class Action:
-            """SQLite foreign key actions"""
+            """Possible actions for a foreign key."""
 
             class ON:
-                """Supported queries for executing actions"""
+                """Queries to execute an action on a foreign key."""
 
                 DELETE = "DELETE"
                 UPDATE = "UPDATE"
@@ -56,15 +56,15 @@ class Attribute:
         def __init__(
             self, table: str, column: str, actions: Tuple[Tuple[str, str]]
         ) -> None:
-            """Instantiate and new ForeignKey object.
+            """Initializes a new `ForeignKey` object.
 
             Args:
-                * `table`: foreign table name.
-                * `column`: foreign column name to bind to.
-                * `actions`: list of actions to execute when foreign key updates.
-                    Note: each action should be described by a two value tuple, the query on which to execute and
-                    the action type: (`<ON-QUERY>`,`<ACTION>`).
-                    * possible values: available queries in `sqlite.Action.ON` and actions in `sqlite.Action`
+                table: The name of the foreign table.
+                column: The name of the foreign column to bind to.
+                actions: A tuple of actions to execute when the foreign key updates.
+                    Each action should be a two-value tuple, the query to execute and the action type.
+                    Possible values for queries are available in `Attribute.ForeignKey.Action.ON`.
+                    Possible values for actions are available in `Attribute.ForeignKey.Action`.
             """
             self.table: str = table
             self.column: str = column
@@ -93,10 +93,10 @@ class SQLiteConnection(object):
         self.__create_db_dir()
         self.__init_db()
 
-        self.__init_args(kwargs)
+        self.__init_args(**kwargs)
 
     def __init_args(self, **kwargs):
-        enable_foreign_keys: bool = kwargs.get("foreign_key", False)
+        enable_foreign_keys: bool = kwargs.get("foreign_keys", False)
         if enable_foreign_keys:
             self.__db.execute("PRAGMA foreign_keys = ON")
             self.__db.commit()
@@ -133,12 +133,12 @@ class SQLiteConnection(object):
             * `col_data`: a list of column names.
             * `values`: a list of values in order of there respective column names.
             * `merger`: the id for the parser type to be used.
-                * possible values: `PARSE.DICT` and `PARSE.TUPLE`, default: `PARSE.TUPLE`
+                * possible values: `Parsers.Dict` and `Parsers.Tuple`, default: `Parsers.Tuple`
 
         Returns:
             * If `merger` is:
-                * `PARSE.DICT`: A list of dictionaries with (column-name: value) pairs.
-                * `PARSE.TUPLE`: A list of tuples with (column-name, value) pairs.
+                * `Parsers.Dict`: A list of dictionaries with (column-name: value) pairs.
+                * `Parsers.Tuple`: A list of tuples with (column-name, value) pairs.
         """
         merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
             self.merge_to_dict if merger == Parsers.Dict else self.merge_to_tuple
@@ -218,19 +218,27 @@ class SQLiteConnection(object):
             return result
 
     def _formatter(
-        self, data: Tuple[str] | str, separator: str, count: int = None, **kwargs
+        self,
+        data: Tuple[str] | str,
+        separator: str,
+        count: Optional[int],
+        **kwargs: Optional[Dict[str, str]],
     ) -> str:
         """Formats the given data and arguments into a single string.
 
         Args:
-            * `data`: a string or strings to format.
-            * `separator`: a charcter or string to be used as a separator after each element in `data`.
-            * `count`(optional): if `data` is a single string, sets the number of times to repeat it,
-                default: `None`
-            * `kwargs`(optional): additional arguments to format.
-                * possible values:
-                    * `suffix`- `Iterable[str] | str`: to be added after each element in `data`.
-                    * `prefix`- `Iterable[str] | str`: to be added before each element in `data`.
+            data (`Tuple[str] | str`):
+                A string or a tuple of strings to format.
+            separator (`str`):
+                A character or string to be used as a separator after each element in `data`.
+            count (`Optional[int]`):
+                If `data` is a single string, sets the number of times to repeat it.
+                Default is `None`.
+            **kwargs (`Optional[Dict[str,str]]`):
+                Additional arguments to format.
+                Possible values:
+                - `suffix` (`str`): A list of strings or a single string to be added after each element in `data`.
+                - `prefix` (`str`): A list of strings or a single string to be added before each element in `data`.
 
         Returns:
             A formatted string.
@@ -268,17 +276,29 @@ class SQLiteConnection(object):
 
         return exists
 
-    def create(self, table: str, data: Tuple[Tuple[str]], **kwargs) -> bool:
+    def create(
+        self, table: str, data: Tuple[Tuple[str, str, str | Attribute.ForeignKey]]
+    ) -> bool:
         """Create a new table in the database.
 
         Args:
-            * `table`: the name for the table to be created.
-            * `data`: a tuple of (name, type, attributes...) describing name, type and attributes for
-            each column in the table.
-                * possible values for attributes available in `sqlite.ATTR`
+            table (`str`):
+                The name for the table to be created.
+            data (`Tuple[Tuple[str, str, str | Attribute.ForeignKey]]`):
+                A tuple of (name, type, attributes...) describing name, type and attributes for each column in the table.
+                The first element of each tuple should be the column name, the second element should be the column type,
+                and any additional elements should be strings representing column attributes.
+                The possible attributes are defined in the `Attribute` class.
+
+                Possible values for column attributes:
+                * `Attribute.PRIMARY_KEY`: Indicates that the column is a primary key.
+                * `Attribute.NOT_NULL`: Indicates that the column cannot have null values.
+                * `Attribute.ForeignKey`: Indicates that the column is a foreign key. If this attribute is specified, the
+                column type should be a string specifying the type of the foreign key column in the referenced table,
+                and the attributes should be an `Attribute.ForeignKey` object.
 
         Returns:
-            `True` if the table was created successfully or already existed, `False` otherwise.
+            `bool`: `True` if the table was created successfully or already existed, `False` otherwise.
         """
 
         cols_query = ""
@@ -319,22 +339,24 @@ class SQLiteConnection(object):
         self,
         table: str,
         data: Dict[str, Any] | List[Dict[str, Any]],
-        return_col: str = None,
+        return_col: Optional[str],
     ) -> str | int:
-        """Insert a new row to table.
+        """Insert one or more rows into a table.
 
         Args:
-            * `table`: the table name to insert the new row in.
-            * `data`: a dictionary of (column-name, value) pairs to insert.
-            * `return_col`(optional): a column whose name represents the value to be returned after insertion,
-            default: `None`.
-                * Note: only when inserting a single row, ignored if multiple rows are inserted.
+            table (`str`):
+                The name of the table to insert into.
+            data (`Dict[str, Any] | List[Dict[str, Any]]`):
+                A dictionary or list of dictionaries of (column-name, value) pairs to insert.
+            return_col (`Optional[str]`):
+                The name of a column whose value to return after insertion. Only used when inserting a single row. Default is `None`.
 
         Returns:
-            * If successful and `data` is:
-                * a single row, returns its id or rowid if id is empty.
-                * multiple rows, returns the count of inserted rows.
-            * If failed returns `False`
+            `(bool | int | str)`: If the insertion was successful:
+                - If `data` is a single row and `return_col` is defined, returns the value of the specified column.
+                - If `data` is a single row and `return_col` is `None`, returns the id or rowid of the inserted row as a string or integer.
+                - If `data` is multiple rows, returns the count of inserted rows as an integer.
+            If the insertion failed, returns `False`.
         """
         attrs = self.__to_tuple_set(data)
         col_names: Tuple = attrs[_TUP_COLUMNS]
@@ -358,14 +380,16 @@ class SQLiteConnection(object):
     def update(
         self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]
     ) -> QueryBuilder:
-        """Update's the columns fields in the specified row id.
+        """Updates the specified row or rows in the table.
 
         Args:
-            * `table`: name of the updated table.
-            * `data`: a dictionary of (column-name, value) pairs to update.
+            table (`str`): The name of the table to update.
+            data (`Dict[str, Any] | List[Dict[str, Any]]`): A dictionary or list of dictionaries of (column-name, value) pairs to update.
+                If a dictionary is passed, it is used to update a single row.
+                If a list of dictionaries is passed, each dictionary corresponds to a row to update.
 
         Returns:
-            a `QueryBuilder` instance of the update query.
+            A `QueryBuilder` instance representing the update query.
         """
         attr = self.__to_tuple_set(data)
         col_names = attr[_TUP_COLUMNS]
@@ -380,61 +404,77 @@ class SQLiteConnection(object):
             self, Queries.UPDATE, query, col_names=col_names, data=values
         )
 
-    def delete(self, table: str, id: str | int = None) -> bool:
-        """Delete a single row or an entire table
+    def delete(
+        self, table: str, col_names: Optional[Tuple[str, ...]], values: Optional[Tuple]
+    ) -> bool:
+        """Delete one or more rows from the table.
+
+        If `col_names` and `values` are specified, delete all rows where the columns `col_names` equals the given `values`.
+        If `col_names` and `values` are not specified, delete the entire table.
 
         Args:
-            * `table`: name of table.
-            * `id`(optional): the row id to delete, if not specified deletes the entire table.
-                default: `None`.
+            table (`str`): The name of the table to delete from.
+            col_names (`Optional[Tuple[str, ...]]`): The names of the columns to filter the delete query by. Default `None`.
+            values (`Optional[Tuple[Any, ...]]`): The values to filter the delete query by. Default `None`.
 
         Returns:
-            `True` if deleted successfully, `False` otherwise.
+            `True` if the rows were deleted successfully, `False` otherwise.
         """
-        if id is None:
-            query = f"DROP TABLE IF EXISTS {table}"
+        if values and col_names:
+            query = f"DELETE FROM {table}"
         else:
-            query = f"DELETE FROM {table} WHERE id = ?"
-        return self._execute(Queries.DELETE, query, (id,) if id is not None else id)
+            query = f"DROP TABLE IF EXISTS {table}"
 
-    def select(self, table: str, col_names: Tuple[str] = None) -> QueryBuilder:
+        return (
+            QueryBuilder(self, Queries.DELETE, query, table=table)
+            .where(col_names, values)
+            .execute()
+            if col_names and values
+            else self._execute(Queries.DELETE, query, values)
+        )
+
+    def select(self, table: str, col_names: Optional[Tuple[str]]) -> QueryBuilder:
         """Select columns from rows in the specified table.
 
         Args:
-            * `table`: name of table to select from.
-            * `col_names`: a tuple of column-names to return.
+            table (`str`): the name of the table to select from.
+            col_names (`Optional[Tuple[str]]`): a tuple of column names to return. Default None.
 
         Returns:
-            a `QueryBuilder` instance of the select query.
+            A `QueryBuilder` instance of the select query.
         """
         cols_query = self._formatter(col_names, ", ") if col_names is not None else "*"
-        query = "SELECT {} FROM {}".format(cols_query, table)
+        query = f"SELECT {cols_query} FROM {table}"
 
         return QueryBuilder(
             self, Queries.SELECT, query, table=table, col_names=col_names
         )
 
-    def merge_to_dict(self, col_names: Tuple[Tuple], values: Tuple) -> Dict[str, Any]:
+    def merge_to_dict(
+        self, col_names: Tuple[Tuple], values: Tuple[Any, ...]
+    ) -> Dict[str, Any]:
         """Merge two tuples of column-names and values to a dictionary.
 
         Args:
-            * `col_names`: the column names in order of there respective value.
-            * `values`: the values in order of there respective column name.
+            col_names (`Tuple[Tuple]`): The column names in order of their respective value.
+            values (`Tuple[Any, ...]`): The values in order of their respective column name.
 
         Returns:
-            A dictionary with (column-name: value) pairs
+            A dictionary with (column-name: value) pairs.
         """
         return {col[0]: val for (col, val) in zip(col_names, values)}
 
-    def merge_to_tuple(self, col_names: Tuple[Tuple], values: Tuple) -> List[Tuple]:
+    def merge_to_tuple(
+        self, col_names: Tuple[Tuple], values: Tuple[Any, ...]
+    ) -> Tuple[Tuple]:
         """Merge two tuples of column-names and values to a single tuple of tuple pairs.
 
         Args:
-            * `col_names`: the column names in order of their respective values.
-            * `values`: the values in order of their respective column names.
+            col_names (`Tuple[Tuple]`): The column names in order of their respective values.
+            values (`Tuple[Any, ...]`): The values in order of their respective column names.
 
         Returns:
-            A tuple with (column-name, value) tuple pairs
+            A tuple of (column-name, value) tuple pairs.
         """
         return tuple([(col[0], val) for (col, val) in zip(col_names, values)])
 
