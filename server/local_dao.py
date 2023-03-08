@@ -28,10 +28,10 @@ class ModuleConsts:
     TABLE_NAME: str = "module"
     """'Module' table name"""
     TYPE_MAP: Tuple[Tuple] = (
-        (ColName.ID, ValueType.INT, Attributes.PRIMARY_KEY),
-        (ColName.BATCH_ID, ValueType.TEXT),
-        (ColName.MAC_ID, ValueType.TEXT),
-        (ColName.DESCRIPTION, ValueType.TEXT),
+        (ColName.ID, ValueType.INT, Attribute.PRIMARY_KEY),
+        (ColName.BATCH_ID, ValueType.STR),
+        (ColName.MAC_ID, ValueType.STR),
+        (ColName.DESCRIPTION, ValueType.STR),
         (ColName.MAX_DURATION, ValueType.INT),
         (ColName.DURATION, ValueType.INT),
         (ColName.ON_TIME, ValueType.TIME),
@@ -78,24 +78,24 @@ class SensorConsts:
     )
     """A set of predefined columns to SELECT a `:class:model.Sensor` object"""
     TYPE_MAP = (
-        (ColName.ID, ValueType.INT, Attributes.PRIMARY_KEY),
-        (ColName.BATCH_ID, ValueType.TEXT),
-        (ColName.DEVICE_ID, ValueType.TEXT),
+        (ColName.ID, ValueType.INT, Attribute.PRIMARY_KEY),
+        (ColName.BATCH_ID, ValueType.STR),
+        (ColName.DEVICE_ID, ValueType.STR),
         (
             ColName.MODULE_ID,
             ValueType.INT,
-            Attributes.ForeignKey(
+            Attribute.ForeignKey(
                 ModuleConsts.TABLE_NAME,
                 ModuleConsts.ColName.ID,
                 (
                     (
-                        Attributes.ForeignKey.Action.ON.DELETE,
-                        Attributes.ForeignKey.Action.CASCADE,
+                        Attribute.ForeignKey.Action.ON.DELETE,
+                        Attribute.ForeignKey.Action.CASCADE,
                     ),
                 ),
             ),
         ),
-        (ColName.TYPE, ValueType.TEXT),
+        (ColName.TYPE, ValueType.STR),
         (ColName.MIN_VAL, ValueType.FLOAT),
         (ColName.MAX_VAL, ValueType.FLOAT),
         (ColName.CURR_VAL, ValueType.FLOAT),
@@ -121,11 +121,11 @@ class XRefConsts:
         REMOTE_ID = "remote_id"
 
     TABLE_NAME: str = "xref"
-    COLUMNS: Tuple = tuple(get_cls_fields_values(ColName))
+    SELECT_COLUMNS: Tuple = tuple(get_cls_fields_values(ColName))
     TYPE_MAP: Tuple[Tuple] = (
-        (ColName.TYPE, ValueType.TEXT),
+        (ColName.TYPE, ValueType.STR),
         (ColName.LOCAL_ID, ValueType.INT),
-        (ColName.REMOTE_ID, ValueType.TEXT),
+        (ColName.REMOTE_ID, ValueType.STR),
     )
 
 
@@ -139,14 +139,27 @@ class Constants:
 # endregion
 
 
+class XrefTypes(Enum):
+    """An enumeration that represents data types in a database. Each value in the
+    enumeration corresponds to a class that represents that type. If there is no class model for a type,
+    the value for that type is of type `int`."""
+
+    Module = EPModule
+    Sensor = AnalogSensor
+    System = int
+    NONE = None
+
+
 class LocalDAO(object):
+    KEY_ID = "local_id"
+    KEY_TYPE = "type"
     DB_PATH = os.path.join(
         os.path.dirname(os.path.abspath(__file__).split("connections")[0]),
         "sqlite\db\pysqlite.db",
     )
 
     def __init__(self) -> None:
-        self._local = SQLiteConnection(LocalDAO.DB_PATH)
+        self._local = SQLiteConnection(LocalDAO.DB_PATH, foreign_keys=True)
         self._logger = logging.getLogger(self.__class__.__name__)
         self._build_tables()
 
@@ -223,11 +236,8 @@ class LocalDAO(object):
                 modules, batch_id, Constants.Module.TABLE_NAME
             )
         else:
-            raise InsertError(
-                self,
-                self.add_modules.__name__,
-                inserted=inserted_count,
-                target=len(module_dicts),
+            self._logger.error(
+                f"{self.add_modules.__name__}> Failed to insert rows, inserted {inserted_count} out of {len(module_dicts)}."
             )
 
         all_sensors: List[List[SensorType]] = []
@@ -262,11 +272,8 @@ class LocalDAO(object):
                     new_sensors, batch_id, Constants.Sensor.TABLE_NAME
                 )
             else:
-                raise InsertError(
-                    self,
-                    self.add_sensors.__name__,
-                    inserted=inserted_count,
-                    target=len(sens_dicts),
+                self._logger.error(
+                    f"{self.add_sensors.__name__}> Failed to insert rows, inserted {inserted_count} out of {len(sens_dicts)}."
                 )
 
             return result
@@ -301,12 +308,64 @@ class LocalDAO(object):
                 assign_list, batch_id, Constants.Sensor.TABLE_NAME
             )
         else:
-            raise InsertError(
-                self,
-                self.add_many_sensors.__name__,
-                inserted=inserted_count,
-                target=len(sens_dicts),
+            self._logger.error(
+                f"{self.add_many_sensors.__name__}> Failed to insert rows, inserted {inserted_count} out of {len(sens_dicts)}."
             )
+        return result
+
+    def _get_obj_xref_data(self, _object: IDable | int) -> Dict:
+        """Returns a dictionary containing xref table data for an object.
+
+        Args:
+            _object (`IDable` | `int`): The object to retrieve the table data from. Can be either an instance of
+                `IDable` or an `integer`.
+
+        Returns:
+            dict: A dictionary with two keys:
+                -`LocalDAO.KEY_TYPE` (`str`): The name of the object's `XrefTypes` value.
+                -`LocalDAO.KEY_ID` (`int`): The local ID value of the object.
+        Raises:
+            `TypeError`: If the input object is neither a subclass of `IDable` nor an `integer`.
+        """
+        _type = XrefTypes(_object.__class__)
+
+        match _type:
+            case XrefTypes.Module | XrefTypes.Sensor:
+                local_id = _object.id
+            case XrefTypes.System:
+                local_id = _object
+            case _:
+                raise TypeError("'object must be an integer or a subclass of 'IDable'")
+
+        return {LocalDAO.KEY_TYPE: _type.name, LocalDAO.KEY_ID: local_id}
+
+    def add_remote_id(self, _object: IDable | int, remote_id):
+        xref_data = self._get_obj_xref_data(_object)
+
+        result = self._local.insert(
+            Constants.XRef.TABLE_NAME,
+            {
+                Constants.XRef.ColName.TYPE: xref_data[LocalDAO.KEY_TYPE],
+                Constants.XRef.ColName.LOCAL_ID: xref_data[LocalDAO.KEY_ID],
+                Constants.XRef.ColName.REMOTE_ID: remote_id,
+            },
+        )
+        return result
+
+    def get_remote_id(self, _object: IDable | int) -> str:
+        xref_data = self._get_obj_xref_data(_object)
+        result = (
+            self._local.select(Constants.XRef.TABLE_NAME, Constants.XRef.SELECT_COLUMNS)
+            .where(
+                (
+                    Constants.XRef.ColName.TYPE,
+                    Constants.XRef.ColName.LOCAL_ID,
+                ),
+                (xref_data[LocalDAO.KEY_TYPE], xref_data[LocalDAO.KEY_ID]),
+            )
+            .execute(Parsers.Dict)
+        )
+
         return result
 
     def update_module(self, module: EPModule, props: List[str] = None):
@@ -316,13 +375,13 @@ class LocalDAO(object):
             else module.to_dict(to_map=Constants.Module.MAP_TO_LOCAL)
         )
 
-        local_done = (
+        result = (
             self._local.update(Constants.Module.TABLE_NAME, module_dict)
-            .where({Constants.Module.ColName.ID: module.id})
+            .where((Constants.Module.ColName.ID,), (module.id,))
             .execute()
         )
 
-        return local_done
+        return result
 
     def update_sensor(self, sensor: AnalogSensor, props: List[str] = None):
         sensor_dict = (
@@ -333,7 +392,7 @@ class LocalDAO(object):
 
         result = (
             self._local.update(Constants.Sensor.TABLE_NAME, sensor_dict)
-            .where({Constants.Sensor.ColName.ID: sensor.id})
+            .where((Constants.Sensor.ColName.ID,), (sensor.id,))
             .execute()
         )
 
@@ -350,22 +409,22 @@ class LocalDAO(object):
             for sensor in sensors
         ]
 
-        local_result = (
+        result = (
             self._local.update(Constants.Sensor.TABLE_NAME, sensor_dicts)
             .where((Constants.Sensor.ColName.ID,), sensor_ids)
             .execute()
         )
 
-        return local_result
+        return result
 
-    def _assign_ids(self, objects: List[IDable], batch_id: str, table: str, **names):
-        colname_id = names.get("id", Constants.ColNames.ID)
-        colname_batch = names.get("batch", Constants.ColNames.BATCH_ID)
+    def _assign_ids(self, objects: List[IDable], batch_id: str, table: str, **kwargs):
+        colname_id = kwargs.get("id", Constants.ColNames.ID)
+        colname_batch = kwargs.get("batch", Constants.ColNames.BATCH_ID)
 
         result_dicts: List[Dict[str, Any]] = (
             self._local.select(table, (colname_id,))
             .where((colname_batch,), (batch_id,))
-            .execute(PARSER.DICT)
+            .execute(Parsers.Dict)
         )
 
         for obj, object_dict in zip(objects, result_dicts):
@@ -374,7 +433,22 @@ class LocalDAO(object):
         return not is_empty(result_dicts)
 
     def delete_module(self, module_id: int) -> bool:
-        return self._local.delete(Constants.Module.TABLE_NAME, module_id)
+        return self._local.delete(
+            Constants.Module.TABLE_NAME, (Constants.Module.ColName.ID,), (module_id,)
+        )
+
+    def delete_sensor(self, sensor_id: int) -> bool:
+        return self._local.delete(
+            Constants.Sensor.TABLE_NAME, (Constants.Sensor.ColName.ID,), (sensor_id,)
+        )
+
+    def delete_remote_id(self, _object: IDable | int):
+        xref_data = self._get_obj_xref_data(_object)
+        return self._local.delete(
+            Constants.XRef.TABLE_NAME,
+            (Constants.XRef.ColName.TYPE, Constants.XRef.ColName.LOCAL_ID),
+            (xref_data[LocalDAO.KEY_TYPE], xref_data[LocalDAO.KEY_ID]),
+        )
 
     def purge(self):
         def log_delete_msg(name, result):
@@ -390,16 +464,3 @@ class LocalDAO(object):
 
         ret = self._local.delete(Constants.XRef.TABLE_NAME)
         log_delete_msg(Constants.XRef.TABLE_NAME, ret)
-
-
-class InsertError(Exception):
-    def __init__(self, sender: object, method: str, **args) -> None:
-        self.inserted_count = args.get("inserted", None)
-        self.target_count = args.get("target", None)
-        self.message = f"{sender.__class__.__name__}.{method}> Failed to insert rows"
-
-        if self.inserted_count and self.target_count:
-            self.message += (
-                f", inserted '{self.inserted_count}' out of '{self.target_count}' rows."
-            )
-        super().__init__(self.message)
