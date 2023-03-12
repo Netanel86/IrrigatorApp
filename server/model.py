@@ -3,7 +3,6 @@ from typing import List
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
-import uuid
 from infra import *
 
 # TODO move SensorType inside AnalogSensor, rename to Type
@@ -17,7 +16,6 @@ class SensorType(Enum):
     TEMPERATURE = "C"
 
 
-# Linear Conversion
 class AnalogSensor(IDable, DictParseable, Observable):
     # (self,aIn ,aIn_Min = 0, aIn_Max = 512, Val_Min = 0 , Val_Max = 100 ):
     __Properties = namedtuple(
@@ -296,3 +294,44 @@ class EPModule(IDable, DictParseable, Observable):
             self._on_time.strftime("%X"),
             self._duration,
         )
+
+
+class Command(DictParseable):
+    class Actions(Enum):
+        REFRESH = 0
+        OPEN = 1
+        CLOSE = 2
+        UPDATE = 3
+
+    __Attributes = namedtuple("__Attributes", "IP DURATION DESCRIPTION")
+    Attrs = __Attributes("ip", "duration", "description")
+
+    __Properties = namedtuple("__Properties", "ID ACTION TIME ATTR")
+    __Props = __Properties("id", "action", "timestamp", "attributes")
+
+    @staticmethod
+    def Props() -> __Properties:
+        return Command.__Props
+
+    def __init__(
+        self, id: str, time: datetime, action: Actions, **attr: Dict[str, Any]
+    ) -> None:
+        self._id = id
+        self.timestamp = time.astimezone()
+        self.action = action
+        self.attributes = attr
+
+    def __str__(self) -> str:
+        to_string = f"[{self.timestamp.strftime('%Y-%m-%d %X')}: Command]:"
+
+        match self.action:
+            case Command.Actions.OPEN:
+                to_string += f" Turn ON Valve #{self.attributes[Command.Attrs.IP]} for: {self.attributes[Command.Attrs.DURATION]}s"
+
+            case Command.Actions.CLOSE:
+                to_string += f" Turn OFF Valve #{self.attributes[Command.Attrs.IP]}"
+
+            case Command.Actions.UPDATE:
+                to_string += f" Edit Valve #{self.attributes[Command.Attrs.IP]} description to: {self.attributes[Command.Attrs.DESCRIPTION]}"
+
+        return to_string
