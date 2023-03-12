@@ -6,7 +6,7 @@ import os
 import sqlite3
 from extensions import is_empty
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 class Queries(Enum):
@@ -18,6 +18,8 @@ class Queries(Enum):
 
 
 class Parsers(Enum):
+    """An enumeration of available parsers for parsing the results of a `SELECT` query."""
+
     Tuple = 0
     Dict = 1
 
@@ -125,20 +127,19 @@ class SQLiteConnection(object):
         self,
         col_data: Tuple[Tuple],
         values: List[Tuple],
-        merger: Parsers,
-    ):
-        """Parse a `Queries.Select` query result to a list using a merger method.
+        merger: Parsers = Parsers.Tuple,
+    ) -> List[Dict[str, Any] | Tuple[str, Any]]:
+        """Parse the result of a Select query into a list using the specified parser.
 
         Args:
-            * `col_data`: a list of column names.
-            * `values`: a list of values in order of there respective column names.
-            * `merger`: the id for the parser type to be used.
-                * possible values: `Parsers.Dict` and `Parsers.Tuple`, default: `Parsers.Tuple`
+            col_data (`Tuple[Tuple]`): A tuple of column names.
+            values (`List[Tuple]`): A list of tuples with the values for each row in the result set.
+            merger (`Parsers`, optional): The type of parser to use. Defaults to `Parsers.Tuple`.
 
         Returns:
-            * If `merger` is:
-                * `Parsers.Dict`: A list of dictionaries with (column-name: value) pairs.
-                * `Parsers.Tuple`: A list of tuples with (column-name, value) pairs.
+            `List[Dict[str, Any] | Tuple[str, Any]]`:
+                - If `merger` is `Parsers.Dict`, a list of dictionaries with (column-name: value) pairs.
+                - If `merger` is `Parsers.Tuple`, a list of tuples with (column-name, value) pairs.
         """
         merge: Callable[[Tuple[Tuple], List[Tuple]], Any] = (
             self.merge_to_dict if merger == Parsers.Dict else self.merge_to_tuple
@@ -168,6 +169,33 @@ class SQLiteConnection(object):
         result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any]
         | Parsers = Parsers.Tuple,
     ) -> bool | int | Dict[str, Any] | List[Dict[str, Any]]:
+        """Executes a database query.
+
+        Args:
+            q_type (`Queries`): The type of the query.
+            query (`str`): The query string.
+            values (`Tuple | List[Tuple]`, optional): A tuple or a list of tuples of values to execute
+                along with the query. Defaults to `None`.
+            result_parser (`Callable[[Tuple[Tuple], List[Tuple]], Any] | Parsers`, optional):
+                A method to convert the query result to a Python object or a `Parsers` enum value.
+                Defaults to `Parsers.Tuple`.
+
+        Returns:
+            (`bool | int | Dict[str, Any] | List[Dict[str, Any]]`):
+            The result of the executed query:
+                - If the query is `Queries.SELECT`: and `result_parser` is:
+                    - `Parsers.Dict`: Returns a list of dictionaries.
+                    - `Parsers.Tuple`: Returns a list of tuples.
+                    - `Callable`: Returns a list of custom Python objects.
+                    With the rows returned from the query.
+                - If the query is `Queries.INSERT`:
+                    - if a single row is inserted and return column was set, returns the columns value else returns the
+                        inserted row id.
+                    - if multiple rows are inserted returns the count of inserted rows.
+                - If the query is `Queries.CREATE`, `Queries.UPDATE` or `Queries.DELETE`: returns `True` if
+                    the query was successful, `False` otherwise.
+
+        """
         method_sig = self._execute.__name__.removeprefix("_")
         self.logger.info(f"{method_sig}> {q_type.name}: {query}")
         result = None
@@ -227,16 +255,10 @@ class SQLiteConnection(object):
         """Formats the given data and arguments into a single string.
 
         Args:
-            data (`Tuple[str] | str`):
-                A string or a tuple of strings to format.
-            separator (`str`):
-                A character or string to be used as a separator after each element in `data`.
-            count (`Optional[int]`):
-                If `data` is a single string, sets the number of times to repeat it.
-                Default is `None`.
-            **kwargs (`Optional[Dict[str,str]]`):
-                Additional arguments to format.
-                Possible values:
+            data (`Tuple[str] | str`): A string or a tuple of strings to format.
+            separator (`str`): A character or string to be used as a separator after each element in `data`.
+            count (`int`, optional): If `data` is a single string, sets the number of times to repeat it. Default is `None`.
+            **kwargs (`Dict[str,str]`, optional): Additional arguments to format. Possible values:
                 - `suffix` (`str`): A list of strings or a single string to be added after each element in `data`.
                 - `prefix` (`str`): A list of strings or a single string to be added before each element in `data`.
 
@@ -282,8 +304,7 @@ class SQLiteConnection(object):
         """Create a new table in the database.
 
         Args:
-            table (`str`):
-                The name for the table to be created.
+            table (`str`): The name for the table to be created.
             data (`Tuple[Tuple[str, str, str | Attribute.ForeignKey]]`):
                 A tuple of (name, type, attributes...) describing name, type and attributes for each column in the table.
                 The first element of each tuple should be the column name, the second element should be the column type,
@@ -344,12 +365,11 @@ class SQLiteConnection(object):
         """Insert one or more rows into a table.
 
         Args:
-            table (`str`):
-                The name of the table to insert into.
-            data (`Dict[str, Any] | List[Dict[str, Any]]`):
-                A dictionary or list of dictionaries of (column-name, value) pairs to insert.
-            return_col (`Optional[str]`):
-                The name of a column whose value to return after insertion. Only used when inserting a single row. Default is `None`.
+            table (`str`): The name of the table to insert into.
+            data (`Dict[str, Any] | List[Dict[str, Any]]`): A dictionary or list of dictionaries of
+                (column-name, value) pairs to insert.
+            return_col (`str`, optional): The name of a column whose value to return after insertion. Only
+                used when inserting a single row. Default is `None`.
 
         Returns:
             `(bool | int | str)`: If the insertion was successful:
@@ -384,7 +404,8 @@ class SQLiteConnection(object):
 
         Args:
             table (`str`): The name of the table to update.
-            data (`Dict[str, Any] | List[Dict[str, Any]]`): A dictionary or list of dictionaries of (column-name, value) pairs to update.
+            data (`Dict[str, Any] | List[Dict[str, Any]]`): A dictionary or list of dictionaries of
+                (column-name, value) pairs to update.
                 If a dictionary is passed, it is used to update a single row.
                 If a list of dictionaries is passed, each dictionary corresponds to a row to update.
 
@@ -414,8 +435,9 @@ class SQLiteConnection(object):
 
         Args:
             table (`str`): The name of the table to delete from.
-            col_names (`Optional[Tuple[str, ...]]`): The names of the columns to filter the delete query by. Default `None`.
-            values (`Optional[Tuple[Any, ...]]`): The values to filter the delete query by. Default `None`.
+            col_names (`Tuple[str, ...]`, optional): The names of the columns to filter the delete query by.
+                Defaults to `None`.
+            values (`Tuple[Any, ...]`, optional): The values to filter the delete query by. Defaults to `None`.
 
         Returns:
             `True` if the rows were deleted successfully, `False` otherwise.
@@ -437,8 +459,8 @@ class SQLiteConnection(object):
         """Select columns from rows in the specified table.
 
         Args:
-            table (`str`): the name of the table to select from.
-            col_names (`Optional[Tuple[str]]`): a tuple of column names to return. Default None.
+            table (`str`): The name of the table to select from.
+            col_names (`Tuple[str]`, optional): A tuple of column names to return. Defaults to `None`.
 
         Returns:
             A `QueryBuilder` instance of the select query.
@@ -481,31 +503,33 @@ class SQLiteConnection(object):
     def map_to_object(
         self,
         dicts: List[Dict[str, Any]],
-        from_dict: Callable[[Dict[str, Any]], Any],
+        converter: Callable[[Dict[str, Any]], Any],
         key_col: str = None,
     ) -> Dict[str, Any] | List:
-        """Map a list of returned database dictionaries to a collection of any object type
+        """Maps a list of database dictionaries to a collection of objects using a converter function.
 
         Args:
-            * `dicts`: a list of database returned dictionaries to map.
-            * `from_dict`: a method to convert a database dictionary row to the requested object.
-                * Args:
-                    * `Dict[str, Any]`: a dictionary with (column-name, value) pairs.
-                * Returns:
-                    * `Any`: the parsed object
-            * `key_col`(optional): the column name to be used as key in the returned dictionary.
-                default: `None`.
+            dicts (`List[Dict[str, Any]]`): A list of dictionaries to map.
+            converter (`Callable[[Dict[str, Any]], Any]`): A function to convert a dictionary to an object.
+                Args:
+                    dict (`Dict[str, Any]`): A dictionary with (column-name, value) pairs.
+                Returns:
+                    `Any`: The parsed object.
+            key_col (str, optional): The name of the column to use as the key in the returned dictionary.
+                Defaults to `None`.
 
         Returns:
-            A dictionary If a key column was set, otherwise a list.
+            `(List[Any] | Dict[str, Any])`:
+                - If `key_col` is `None`, returns a list of mapped objects.
+                - If `key_col` is set, returns a dictionary with the values mapped to the key column.
 
         Raises:
-            `KeyError`: if `key_col` does not exist in `dicts` keys
+            `KeyError`: If `key_col` is not found in the dictionaries.
         """
         objects: Dict[str, Any] | List = {} if key_col is not None else []
 
         for dic in dicts:
-            mapped_obj = from_dict(dic)
+            mapped_obj = converter(dic)
 
             if key_col is not None:
                 objects[dic[key_col]] = mapped_obj
@@ -790,26 +814,30 @@ class QueryBuilder(object):
         result_parser: Callable[[Tuple[Tuple], List[Tuple]], Any]
         | Parsers = Parsers.Tuple,
     ):
-        """Executes the query.
+        """
+        Executes the query.
 
         Args:
-            * `result_parser`(optional)- `int`: the id for the parser type to be used.
-                * possible values: `PARSE.TUPLE` and `PARSE.DICT`, default: `PARSE.TUPLE`
-                    * OR
-            * `result_parser`(optional)- `Callable[[Tuple[Tuple], List[Tuple]]`: a custom method to parse the database result.
-                    * Args:
-                        * `col_data`- `Tuple[Tuple]`: the result columns data
-                        * `values`- `List[Tuple]`: the result values
-                    * Returns:
-                        * `Any`: the parsed data
+            result_parser (`Callable[[Tuple[Tuple], List[Tuple]], Any] | Parsers`, optional):
+                The parser type to be used for the database result. It can either be of type `Parsers`
+                representing the parser type, or a custom callable method to parse the database result.
+
+                If using a custom method, it should accept two arguments:
+                    col_data (`Tuple[Tuple]`): The result columns data
+                    values (`List[Tuple]`): The result values
+                and should return the parsed data.
+
+                Default: `Parsers.Tuple`
 
         Returns:
-            * The result of the executed query, If query is:
-                * `Queries.SELECT`: returns a tuple set of returned rows (if `result_parser` is default).
-                * `Queries.UPDATE`: returns `True` if successful, `False` otherwise.
+            The result of the executed query, which depends on the query type:
+                - If query type is `Queries.SELECT`, a tuple set of returned rows is returned
+                    (if `result_parser` is set to default `Parsers.Tuple`).
+                - If query type is `Queries.CREATE`, `Queries.UPDATE`, or `Queries.DELETE`, `True` is returned
+                    if the query was successful, and `False` otherwise.
 
         Raises:
-            `IntegrityError`: if `WHERE` clause has not been set in an `Queries.UPDATE` query.
+            `QueryIntegrityError`: If the WHERE clause has not been set in an UPDATE query.
         """
 
         if self.__query_type == Queries.UPDATE and not self.__where:
