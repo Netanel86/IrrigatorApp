@@ -159,14 +159,14 @@ class LocalDAO(object):
     )
 
     def __init__(self) -> None:
-        self._local = SQLiteConnection(LocalDAO.DB_PATH, foreign_keys=True)
+        self._db = SQLiteConnection(LocalDAO.DB_PATH, foreign_keys=True)
         self._logger = logging.getLogger(self.__class__.__name__)
         self._build_tables()
 
     def _build_tables(self):
-        self._local.create(Constants.Module.TABLE_NAME, Constants.Module.TYPE_MAP)
-        self._local.create(Constants.Sensor.TABLE_NAME, Constants.Sensor.TYPE_MAP)
-        self._local.create(Constants.XRef.TABLE_NAME, Constants.XRef.TYPE_MAP)
+        self._db.create(Constants.Module.TABLE_NAME, Constants.Module.TYPE_MAP)
+        self._db.create(Constants.Sensor.TABLE_NAME, Constants.Sensor.TYPE_MAP)
+        self._db.create(Constants.XRef.TABLE_NAME, Constants.XRef.TYPE_MAP)
 
     def _parse_modules(self, col_data: Tuple[Tuple], values: List[Tuple]):
         mod_col_count = len(Constants.Module.SELECT_COLUMNS)
@@ -177,8 +177,8 @@ class LocalDAO(object):
         sensor_cols = col_data[mod_col_count:sen_col_last_idx]
 
         for tup in values:
-            module_dict = self._local.merge_to_dict(module_cols, tup[:mod_col_count])
-            sensor_dict = self._local.merge_to_dict(
+            module_dict = self._db.merge_to_dict(module_cols, tup[:mod_col_count])
+            sensor_dict = self._db.merge_to_dict(
                 sensor_cols, tup[mod_col_count:sen_col_last_idx]
             )
 
@@ -198,7 +198,7 @@ class LocalDAO(object):
 
     def get_modules(self) -> Dict[str, EPModule]:
         return (
-            self._local.select(
+            self._db.select(
                 Constants.Module.TABLE_NAME, Constants.Module.SELECT_COLUMNS
             )
             .join(
@@ -213,7 +213,7 @@ class LocalDAO(object):
         )
 
     def add_module(self, module: EPModule):
-        module.id = self._local.insert(
+        module.id = self._db.insert(
             Constants.Module.TABLE_NAME,
             module.to_dict(to_map=Constants.Module.MAP_TO_LOCAL),
             Constants.Module.ColName.ID,
@@ -230,7 +230,7 @@ class LocalDAO(object):
             module_dict[Constants.Module.ColName.BATCH_ID] = batch_id
             module_dicts.append(module_dict)
 
-        inserted_count = self._local.insert(Constants.Module.TABLE_NAME, module_dicts)
+        inserted_count = self._db.insert(Constants.Module.TABLE_NAME, module_dicts)
         if inserted_count == len(module_dicts):
             result_modules = self._assign_ids(
                 modules, batch_id, Constants.Module.TABLE_NAME
@@ -262,7 +262,7 @@ class LocalDAO(object):
                 sens_dict[Constants.Sensor.ColName.BATCH_ID] = batch_id
                 sens_dicts.append(sens_dict)
 
-            inserted_count = self._local.insert(
+            inserted_count = self._db.insert(
                 Constants.Sensor.TABLE_NAME,
                 sens_dicts,
             )
@@ -302,7 +302,7 @@ class LocalDAO(object):
                     sens_dicts.append(sens_dict)
             assign_list.extend(sensors)
 
-        inserted_count = self._local.insert(Constants.Sensor.TABLE_NAME, sens_dicts)
+        inserted_count = self._db.insert(Constants.Sensor.TABLE_NAME, sens_dicts)
         if inserted_count == len(sens_dicts):
             result = self._assign_ids(
                 assign_list, batch_id, Constants.Sensor.TABLE_NAME
@@ -342,7 +342,7 @@ class LocalDAO(object):
     def add_remote_id(self, _object: IDable | int, remote_id):
         xref_data = self._get_obj_xref_data(_object)
 
-        result = self._local.insert(
+        result = self._db.insert(
             Constants.XRef.TABLE_NAME,
             {
                 Constants.XRef.ColName.TYPE: xref_data[LocalDAO.KEY_TYPE],
@@ -355,7 +355,7 @@ class LocalDAO(object):
     def get_remote_id(self, _object: IDable | int) -> str:
         xref_data = self._get_obj_xref_data(_object)
         result = (
-            self._local.select(Constants.XRef.TABLE_NAME, Constants.XRef.SELECT_COLUMNS)
+            self._db.select(Constants.XRef.TABLE_NAME, Constants.XRef.SELECT_COLUMNS)
             .where(
                 (
                     Constants.XRef.ColName.TYPE,
@@ -376,7 +376,7 @@ class LocalDAO(object):
         )
 
         result = (
-            self._local.update(Constants.Module.TABLE_NAME, module_dict)
+            self._db.update(Constants.Module.TABLE_NAME, module_dict)
             .where((Constants.Module.ColName.ID,), (module.id,))
             .execute()
         )
@@ -391,7 +391,7 @@ class LocalDAO(object):
         )
 
         result = (
-            self._local.update(Constants.Sensor.TABLE_NAME, sensor_dict)
+            self._db.update(Constants.Sensor.TABLE_NAME, sensor_dict)
             .where((Constants.Sensor.ColName.ID,), (sensor.id,))
             .execute()
         )
@@ -410,7 +410,7 @@ class LocalDAO(object):
         ]
 
         result = (
-            self._local.update(Constants.Sensor.TABLE_NAME, sensor_dicts)
+            self._db.update(Constants.Sensor.TABLE_NAME, sensor_dicts)
             .where((Constants.Sensor.ColName.ID,), sensor_ids)
             .execute()
         )
@@ -422,7 +422,7 @@ class LocalDAO(object):
         colname_batch = kwargs.get("batch", Constants.ColNames.BATCH_ID)
 
         result_dicts: List[Dict[str, Any]] = (
-            self._local.select(table, (colname_id,))
+            self._db.select(table, (colname_id,))
             .where((colname_batch,), (batch_id,))
             .execute(Parsers.Dict)
         )
@@ -433,18 +433,18 @@ class LocalDAO(object):
         return not is_empty(result_dicts)
 
     def delete_module(self, module_id: int) -> bool:
-        return self._local.delete(
+        return self._db.delete(
             Constants.Module.TABLE_NAME, (Constants.Module.ColName.ID,), (module_id,)
         )
 
     def delete_sensor(self, sensor_id: int) -> bool:
-        return self._local.delete(
+        return self._db.delete(
             Constants.Sensor.TABLE_NAME, (Constants.Sensor.ColName.ID,), (sensor_id,)
         )
 
     def delete_remote_id(self, _object: IDable | int):
         xref_data = self._get_obj_xref_data(_object)
-        return self._local.delete(
+        return self._db.delete(
             Constants.XRef.TABLE_NAME,
             (Constants.XRef.ColName.TYPE, Constants.XRef.ColName.LOCAL_ID),
             (xref_data[LocalDAO.KEY_TYPE], xref_data[LocalDAO.KEY_ID]),
@@ -456,11 +456,11 @@ class LocalDAO(object):
                 f"{self.purge.__name__}> Delete table {name} returned result: '{result}'"
             )
 
-        ret = self._local.delete(Constants.Sensor.TABLE_NAME)
+        ret = self._db.delete(Constants.Sensor.TABLE_NAME)
         log_delete_msg(Constants.Sensor.TABLE_NAME, ret)
 
-        ret = self._local.delete(Constants.Module.TABLE_NAME)
+        ret = self._db.delete(Constants.Module.TABLE_NAME)
         log_delete_msg(Constants.Module.TABLE_NAME, ret)
 
-        ret = self._local.delete(Constants.XRef.TABLE_NAME)
+        ret = self._db.delete(Constants.XRef.TABLE_NAME)
         log_delete_msg(Constants.XRef.TABLE_NAME, ret)
