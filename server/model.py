@@ -316,7 +316,7 @@ class Command(DictParseable):
     def __init__(
         self, id: str, time: datetime, action: Actions, **attr: Dict[str, Any]
     ) -> None:
-        self._id = id
+        self.id = id
         self.timestamp = time.astimezone()
         self.action = action
         self.attributes = attr

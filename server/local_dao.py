@@ -240,7 +240,7 @@ class LocalDAO(object):
                 f"{self.add_modules.__name__}> Failed to insert rows, inserted {inserted_count} out of {len(module_dicts)}."
             )
 
-        all_sensors: List[List[SensorType]] = []
+        all_sensors: List[List[AnalogSensor]] = []
         module_ids = []
         for module in modules:
             module_ids.append(module.id)
