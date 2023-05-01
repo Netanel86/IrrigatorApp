@@ -249,7 +249,7 @@ class SQLiteConnection(object):
         self,
         data: Tuple[str] | str,
         separator: str,
-        count: Optional[int],
+        count: Optional[int] = None,
         **kwargs: Optional[Dict[str, str]],
     ) -> str:
         """Formats the given data and arguments into a single string.
@@ -360,7 +360,7 @@ class SQLiteConnection(object):
         self,
         table: str,
         data: Dict[str, Any] | List[Dict[str, Any]],
-        return_col: Optional[str],
+        return_col: Optional[str] = None,
     ) -> str | int:
         """Insert one or more rows into a table.
 
@@ -426,7 +426,10 @@ class SQLiteConnection(object):
         )
 
     def delete(
-        self, table: str, col_names: Optional[Tuple[str, ...]], values: Optional[Tuple]
+        self,
+        table: str,
+        col_names: Optional[Tuple[str, ...]] = None,
+        values: Optional[Tuple] = None,
     ) -> bool:
         """Delete one or more rows from the table.
 
@@ -455,7 +458,9 @@ class SQLiteConnection(object):
             else self._execute(Queries.DELETE, query, values)
         )
 
-    def select(self, table: str, col_names: Optional[Tuple[str]]) -> QueryBuilder:
+    def select(
+        self, table: str, col_names: Optional[Tuple[str]] = None
+    ) -> QueryBuilder:
         """Select columns from rows in the specified table.
 
         Args:
