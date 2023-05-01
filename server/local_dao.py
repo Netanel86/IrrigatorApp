@@ -151,8 +151,6 @@ class XrefTypes(Enum):
 
 
 class LocalDAO(object):
-    KEY_ID = "local_id"
-    KEY_TYPE = "type"
     DB_PATH = os.path.join(
         os.path.dirname(os.path.abspath(__file__).split("connections")[0]),
         "sqlite\db\pysqlite.db",
@@ -313,47 +311,18 @@ class LocalDAO(object):
             )
         return result
 
-    def _get_obj_xref_data(self, _object: IDable | int) -> Dict:
-        """Returns a dictionary containing xref table data for an object.
-
-        Args:
-            _object (`IDable` | `int`): The object to retrieve the table data from. Can be either an instance of
-                `IDable` or an `integer`.
-
-        Returns:
-            dict: A dictionary with two keys:
-                -`LocalDAO.KEY_TYPE` (`str`): The name of the object's `XrefTypes` value.
-                -`LocalDAO.KEY_ID` (`int`): The local ID value of the object.
-        Raises:
-            `TypeError`: If the input object is neither a subclass of `IDable` nor an `integer`.
-        """
-        _type = XrefTypes(_object.__class__)
-
-        match _type:
-            case XrefTypes.Module | XrefTypes.Sensor:
-                local_id = _object.id
-            case XrefTypes.System:
-                local_id = _object
-            case _:
-                raise TypeError("'object must be an integer or a subclass of 'IDable'")
-
-        return {LocalDAO.KEY_TYPE: _type.name, LocalDAO.KEY_ID: local_id}
-
-    def add_remote_id(self, _object: IDable | int, remote_id):
-        xref_data = self._get_obj_xref_data(_object)
-
+    def add_remote_id(self, _type: XrefTypes, local_id: int, remote_id: str):
         result = self._db.insert(
             Constants.XRef.TABLE_NAME,
             {
-                Constants.XRef.ColName.TYPE: xref_data[LocalDAO.KEY_TYPE],
-                Constants.XRef.ColName.LOCAL_ID: xref_data[LocalDAO.KEY_ID],
+                Constants.XRef.ColName.TYPE: _type.name,
+                Constants.XRef.ColName.LOCAL_ID: local_id,
                 Constants.XRef.ColName.REMOTE_ID: remote_id,
             },
         )
         return result
 
-    def get_remote_id(self, _object: IDable | int) -> str:
-        xref_data = self._get_obj_xref_data(_object)
+    def get_remote_id(self, _type: XrefTypes, local_id: int):
         result = (
             self._db.select(Constants.XRef.TABLE_NAME, Constants.XRef.SELECT_COLUMNS)
             .where(
@@ -361,7 +330,7 @@ class LocalDAO(object):
                     Constants.XRef.ColName.TYPE,
                     Constants.XRef.ColName.LOCAL_ID,
                 ),
-                (xref_data[LocalDAO.KEY_TYPE], xref_data[LocalDAO.KEY_ID]),
+                (_type.name, local_id),
             )
             .execute(Parsers.Dict)
         )
@@ -442,25 +411,26 @@ class LocalDAO(object):
             Constants.Sensor.TABLE_NAME, (Constants.Sensor.ColName.ID,), (sensor_id,)
         )
 
-    def delete_remote_id(self, _object: IDable | int):
-        xref_data = self._get_obj_xref_data(_object)
+    def delete_remote_id(self, _type: XrefTypes, local_id: int):
         return self._db.delete(
             Constants.XRef.TABLE_NAME,
             (Constants.XRef.ColName.TYPE, Constants.XRef.ColName.LOCAL_ID),
-            (xref_data[LocalDAO.KEY_TYPE], xref_data[LocalDAO.KEY_ID]),
+            (_type.name, local_id),
         )
 
-    def purge(self):
+    def purge(self) -> bool:
         def log_delete_msg(name, result):
             self._logger.info(
                 f"{self.purge.__name__}> Delete table {name} returned result: '{result}'"
             )
 
-        ret = self._db.delete(Constants.Sensor.TABLE_NAME)
-        log_delete_msg(Constants.Sensor.TABLE_NAME, ret)
+        prg_sensors = self._db.delete(Constants.Sensor.TABLE_NAME)
+        log_delete_msg(Constants.Sensor.TABLE_NAME, prg_sensors)
 
-        ret = self._db.delete(Constants.Module.TABLE_NAME)
-        log_delete_msg(Constants.Module.TABLE_NAME, ret)
+        prg_modules = self._db.delete(Constants.Module.TABLE_NAME)
+        log_delete_msg(Constants.Module.TABLE_NAME, prg_modules)
 
-        ret = self._db.delete(Constants.XRef.TABLE_NAME)
-        log_delete_msg(Constants.XRef.TABLE_NAME, ret)
+        prg_xref = self._db.delete(Constants.XRef.TABLE_NAME)
+        log_delete_msg(Constants.XRef.TABLE_NAME, prg_xref)
+
+        return prg_sensors and prg_modules and prg_xref
