@@ -208,8 +208,8 @@ class FirestoreConnection(object):
     def map_to_object(
         self,
         dicts: Dict[str, Dict[str, Any]],
-        id_field: str,
         from_dict: Callable[[Dict[str, Any]], Any],
+        id_field: str = None,
         key_prop: str = None,
     ) -> Dict[str, Any] | List:
         """Map dicts to a dict of `object_type` values.
@@ -230,20 +230,12 @@ class FirestoreConnection(object):
 
         Raises:
             KeyError: if no `key_prop` property exist in object's dictionary keys.
-            AttributeError: if `id_field` not set or is empty.
         """
         objects: Dict[str, Any] | List[Any] = {} if key_prop is not None else []
 
         for id, obj_dict in dicts.items():
-            if not id_field:
-                raise AttributeError(
-                    "'id_field' must be set to a value.(id_field: {})".format(id_field)
-                )
-            if len(id_field) == 0:
-                raise AttributeError(
-                    "'id_field' must not be empty. (id_field: {})".format(id_field)
-                )
-            obj_dict[id_field] = id
+            if id_field:
+                obj_dict[id_field] = id
             mapped_obj = from_dict(obj_dict)
             if key_prop is not None:
                 objects[obj_dict[key_prop]] = mapped_obj
