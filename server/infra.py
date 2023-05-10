@@ -3,6 +3,7 @@ from abc import ABC
 from enum import Enum
 import logging
 from datetime import datetime
+from google.api_core.datetime_helpers import DatetimeWithNanoseconds
 from typing import Any, Dict, List, NamedTuple, Tuple, Callable
 from extensions import is_empty
 
@@ -171,7 +172,10 @@ class DictParseable(ABC):
 
             if value_type is not attr_type:
                 if isinstance(getattr(self, obj_prop), datetime):
-                    value = datetime.fromisoformat(value)
+                    if isinstance(value, str):
+                        value = datetime.fromisoformat(value)
+                    elif isinstance(value, DatetimeWithNanoseconds):
+                        value = datetime.fromtimestamp(value.timestamp()).astimezone()
 
                 elif isinstance(getattr(self, obj_prop), Enum):
                     value = attr_type[f"{value}"]
@@ -191,3 +195,12 @@ class DictParseable(ABC):
                     attr_val.name if isinstance(attr_val, Enum) else attr_val
                 )
         return obj_dict
+
+    def __eq__(self, other: object):
+        is_equal = False
+        if isinstance(other, self.__class__):
+            is_equal = self.__dict__ == other.__dict__
+        else:
+            raise TypeError(self.__class__, other.__class__)
+
+        return is_equal
